@@ -1,0 +1,19 @@
+{
+  "name": "neighbourhoods",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/h20liquidity/neighbourhoods.git"
+  },
+  "author": "thedavidmeister",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/h20liquidity/neighbourhoods/issues"
+  },
+  "homepage": "https://github.com/h20liquidity/neighbourhoods#readme"
+}
