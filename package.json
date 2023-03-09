@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/h20liquidity/neighbourhoods#readme",
   "devDependencies": {
-    "hardhat": "^2.13.0"
+    "hardhat": "^2.13.0",
+    "solc": "=0.8.17",
+    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#49794177708ed530fd3515a4a9bee2809e0b68e1"
   }
 }

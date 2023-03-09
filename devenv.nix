@@ -9,6 +9,8 @@
   scripts.hello.exec = "echo hello from $GREET";
 
   enterShell = ''
+  npm install
+  PATH="$(npm prefix)/node_modules/.bin:$PATH"
   '';
 
   # https://devenv.sh/languages/
