@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/h20liquidity/neighbourhoods/issues"
   },
-  "homepage": "https://github.com/h20liquidity/neighbourhoods#readme"
+  "homepage": "https://github.com/h20liquidity/neighbourhoods#readme",
+  "devDependencies": {
+    "hardhat": "^2.13.0"
+  }
 }
