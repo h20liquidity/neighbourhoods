@@ -1,35 +1,37 @@
 /* Calculate IO */
 /* 24 hour delay on new batches */
-seed: call<0 1 3>(),
+seed: call<3 1>(),
 : ensure(gt(now() add(get(hash(seed 1)) mul(60 60 24)))),
 
 /* get info about current batch */
-batch-index batch-remaining: call<1 2 2>(0),
+batch-index batch-remaining: call<2 2>(0),
 
 /* always offer at least 10 tokens even if that's beyond the current batch */
-amount: max(batch-remaining scale-18<0>(10)),
+amount: max(batch-remaining 10e18),
 
 /* exponential growth */
 /* (1.1)^batch-index */
 /* Power function x^y with y simple integer */
 /* https://github.com/PaulRBerg/prb-math */
-io-ratio: fp-powu(scale-18<1>(11) batch-index);
+io-ratio: prb-powu(11e17 batch-index);
 
 /*
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
-seed: call<0 1 3>(),
+seed: call<3 1>(),
+out-token-amount: context<3 4>(),
+out-token-decimals: context<3 1>(),
 seen-batch-index seen-batch-time: get(hash(seed 0)) get(hash(seed 1)),
-total-amount-sent batch-index batch-remaining: call<1 3 2>(scale-18-dynamic(out-token-amount out-token-decimals)),
+total-amount-sent batch-index batch-remaining: call<2 3>(scale-18-dynamic<1>(out-token-amount out-token-decimals)),
 /* if we're in a new batch record current time as batch time */
 :set(hash(seed 1) if(gt(batch-index seen-batch-index) now() seen-batch-time)),
 :set(seed total-amount-sent);
 
 /* Calculate batch */
 amount-this-batch:,
-seed: call<0 1 3>(),
-amount-per-batch: scale-18<0>(1000),
+seed: call<3 1>(),
+amount-per-batch: 1000e18,
 total-amount-sent: add(get(seed) amount-this-batch),
 batch-index: div(total-amount-sent amount-per-batch),
 batch-remaining: mod(total-amount-sent amount-per-batch);
