@@ -54,4 +54,8 @@ amount-per-batch: 1000e18,
 new-total-amount-sent: add(get(total-sent-k) new-sent),
 /* use the flooring from integer division to simply batch the order */
 new-batch-index: div(new-total-amount-sent amount-per-batch),
-new-batch-remaining: sub(mul(add(new-batch-index 1) amount-per-batch) new-total-amount-sent);
+new-batch-remaining: sub(
+  mul(
+    add(new-batch-index 1)
+    amount-per-batch)
+  new-total-amount-sent);
