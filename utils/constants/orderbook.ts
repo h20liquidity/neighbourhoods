@@ -1,2 +1,0 @@
-export const FLAG_INDEX_CLEARED_ORDER = 0;
-export const FLAG_INDEX_CLEARED_COUNTERPARTY = 1;

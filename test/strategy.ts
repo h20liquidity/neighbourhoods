@@ -1,13 +1,14 @@
 import { assert } from "chai";
-import { concat } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ReserveToken18 } from "../typechain";
-import { AddOrderEvent, OrderConfigStruct } from "../typechain/contracts/orderbook/IOrderBookV1";
-import { AllStandardOps, basicDeploy, compareStructs, eighteenZeros, generateEvaluableConfig, getEventArgs, max_uint256, memoryOperand, MemoryType, op, randomUint256, standardEvaluableConfig } from "../utils";
+import { AddOrderEvent,  DepositConfigStruct,  OrderConfigStruct } from "../typechain/contracts/orderbook/IOrderBookV1";
+import {  basicDeploy, compareStructs, eighteenZeros, generateEvaluableConfig, getEventArgs,  randomUint256, standardEvaluableConfig } from "../utils";
 import { deployOrderBook } from "../utils/deploy/orderBook/deploy";
-import deploy1820 from "../utils/deploy/registry1820/deploy";
+import {deploy1820} from "@rainprotocol/rain-protocol/utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
 import fs from "fs"
+import { DepositEvent } from "../typechain/contracts/orderbook/OrderBook";
+
 
 
 describe("OrderBook add order", async function () {
@@ -16,7 +17,9 @@ describe("OrderBook add order", async function () {
 
   beforeEach(async () => {
     tokenA = (await basicDeploy("ReserveToken18", {})) as ReserveToken18;
-    tokenB = (await basicDeploy("ReserveToken18", {})) as ReserveToken18;
+    tokenB = (await basicDeploy("ReserveToken18", {})) as ReserveToken18; 
+    await tokenA.initialize();
+    await tokenB.initialize();
   });
 
   before(async () => {
@@ -34,10 +37,12 @@ describe("OrderBook add order", async function () {
     }
   };
 
-  it("Add strategy order", async function () {
+  it("Add strategy order", async function () { 
+
+    console.log("test")
     const signers = await ethers.getSigners();
 
-    const [, alice] = signers;
+    const [, alice] = signers; 
 
     const orderBook = await deployOrderBook();
 
@@ -92,10 +97,42 @@ describe("OrderBook add order", async function () {
       "wrong expression deployer"
     );
     assert(sender_A === alice.address, "wrong sender");
-    compareStructs(order_A, orderConfig_A);
+    compareStructs(order_A, orderConfig_A);    
+
+    console.log("order_A : " , order_A )
+
+    // DEPOSIT
+    // Deposit token equal to the size of the batch
+    const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+
+    const depositConfigStructAlice: DepositConfigStruct = {
+      token: tokenB.address,
+      vaultId: aliceOutputVault,
+      amount: amountB,
+    };
+
+    await tokenB.transfer(alice.address, amountB);
+    await tokenB
+      .connect(alice)
+      .approve(orderBook.address, depositConfigStructAlice.amount);
+
+    // Alice deposits tokenB into her output vault
+    const txDepositOrderAlice = await orderBook
+      .connect(alice)
+      .deposit(depositConfigStructAlice);
+
+    const { sender: depositAliceSender, config: depositAliceConfig } =
+      (await getEventArgs(
+        txDepositOrderAlice,
+        "Deposit",
+        orderBook
+      )) as DepositEvent["args"];
+
+    assert(depositAliceSender === alice.address);
+    compareStructs(depositAliceConfig, depositConfigStructAlice); 
 
 
+  }); 
 
-    
-  });
+
 });
