@@ -1,18 +1,13 @@
-allowed-counterparty: 0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907,
-/**
- * 32 random bytes from openssl for storage seed
- * get(seed) = total amount sent all time
- * get(hash(seed 0)) = seen batch index
- * get(hash(seed 1)) = seen batch time
-*/
-seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
+/* Calculate IO */
 
 /* refuse any counterparties other than named */
+allowed-counterparty: 0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907,
 : ensure(eq(allowed-counterparty context<0 2>())),
 
-/* Calculate IO */
 /* 24 hour delay on new batches = 86400 seconds */
-: ensure(gt(now() add(get(hash(seed 1)) 86400))),
+batch-start-info: get(0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9),
+batch-start-time: decode-256<32 63>(batch-start-info),
+: ensure(gt(now() add(batch-start-time 86400))),
 
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
@@ -30,19 +25,33 @@ io-ratio: prb-powu(11e17 batch-index);
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
-seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
+total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
+batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
+
+/* new batch info due to trade */
 out-token-amount: context<3 4>(),
 out-token-decimals: context<3 1>(),
-seen-batch-index seen-batch-time: get(hash(seed 0)) get(hash(seed 1)),
-total-amount-sent batch-index batch-remaining: call<2 3>(scale-18-dynamic<1>(out-token-amount out-token-decimals)),
-/* if we're in a new batch record current time as batch time */
-:set(hash(seed 1) if(gt(batch-index seen-batch-index) now() seen-batch-time)),
-:set(seed total-amount-sent);
+new-total-sent new-batch-index _: call<2 3>(scale-18-dynamic<1>(out-token-amount out-token-decimals)),
+
+/* stored batch info */
+batch-start-info: get(batch-start-info-k),
+batch-start-index: decode-256<0 31>(batch-start-info),
+batch-start-time: decode-256<32 63>(batch-start-info),
+
+/* if we're in a new batch record current time as batch start time */
+:set(
+  batch-start-info-k
+  if(
+    gt(new-batch-index batch-start-index)
+    encode-256<32 63>(now() encode-256<0 31>(new-batch-index 0))
+    batch-start-info)),
+:set(total-sent-k new-total-sent);
 
 /* Calculate batch */
-amount-this-batch:,
-seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
+new-sent:,
+total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 amount-per-batch: 1000e18,
-total-amount-sent: add(get(seed) amount-this-batch),
-batch-index: div(total-amount-sent amount-per-batch),
-batch-remaining: mod(total-amount-sent amount-per-batch);
+new-total-amount-sent: add(get(total-sent-k) new-sent),
+/* use the flooring from integer division to simply batch the order */
+new-batch-index: div(new-total-amount-sent amount-per-batch),
+new-batch-remaining: sub(mul(add(new-batch-index 1) amount-per-batch) new-total-amount-sent);
