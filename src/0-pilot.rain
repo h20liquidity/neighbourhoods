@@ -1,7 +1,17 @@
+allowed-counterparty: 0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907,
+/**
+ * 32 random bytes from openssl for storage seed
+ * hash(seed 0) = batch index
+ * hash(seed 1) = batch remaining
+*/
+seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
+
+/* refuse any counterparties other than named */
+: ensure(eq(allowed-counterparty context<0 2>())),
+
 /* Calculate IO */
-/* 24 hour delay on new batches */
-seed: call<3 1>(),
-: ensure(gt(now() add(get(hash(seed 1)) mul(60 60 24)))),
+/* 24 hour delay on new batches = 86400 seconds */
+: ensure(gt(now() add(get(hash(seed 1)) 86400))),
 
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
@@ -19,7 +29,7 @@ io-ratio: prb-powu(11e17 batch-index);
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
-seed: call<3 1>(),
+seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 out-token-amount: context<3 4>(),
 out-token-decimals: context<3 1>(),
 seen-batch-index seen-batch-time: get(hash(seed 0)) get(hash(seed 1)),
@@ -30,11 +40,8 @@ total-amount-sent batch-index batch-remaining: call<2 3>(scale-18-dynamic<1>(out
 
 /* Calculate batch */
 amount-this-batch:,
-seed: call<3 1>(),
+seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 amount-per-batch: 1000e18,
 total-amount-sent: add(get(seed) amount-this-batch),
 batch-index: div(total-amount-sent amount-per-batch),
 batch-remaining: mod(total-amount-sent amount-per-batch);
-
-/* shared constants */
-seed: 0x897055f9a919d8fca1a0eb0bfeed3ba67d50c4c5667c072fa52bd5612787a690;
