@@ -1,8 +1,9 @@
 allowed-counterparty: 0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907,
 /**
  * 32 random bytes from openssl for storage seed
- * hash(seed 0) = batch index
- * hash(seed 1) = batch remaining
+ * get(seed) = total amount sent all time
+ * get(hash(seed 0)) = seen batch index
+ * get(hash(seed 1)) = seen batch time
 */
 seed: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 
