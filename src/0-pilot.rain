@@ -1,7 +1,7 @@
 /* Calculate IO */
 
 /* refuse any counterparties other than named */
-allowed-counterparty: 0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907,
+allowed-counterparty: {{ counterparty }},
 : ensure(eq(allowed-counterparty context<0 2>())),
 
 /* 24 hour delay on new batches = 86400 seconds */
