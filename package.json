@@ -20,7 +20,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@prb/math": "=3.3.0",
-    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#8eb47d4f6f7ea47d5082a6f846ac9227d06a4004",
+    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#6b43b46e4cada0faac8683be4b90e2d02ec922df",
     "dotenv": "=16.0.3",
     "hardhat": "^2.13.0",
     "hardhat-contract-sizer": "=2.6.1",
