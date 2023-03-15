@@ -1,5 +1,6 @@
 
 import { ethers } from "hardhat";
+import * as helpers  from "@nomicfoundation/hardhat-network-helpers"
 
 
 /**
@@ -13,3 +14,6 @@ export const timewarp = async (duration: number): Promise<void> => {
     await ethers.provider.send("evm_mine", []);
   };
   
+export const resetFork = async (url:string , block:number):Promise<void> => {
+  await helpers.reset(url, block);
+}

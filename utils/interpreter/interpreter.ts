@@ -1,43 +1,11 @@
-import { BigNumberish, BytesLike } from "ethers";
+
 import {   hexlify } from "ethers/lib/utils";
-import { PromiseOrValue } from "../../typechain/common";
-import { EvaluableConfigStruct } from "../../typechain/contracts/flow/basic/Flow";
-import {
-  rainterpreterDeploy,
-  rainterpreterStoreDeploy,
-} from "../deploy/interpreter/shared/rainterpreter/deploy";
-import { rainterpreterExpressionDeployerDeploy } from "../deploy/interpreter/shared/rainterpreterExpressionDeployer/deploy";
+
 import { ExpressionConfig, rlc } from "rainlang";
-import { getRainMetaDocumentFromOpmeta } from "../meta";
+
 import { MAGIC_NUMBERS, decodeRainMetaDocument } from "../meta/cbor";
 
 
-
-/**
- * @public
- * Builds an EvaluableConfig struct with expressionConfig and a store.
- *
- * @param expressionConfig - index of function source
- * @param isStore - used to toggle NO_STORE
- * @returns operand
- */
-export async function generateEvaluableConfig(
-  sources: PromiseOrValue<BytesLike>[],
-  constants: PromiseOrValue<BigNumberish>[]
-): Promise<EvaluableConfigStruct> {
-  const interpreter = await rainterpreterDeploy();
-  const store = await rainterpreterStoreDeploy();
-  const expressionDeployer = await rainterpreterExpressionDeployerDeploy(
-    interpreter,
-    store
-  );
-
-  return {
-    deployer: expressionDeployer.address,
-    sources,
-    constants,
-  };
-}
 
 /**
  * @public

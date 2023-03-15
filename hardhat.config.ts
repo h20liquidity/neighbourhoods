@@ -3,7 +3,7 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-contract-sizer";
-
+import * as conifg_ from "./config/config.json"
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -17,8 +17,8 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: { 
       forking:{
-        url:"https://polygon-mumbai.g.alchemy.com/v2/rn2aDBYZPFxGhDrw2EH5fl36rKOVsSde",
-        blockNumber : 33132259
+        url: conifg_.hardhat.forkBaseUrl + process.env["ALCHEMY_KEY"],
+        blockNumber : conifg_.hardhat.blockNumber
       }
     },
 
