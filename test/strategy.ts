@@ -2,33 +2,37 @@ import { assert } from "chai";
 import { ethers  } from "hardhat";
 import { BigNumber } from "ethers";
 
-import type {  ReserveToken18, ReserveTokenDecimals } from "../../typechain";
+import type {  ReserveToken18, ReserveTokenDecimals } from "../typechain";
 import {
   OrderConfigStruct,
   AddOrderEvent,
-} from "../../typechain/contracts/orderbook/OrderBook";
-import { randomUint256 } from "../../utils/bytes";
+  DepositEvent,
+} from "../typechain/contracts/orderbook/OrderBook";
+import { randomUint256 } from "../utils/bytes";
 import {
   eighteenZeros,
   ONE,
   sixZeros,
-} from "../../utils/constants/bigNumber";
-import { basicDeploy } from "../../utils/deploy/basicDeploy";
-import { getEventArgs } from "../../utils/events";
+} from "../utils/constants/bigNumber";
+
+import { getEventArgs } from "../utils/events";
 import {
   generateEvaluableConfig,
-
-  standardEvaluableConfig,
-} from "../../utils/interpreter/interpreter";
-import {  fixedPointMul } from "../../utils/math";
-import { compareStructs } from "../../utils/test/compareStructs";
-import deploy1820 from "../../utils/deploy/registry1820/deploy";
-import { deployOrderBook } from "../../utils/deploy/orderBook/deploy";
-import { DepositConfigStruct, TakeOrderConfigStruct, TakeOrderEvent, TakeOrdersConfigStruct } from "../../typechain/contracts/orderbook/IOrderBookV1"; 
+  standardEvaluableConfig
+} from "../utils/interpreter/interpreter";
+import {  fixedPointMul } from "../utils/math";
+import { compareStructs } from "../utils/test/compareStructs";
+import deploy1820 from "../utils/deploy/registry1820/deploy";
+import { deployOrderBook } from "../utils/deploy/orderBook/deploy";
+import { DepositConfigStruct, TakeOrderConfigStruct, TakeOrderEvent, TakeOrdersConfigStruct } from "../typechain/contracts/orderbook/IOrderBookV1"; 
 import * as path from 'path'; 
 import fs from "fs"  
-import { assertError, timewarp } from "../../utils";
+import { assertError, timewarp } from "../utils";
 import * as mustache from 'mustache'; 
+import { basicDeploy } from "../utils/deploy/basicDeploy"; 
+
+import { artifacts } from "hardhat";
+
 
 export const fetchFile = (_path: string): string => {
   try {
@@ -75,1576 +79,1772 @@ describe("Pilot", async function () {
   let tokenA: ReserveToken18;
   let tokenB: ReserveToken18; 
 
-  
+  let orderBook
+  let expressionDeployer
 
   beforeEach(async () => {
+    const signers = await ethers.getSigners();
+
     tokenA = (await basicDeploy("ReserveToken18", {})) as ReserveToken18;
     tokenB = (await basicDeploy("ReserveToken18", {})) as ReserveToken18; 
     await tokenA.initialize();
-    await tokenB.initialize();
+    await tokenB.initialize(); 
+
+    const addressOB = "0x5bB0f2f1504750449B1682Ec8015A066ED2b4cA9"
+    const obAbiJSON = artifacts.readArtifactSync("OrderBook").abi; 
+
+    orderBook = new ethers.Contract(addressOB,obAbiJSON,signers[0]) 
+
+    const addressDeployer = "0xD26D51eF3AdC496c5Ce4F568fCb1b148BF0C5924"
+    const deployerAbiJSON = artifacts.readArtifactSync("RainterpreterExpressionDeployer").abi;  
+
+    expressionDeployer = new ethers.Contract(addressDeployer,deployerAbiJSON,signers[0]) 
+
+
   });
 
   before(async () => {
     // Deploy ERC1820Registry
     const signers = await ethers.getSigners();
     await deploy1820(signers[0]);
-  });
+  }); 
 
+  it.only("test :" , async function(){ 
+
+    const signers = await ethers.getSigners();  
+
+    const [ admin , alice, bob, carol] = signers; 
+    const aliceOutputVault = ethers.BigNumber.from(randomUint256()); 
+
+    const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
  
-  it("should ensure only conterparties are able to takeOrders", async function () { 
-
-    const signers = await ethers.getSigners();
-
-    const [, alice, bob, carol] = signers;   
-
-    const orderBook = await deployOrderBook();
-
-    const aliceInputVault = ethers.BigNumber.from(randomUint256());
-    const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-  
-
-    const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-    
-    // Order_A 
-
-    const strategyExpression = path.resolve(
-      __dirname,
-      "../src/0-pilot.rain"
-    );
-
-    const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
-
-    const EvaluableConfig_A = await generateEvaluableConfig(
-      sources,
-      constants
-    );
-
-    const orderConfig_A: OrderConfigStruct = {
-      validInputs: [
-        { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
-      ],
-      validOutputs: [
-        { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
-      ],
-      evaluableConfig: EvaluableConfig_A,
-      data: aliceOrder,
-    };
-
-    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-
-    const {
-      order: Order_A
-    } = (await getEventArgs(
-      txOrder_A,
-      "AddOrder",
-      orderBook
-    )) as AddOrderEvent["args"];
-
-
-     // TAKE ORDER
-
-     // DEPOSIT
-     // Deposit token equal to the size of the batch
-     const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
- 
-     const depositConfigStructAlice: DepositConfigStruct = {
+    const depositConfigStructAlice: DepositConfigStruct = {
        token: tokenB.address,
        vaultId: aliceOutputVault,
        amount: amountB,
-     };
- 
-     await tokenB.transfer(alice.address, amountB);
-     await tokenB
+     }; 
+
+     let tx1 = await tokenB.connect(admin).transfer(alice.address, amountB);  
+     console.log("tx1 : ", tx1.hash)
+
+      let tx2= await tokenB
        .connect(alice)
-       .approve(orderBook.address, depositConfigStructAlice.amount);
+       .approve(orderBook.address, depositConfigStructAlice.amount); 
+       console.log("tx2 : ", tx2.hash)
  
      // Alice deposits tokenB into her output vault
-     await orderBook
+     const txDepositOrderAlice = await orderBook
        .connect(alice)
-       .deposit(depositConfigStructAlice);
+       .deposit(depositConfigStructAlice);   
+      console.log("txDepositOrderAlice : ", txDepositOrderAlice)
+
  
-     const takeOrderConfigStruct: TakeOrderConfigStruct = {
-       order: Order_A,
-       inputIOIndex: 0,
-       outputIOIndex: 0,
-     }; 
- 
-     let ratio = await prbScale(0) 
- 
-     const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-       output: tokenA.address,
-       input: tokenB.address,
-       minimumInput: amountB,
-       maximumInput: amountB,
-       maximumIORatio: ratio,
-       orders: [takeOrderConfigStruct],
-     };
- 
-     const amountA = amountB.mul(ratio).div(ONE); 
- 
-     await tokenA.transfer(carol.address, amountA);
-     await tokenA.connect(carol).approve(orderBook.address, amountA); 
-
-     await assertError(
-      async () =>
-        await await orderBook
-        .connect(carol)
-        .takeOrders(takeOrdersConfigStruct),
-      "",
-      "Invalid Conterparty"
-    );
-        
-  }); 
-
-  it("should ensure 24 hour delay is maintained between two batches", async function () { 
-
-    const signers = await ethers.getSigners();
-
-    const [, alice, bob] = signers;   
-
-    const orderBook = await deployOrderBook();
-
-    const aliceInputVault = ethers.BigNumber.from(randomUint256());
-    const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-  
-
-    const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
-    
-    // Order_A
-
-    const stringExpression = mustache.render(stringExp, {
-      counterparty: bob.address,
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
-
-    const EvaluableConfig_A = await generateEvaluableConfig(
-      sources,
-      constants
-    );
-
-    const orderConfig_A: OrderConfigStruct = {
-      validInputs: [
-        { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
-      ],
-      validOutputs: [
-        { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
-      ],
-      evaluableConfig: EvaluableConfig_A,
-      data: aliceOrder,
-    };
-
-    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-
-    const {
-      order: Order_A
-    } = (await getEventArgs(
-      txOrder_A,
-      "AddOrder",
-      orderBook
-    )) as AddOrderEvent["args"];
-
-     // DEPOSIT
-     // Deposit token equal to the size of the batch
-     const amountB = ethers.BigNumber.from("1000" + eighteenZeros); 
- 
-     const depositConfigStructAlice: DepositConfigStruct = {
-       token: tokenB.address,
-       vaultId: aliceOutputVault,
-       amount: amountB.mul(2),
-     };
- 
-     await tokenB.transfer(alice.address, amountB.mul(2));
-     await tokenB
-       .connect(alice)
-       .approve(orderBook.address, depositConfigStructAlice.amount);
- 
-     // Alice deposits tokenB into her output vault
-     await orderBook
-       .connect(alice)
-       .deposit(depositConfigStructAlice);
- 
-    // TAKE ORDER 0 
-     const takeOrderConfigStruct0: TakeOrderConfigStruct = {
-       order: Order_A,
-       inputIOIndex: 0,
-       outputIOIndex: 0,
-     }; 
- 
-     let ratio0 = await prbScale(0) 
-     
-     const takeOrdersConfigStruct0: TakeOrdersConfigStruct = {
-       output: tokenA.address,
-       input: tokenB.address,
-       minimumInput: amountB,
-       maximumInput: amountB,
-       maximumIORatio: ratio0,
-       orders: [takeOrderConfigStruct0],
-     };
- 
-     const amountA0 = amountB.mul(ratio0).div(ONE); 
- 
-     await tokenA.transfer(bob.address, amountA0);
-     await tokenA.connect(bob).approve(orderBook.address, amountA0); 
-
-     const txTakeOrders0 = await orderBook
-        .connect(bob)
-        .takeOrders(takeOrdersConfigStruct0)
-
-      const { sender: sender0, config: config0, input:input0, output: output0 } = (await getEventArgs(
-        txTakeOrders0,
-        "TakeOrder",
-        orderBook
-      )) as TakeOrderEvent["args"];  
-
-
-      assert(sender0 === bob.address, "wrong sender");
-      assert(input0.eq(amountB), "wrong input");
-      assert(output0.eq(amountA0), "wrong output");
-
-      compareStructs(config0, takeOrderConfigStruct0); 
-
-     // TAKE ORDER 1  
-
-     const takeOrderConfigStruct1: TakeOrderConfigStruct = {
-      order: Order_A,
-      inputIOIndex: 0,
-      outputIOIndex: 0,
-    }; 
-
-    let ratio1 = await prbScale(1) 
-    
-    const takeOrdersConfigStruct1: TakeOrdersConfigStruct = {
-      output: tokenA.address,
-      input: tokenB.address,
-      minimumInput: amountB,
-      maximumInput: amountB,
-      maximumIORatio: ratio1,
-      orders: [takeOrderConfigStruct1],
-    };
-
-    const amountA1 = amountB.mul(ratio1).div(ONE); 
-
-    await tokenA.transfer(bob.address, amountA1);
-    await tokenA.connect(bob).approve(orderBook.address, amountA1); 
-    
-    //Should fail as delay is not observed
-    await assertError(
-      async () =>
-        await orderBook
-      .connect(bob)
-      .takeOrders(takeOrdersConfigStruct0),
-      "",
-      "Delay"
-    ) 
-    
-    // Introducing Delay
-    await timewarp(86400); 
-    
-    // Order should succeed after deplay is complete
-    const txTakeOrders1 = await orderBook
-        .connect(bob)
-        .takeOrders(takeOrdersConfigStruct1)
-
-      const { sender: sender1, config: config1, input:input1, output: output1 } = (await getEventArgs(
-        txTakeOrders1,
-        "TakeOrder",
-        orderBook
-      )) as TakeOrderEvent["args"];  
-
-
-      assert(sender1 === bob.address, "wrong sender");
-      assert(input1.eq(amountB), "wrong input");
-      assert(output1.eq(amountA1), "wrong output");
-
-      compareStructs(config1, takeOrderConfigStruct0); 
-        
-  }); 
-
-  it("should ensure ratio is not scaled by the expressions for orders with same batch", async function () { 
-
-    const signers = await ethers.getSigners();
-
-    const [, alice, bob] = signers;   
-
-
-    const orderBook = await deployOrderBook();
-
-    const aliceInputVault = ethers.BigNumber.from(randomUint256());
-    const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-  
-
-    const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
-
-    const stringExpression = mustache.render(stringExp, {
-      counterparty: bob.address,
-    }); 
-    
-    // Order_A
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
-
-    const EvaluableConfig_A = await generateEvaluableConfig(
-      sources,
-      constants
-    );
-
-    const orderConfig_A: OrderConfigStruct = {
-      validInputs: [
-        { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
-      ],
-      validOutputs: [
-        { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
-      ],
-      evaluableConfig: EvaluableConfig_A,
-      data: aliceOrder,
-    };
-
-    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-
-    const {
-      order: Order_A
-    } = (await getEventArgs(
-      txOrder_A,
-      "AddOrder",
-      orderBook
-    )) as AddOrderEvent["args"];
-
-
-    // TAKE ORDER
-
-    // Bob takes order with direct wallet transfer
-    for(let i = 0 ; i < 10 ; i++){  
-
-      // DEPOSIT
-      const amountB = ethers.BigNumber.from("100" + eighteenZeros);
-
-      const depositConfigStructAlice: DepositConfigStruct = {
-        token: tokenB.address,
-        vaultId: aliceOutputVault,
-        amount: amountB,
-      };
-
-      await tokenB.transfer(alice.address, amountB);
-      await tokenB
-        .connect(alice)
-        .approve(orderBook.address, depositConfigStructAlice.amount);
-
-      // Alice deposits tokenB into her output vault
-       await orderBook.connect(alice).deposit(depositConfigStructAlice);
-
-      const takeOrderConfigStruct: TakeOrderConfigStruct = {
-        order: Order_A,
-        inputIOIndex: 0,
-        outputIOIndex: 0,
-      }; 
-
-      // Batch Index Remains the same hence ratio remains the same 
-      const ratio = await prbScale(0)
-  
-      const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-        output: tokenA.address,
-        input: tokenB.address,
-        minimumInput: amountB,
-        maximumInput: amountB,
-        maximumIORatio: ratio,
-        orders: [takeOrderConfigStruct],
-      };
-  
-      const amountA = amountB.mul(ratio).div(ONE); 
-  
-      await tokenA.transfer(bob.address, amountA);
-      await tokenA.connect(bob).approve(orderBook.address, amountA); 
-  
-  
-      const txTakeOrders = await orderBook
-        .connect(bob)
-        .takeOrders(takeOrdersConfigStruct);   
-        
-      const { sender, config, input, output } = (await getEventArgs(
-        txTakeOrders,
-        "TakeOrder",
-        orderBook
-      )) as TakeOrderEvent["args"];  
-    
-      assert(sender === bob.address, "wrong sender");
-      assert(input.eq(amountB), "wrong input");
-      assert(output.eq(amountA), "wrong output");
-  
-      compareStructs(config, takeOrderConfigStruct); 
-
-      // No delay is introduced as all orders are part of the same batch
-      // await timewarp(86400)
-    } 
-    
-  });  
-
-  it("should ensure ratio is scaled exponentially by the expressions as batch index increases", async function () { 
-
-    const signers = await ethers.getSigners();
-
-    const [, alice, bob] = signers;   
-
-
-    const orderBook = await deployOrderBook();
-
-    const aliceInputVault = ethers.BigNumber.from(randomUint256());
-    const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-  
-
-    const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
-
-    const stringExpression = mustache.render(stringExp, {
-      counterparty: bob.address,
-    }); 
-    
-    // Order_A
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
-
-    const EvaluableConfig_A = await generateEvaluableConfig(
-      sources,
-      constants
-    );
-
-    const orderConfig_A: OrderConfigStruct = {
-      validInputs: [
-        { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
-      ],
-      validOutputs: [
-        { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
-      ],
-      evaluableConfig: EvaluableConfig_A,
-      data: aliceOrder,
-    };
-
-    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-
-    const {
-      order: Order_A
-    } = (await getEventArgs(
-      txOrder_A,
-      "AddOrder",
-      orderBook
-    )) as AddOrderEvent["args"];
-
-
-    // TAKE ORDER
-
-    // Bob takes order with direct wallet transfer
-    for(let i = 0 ; i < 10 ; i++){  
-
-      // DEPOSIT
-
-      // Deposit max amount per batch
-      const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
-
-      const depositConfigStructAlice: DepositConfigStruct = {
-        token: tokenB.address,
-        vaultId: aliceOutputVault,
-        amount: amountB,
-      };
-
-      await tokenB.transfer(alice.address, amountB);
-      await tokenB
-        .connect(alice)
-        .approve(orderBook.address, depositConfigStructAlice.amount);
-
-      // Alice deposits tokenB into her output vault
-       await orderBook.connect(alice).deposit(depositConfigStructAlice);
-
-      const takeOrderConfigStruct: TakeOrderConfigStruct = {
-        order: Order_A,
-        inputIOIndex: 0,
-        outputIOIndex: 0,
-      }; 
-
-      // Scaling ratio as batch index increases 
-      const ratio = await prbScale(i)
-  
-      const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-        output: tokenA.address,
-        input: tokenB.address,
-        minimumInput: amountB,
-        maximumInput: amountB,
-        maximumIORatio: ratio,
-        orders: [takeOrderConfigStruct],
-      };
-  
-      const amountA = amountB.mul(ratio).div(ONE); 
-  
-      await tokenA.transfer(bob.address, amountA);
-      await tokenA.connect(bob).approve(orderBook.address, amountA); 
-  
-  
-      const txTakeOrders = await orderBook
-        .connect(bob)
-        .takeOrders(takeOrdersConfigStruct);   
-        
-      const { sender, config, input, output } = (await getEventArgs(
-        txTakeOrders,
-        "TakeOrder",
-        orderBook
-      )) as TakeOrderEvent["args"];   
-
-    
-      assert(sender === bob.address, "wrong sender");
-      assert(input.eq(amountB), "wrong input");
-      assert(output.eq(amountA), "wrong output");
-  
-      compareStructs(config, takeOrderConfigStruct); 
-
-      // Delay is introduced between batches
-      await timewarp(86400)
-    } 
-    
-  }); 
-
-  describe("should chain orders within same batch with decimals", () => { 
-
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 18)", async function () { 
-
-      const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals;
-      const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA06.initialize();
-      await tokenB18.initialize();
-  
-      const tokenADecimals = await tokenA06.decimals();
-      const tokenBDecimals = await tokenB18.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders within a batch
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + eighteenZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB18.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB18.transfer(alice.address, amountB);
-        await tokenB18
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA06.address,
-          input: tokenB18.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA06.transfer(bob.address, amountA);
-        await tokenA06.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct);
-      } 
-      
-    });  
-
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 18 vs Output Decimals: 6)", async function () { 
-
-      const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
-      ])) as ReserveTokenDecimals;
-      const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA18.initialize();
-      await tokenB06.initialize();
-  
-      const tokenADecimals = await tokenA18.decimals();
-      const tokenBDecimals = await tokenB06.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA18.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders within a batch
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + sixZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB06.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB06.transfer(alice.address, amountB);
-        await tokenB06
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA18.address,
-          input: tokenB06.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA18.transfer(bob.address, amountA);
-        await tokenA18.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct);
-      } 
-      
-    });  
-
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 6)", async function () { 
-
-      const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals;
-      const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA06.initialize();
-      await tokenB06.initialize();
-  
-      const tokenADecimals = await tokenA06.decimals();
-      const tokenBDecimals = await tokenB06.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders within a batch
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + sixZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB06.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB06.transfer(alice.address, amountB);
-        await tokenB06
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA06.address,
-          input: tokenB06.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA06.transfer(bob.address, amountA);
-        await tokenA06.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct);
-      } 
-      
-    });  
-
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 0 vs Output Decimals: 18)", async function () { 
-
-      const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        0,
-      ])) as ReserveTokenDecimals;
-      const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA00.initialize();
-      await tokenB18.initialize();
-  
-      const tokenADecimals = await tokenA00.decimals();
-      const tokenBDecimals = await tokenB18.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA00.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders within a batch
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + eighteenZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB18.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB18.transfer(alice.address, amountB);
-        await tokenB18
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA00.address,
-          input: tokenB18.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA00.transfer(bob.address, amountA);
-        await tokenA00.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct);
-      } 
-      
-    }); 
-
-  }) 
-
-  describe("should scale ratio exponentially for different batches with decimals", () => { 
-
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 18)", async function () { 
-
-      const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals;
-      const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA06.initialize();
-      await tokenB18.initialize();
-  
-      const tokenADecimals = await tokenA06.decimals();
-      const tokenBDecimals = await tokenB18.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders for batches
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-
-        // Deposit amount same as max posit amount per batch
-        const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB18.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB18.transfer(alice.address, amountB);
-        await tokenB18
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA06.address,
-          input: tokenB18.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA06.transfer(bob.address, amountA);
-        await tokenA06.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct); 
-
-        //Introduce delay
-        await timewarp(86400);
-      } 
-      
-    });  
-
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 18 vs Output Decimals: 6)", async function () { 
-
-      const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
-      ])) as ReserveTokenDecimals;
-      const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA18.initialize();
-      await tokenB06.initialize();
-  
-      const tokenADecimals = await tokenA18.decimals();
-      const tokenBDecimals = await tokenB06.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA18.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders for batches
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("1000" + sixZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB06.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB06.transfer(alice.address, amountB);
-        await tokenB06
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA18.address,
-          input: tokenB06.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA18.transfer(bob.address, amountA);
-        await tokenA18.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct); 
-
-        //Introduce delay
-        await timewarp(86400);
-      } 
-      
-    });  
-
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 6)", async function () { 
-
-      const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals;
-      const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        6,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA06.initialize();
-      await tokenB06.initialize();
-  
-      const tokenADecimals = await tokenA06.decimals();
-      const tokenBDecimals = await tokenB06.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders for batches
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("1000" + sixZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB06.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB06.transfer(alice.address, amountB);
-        await tokenB06
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA06.address,
-          input: tokenB06.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA06.transfer(bob.address, amountA);
-        await tokenA06.connect(bob).approve(orderBook.address, amountA); 
-    
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct); 
-
-        //Introduce delay
-        await timewarp(86400);
-      } 
-      
-    });  
-
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 0 vs Output Decimals: 18)", async function () { 
-
-      const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        0,
-      ])) as ReserveTokenDecimals;
-      const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
-      ])) as ReserveTokenDecimals; 
-
-      await tokenA00.initialize();
-      await tokenB18.initialize();
-  
-      const tokenADecimals = await tokenA00.decimals();
-      const tokenBDecimals = await tokenB18.decimals();  
-  
-      const signers = await ethers.getSigners();
-  
-      const [, alice, bob] = signers;   
-  
-      const orderBook = await deployOrderBook();
-  
-      const aliceInputVault = ethers.BigNumber.from(randomUint256());
-      const aliceOutputVault = ethers.BigNumber.from(randomUint256());
-    
-  
-      const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
-
-      const stringExpression = mustache.render(stringExp, {
-        counterparty: bob.address,
-      }); 
-      
-      // Order_A
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
-  
-      const EvaluableConfig_A = await generateEvaluableConfig(
-        sources,
-        constants
-      );
-  
-      const orderConfig_A: OrderConfigStruct = {
-        validInputs: [
-          { token: tokenA00.address, decimals: tokenADecimals, vaultId: aliceInputVault },
-        ],
-        validOutputs: [
-          { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
-        ],
-        evaluableConfig: EvaluableConfig_A,
-        data: aliceOrder,
-      };
-  
-      const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-  
-      const {
-        order: Order_A
-      } = (await getEventArgs(
-        txOrder_A,
-        "AddOrder",
-        orderBook
-      )) as AddOrderEvent["args"];
-  
-  
-      // Recursively places orders for batches
-      for(let i = 0 ; i < 10 ; i++){  
-  
-        // DEPOSIT
-        const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
-  
-        const depositConfigStructAlice: DepositConfigStruct = {
-          token: tokenB18.address,
-          vaultId: aliceOutputVault,
-          amount: amountB,
-        };
-  
-        await tokenB18.transfer(alice.address, amountB);
-        await tokenB18
-          .connect(alice)
-          .approve(orderBook.address, depositConfigStructAlice.amount);
-  
-        // Alice deposits tokenB into her output vault
-         await orderBook.connect(alice).deposit(depositConfigStructAlice);
-  
-        const takeOrderConfigStruct: TakeOrderConfigStruct = {
-          order: Order_A,
-          inputIOIndex: 0,
-          outputIOIndex: 0,
-        }; 
-        
-        // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
-      
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
-        const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
-          output: tokenA00.address,
-          input: tokenB18.address,
-          minimumInput: amountB,
-          maximumInput: amountB,
-          maximumIORatio: maximumIORatio,
-          orders: [takeOrderConfigStruct],
-        };
-    
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
-        
-        await tokenA00.transfer(bob.address, amountA);
-        await tokenA00.connect(bob).approve(orderBook.address, amountA); 
-    
-        const txTakeOrders = await orderBook
-          .connect(bob)
-          .takeOrders(takeOrdersConfigStruct);   
-          
-        const { sender, config, input, output } = (await getEventArgs(
-          txTakeOrders,
-          "TakeOrder",
-          orderBook
-        )) as TakeOrderEvent["args"];  
-    
-        assert(sender === bob.address, "wrong sender");
-        assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
-    
-        compareStructs(config, takeOrderConfigStruct); 
-
-        //Introduce delay
-        await timewarp(86400);
-      } 
-      
-    }); 
 
   })
 
+ 
+  // it.only("should ensure only conterparties are able to takeOrders", async function () {  
+
+  //   console.log("test :" , orderBook.address) ;  
+
+  //   const signers = await ethers.getSigners();
+
+  //   const [ admin , alice, bob, carol] = signers;  
+  //   console.log("admin :" , admin.address) ;  
+  //   console.log("alice :" , alice.address) ;  
+  //   console.log("bob :" , bob.address) ;  
+  //   console.log("carol :" , carol.address) ;  
+
+    
+  //   const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //   const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+  
+
+  //   const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");   
+
+  //   const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+ 
+  //    const depositConfigStructAlice: DepositConfigStruct = {
+  //      token: tokenB.address,
+  //      vaultId: aliceOutputVault,
+  //      amount: amountB,
+  //    };
+ 
+  //    let tx1 = await tokenB.connect(admin).transfer(alice.address, amountB); 
+  //    console.log("tx1:" , tx1 ) 
+  //    console.log("depositConfigStructAlice.amount:" , depositConfigStructAlice.amount ) 
+  //    console.log("amountB:" , amountB ) //1000000000000000000000
+
+
+
+  //    await tokenB
+  //      .connect(alice)
+  //      .approve(orderBook.address, depositConfigStructAlice.amount);
+ 
+  //    // Alice deposits tokenB into her output vault
+  //    const txDepositOrderAlice = await orderBook
+  //      .connect(alice)
+  //      .deposit(depositConfigStructAlice);   
+
+  //   console.log("txDepositOrderAlice : " , txDepositOrderAlice ) 
+  //   console.log("receipt : " , await txDepositOrderAlice.wait() )  
+
+  //   console.log("tokenB : " , tokenB.address ) 
+  //   console.log("aliceOutputVault : " , aliceOutputVault.toHexString()) 
+  //   console.log("amountB : " , amountB.toHexString()) 
+
+  //   //0xe6b62636
+  //   //000000000000000000000000f9d1fcb0ee98bc39ade81397b37ae8c5b4d8f6c4
+  //   //695fff3bff5cbb3708b36663de7447224f4240d99e1b4d5311b25026ae989652
+  //   //00000000000000000000000000000000000000000000003635c9adc5dea00000
+
+  //   //  await timewarp(86400)
+
+    
+  //   await new Promise(res => setTimeout(() => res(null), 5000));
+
+  //      const { sender: depositAliceSender, config: depositAliceConfig } =
+  //     (await getEventArgs(
+  //       txDepositOrderAlice,
+  //       "Deposit",
+  //       orderBook
+  //     )) as DepositEvent["args"];  
+
+  //     console.log("depositAliceConfig ; " , depositAliceConfig )
+
+
+    
+  //   // // Order_A 
+
+  //   // const strategyExpression = path.resolve(
+  //   //   __dirname,
+  //   //   "../src/0-pilot.rain"
+  //   // );
+
+  //   // const strategyString = await fetchFile(strategyExpression); 
+
+  //   // const stringExpression = mustache.render(strategyString, {
+  //   //   counterparty: bob.address,
+  //   // });   
+
+    
+
+  //   // const { sources, constants } = await standardEvaluableConfig(stringExpression)
+
+  //   // const EvaluableConfig_A = {
+  //   //   deployer: expressionDeployer.address,
+  //   //   sources,
+  //   //   constants,
+  //   // }
+  //   // const orderConfig_A: OrderConfigStruct = {
+  //   //   validInputs: [
+  //   //     { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
+  //   //   ],
+  //   //   validOutputs: [
+  //   //     { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
+  //   //   ],
+  //   //   evaluableConfig: EvaluableConfig_A,
+  //   //   data: aliceOrder,
+  //   // }; 
+
+  //   // console.log("orderConfig_A : " , orderConfig_A )
+
+  //   // const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  //   // let receipt = await txOrder_A.wait()
+  //   // // console.log("txOrder_A : " , txOrder_A ) 
+  //   // console.log("receipt : " , receipt ) 
+
+
+  //   // const {
+  //   //   order: Order_A
+  //   // } = (await getEventArgs(
+  //   //   txOrder_A,
+  //   //   "AddOrder",
+  //   //   orderBook
+  //   // )) as AddOrderEvent["args"];
+
+
+  //   //  // TAKE ORDER
+
+  //   //  // DEPOSIT
+  //   //  // Deposit token equal to the size of the batch
+  //   //  const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+ 
+  //   //  const depositConfigStructAlice: DepositConfigStruct = {
+  //   //    token: tokenB.address,
+  //   //    vaultId: aliceOutputVault,
+  //   //    amount: amountB,
+  //   //  };
+ 
+  //   //  await tokenB.transfer(alice.address, amountB);
+  //   //  await tokenB
+  //   //    .connect(alice)
+  //   //    .approve(orderBook.address, depositConfigStructAlice.amount);
+ 
+  //   //  // Alice deposits tokenB into her output vault
+  //   //  await orderBook
+  //   //    .connect(alice)
+  //   //    .deposit(depositConfigStructAlice);
+ 
+  //   //  const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //   //    order: Order_A,
+  //   //    inputIOIndex: 0,
+  //   //    outputIOIndex: 0,
+  //   //  }; 
+ 
+  //   //  let ratio = await prbScale(0) 
+ 
+  //   //  const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //   //    output: tokenA.address,
+  //   //    input: tokenB.address,
+  //   //    minimumInput: amountB,
+  //   //    maximumInput: amountB,
+  //   //    maximumIORatio: ratio,
+  //   //    orders: [takeOrderConfigStruct],
+  //   //  };
+ 
+  //   //  const amountA = amountB.mul(ratio).div(ONE); 
+ 
+  //   //  await tokenA.transfer(carol.address, amountA);
+  //   //  await tokenA.connect(carol).approve(orderBook.address, amountA); 
+
+  //   //  await assertError(
+  //   //   async () =>
+  //   //      await orderBook
+  //   //     .connect(carol)
+  //   //     .takeOrders(takeOrdersConfigStruct),
+  //   //   "",
+  //   //   "Invalid Conterparty"
+  //   // );
+        
+  // }); 
+
+  // it("should ensure 24 hour delay is maintained between two batches", async function () { 
+
+  //   const signers = await ethers.getSigners();
+
+  //   const [, alice, bob] = signers;   
+
+  //   const orderBook = await deployOrderBook();
+
+  //   const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //   const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+  
+
+  //   const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
+    
+  //   // Order_A
+
+  //   const strategyExpression = path.resolve(
+  //     __dirname,
+  //     "../src/0-pilot.rain"
+  //   );
+
+  //   const strategyString = await fetchFile(strategyExpression); 
+
+  //   const stringExpression = mustache.render(strategyString, {
+  //     counterparty: bob.address,
+  //   }); 
+
+  //   const { sources, constants } = await standardEvaluableConfig(stringExpression)
+
+  //   const EvaluableConfig_A = await generateEvaluableConfig(
+  //     sources,
+  //     constants
+  //   );
+
+  //   const orderConfig_A: OrderConfigStruct = {
+  //     validInputs: [
+  //       { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
+  //     ],
+  //     validOutputs: [
+  //       { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
+  //     ],
+  //     evaluableConfig: EvaluableConfig_A,
+  //     data: aliceOrder,
+  //   };
+
+  //   const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+
+  //   const {
+  //     order: Order_A
+  //   } = (await getEventArgs(
+  //     txOrder_A,
+  //     "AddOrder",
+  //     orderBook
+  //   )) as AddOrderEvent["args"];
+
+  //    // DEPOSIT
+  //    // Deposit token equal to the size of the batch
+  //    const amountB = ethers.BigNumber.from("1000" + eighteenZeros); 
+ 
+  //    const depositConfigStructAlice: DepositConfigStruct = {
+  //      token: tokenB.address,
+  //      vaultId: aliceOutputVault,
+  //      amount: amountB.mul(2),
+  //    };
+ 
+  //    await tokenB.transfer(alice.address, amountB.mul(2));
+  //    await tokenB
+  //      .connect(alice)
+  //      .approve(orderBook.address, depositConfigStructAlice.amount);
+ 
+  //    // Alice deposits tokenB into her output vault
+  //    await orderBook
+  //      .connect(alice)
+  //      .deposit(depositConfigStructAlice);
+ 
+  //   // TAKE ORDER 0 
+  //    const takeOrderConfigStruct0: TakeOrderConfigStruct = {
+  //      order: Order_A,
+  //      inputIOIndex: 0,
+  //      outputIOIndex: 0,
+  //    }; 
+ 
+  //    let ratio0 = await prbScale(0) 
+     
+  //    const takeOrdersConfigStruct0: TakeOrdersConfigStruct = {
+  //      output: tokenA.address,
+  //      input: tokenB.address,
+  //      minimumInput: amountB,
+  //      maximumInput: amountB,
+  //      maximumIORatio: ratio0,
+  //      orders: [takeOrderConfigStruct0],
+  //    };
+ 
+  //    const amountA0 = amountB.mul(ratio0).div(ONE); 
+ 
+  //    await tokenA.transfer(bob.address, amountA0);
+  //    await tokenA.connect(bob).approve(orderBook.address, amountA0); 
+
+  //    const txTakeOrders0 = await orderBook
+  //       .connect(bob)
+  //       .takeOrders(takeOrdersConfigStruct0)
+
+  //     const { sender: sender0, config: config0, input:input0, output: output0 } = (await getEventArgs(
+  //       txTakeOrders0,
+  //       "TakeOrder",
+  //       orderBook
+  //     )) as TakeOrderEvent["args"];  
+
+
+  //     assert(sender0 === bob.address, "wrong sender");
+  //     assert(input0.eq(amountB), "wrong input");
+  //     assert(output0.eq(amountA0), "wrong output");
+
+  //     compareStructs(config0, takeOrderConfigStruct0); 
+
+  //    // TAKE ORDER 1  
+
+  //    const takeOrderConfigStruct1: TakeOrderConfigStruct = {
+  //     order: Order_A,
+  //     inputIOIndex: 0,
+  //     outputIOIndex: 0,
+  //   }; 
+
+  //   let ratio1 = await prbScale(1) 
+    
+  //   const takeOrdersConfigStruct1: TakeOrdersConfigStruct = {
+  //     output: tokenA.address,
+  //     input: tokenB.address,
+  //     minimumInput: amountB,
+  //     maximumInput: amountB,
+  //     maximumIORatio: ratio1,
+  //     orders: [takeOrderConfigStruct1],
+  //   };
+
+  //   const amountA1 = amountB.mul(ratio1).div(ONE); 
+
+  //   await tokenA.transfer(bob.address, amountA1);
+  //   await tokenA.connect(bob).approve(orderBook.address, amountA1); 
+    
+  //   //Should fail as delay is not observed
+  //   await assertError(
+  //     async () =>
+  //       await orderBook
+  //     .connect(bob)
+  //     .takeOrders(takeOrdersConfigStruct0),
+  //     "",
+  //     "Delay"
+  //   ) 
+    
+  //   // Introducing Delay
+  //   await timewarp(86400); 
+    
+  //   // Order should succeed after deplay is complete
+  //   const txTakeOrders1 = await orderBook
+  //       .connect(bob)
+  //       .takeOrders(takeOrdersConfigStruct1)
+
+  //     const { sender: sender1, config: config1, input:input1, output: output1 } = (await getEventArgs(
+  //       txTakeOrders1,
+  //       "TakeOrder",
+  //       orderBook
+  //     )) as TakeOrderEvent["args"];  
+
+
+  //     assert(sender1 === bob.address, "wrong sender");
+  //     assert(input1.eq(amountB), "wrong input");
+  //     assert(output1.eq(amountA1), "wrong output");
+
+  //     compareStructs(config1, takeOrderConfigStruct0); 
+        
+  // }); 
+
+  // it("should ensure ratio is not scaled by the expressions for orders with same batch", async function () { 
+
+  //   const signers = await ethers.getSigners();
+
+  //   const [, alice, bob] = signers;   
+
+
+  //   const orderBook = await deployOrderBook();
+
+  //   const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //   const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+  
+
+  //   const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
+
+  //   // Order_A
+
+  //   const strategyExpression = path.resolve(
+  //     __dirname,
+  //     "../src/0-pilot.rain"
+  //   );
+
+  //   const strategyString = await fetchFile(strategyExpression); 
+
+  //   const stringExpression = mustache.render(strategyString, {
+  //     counterparty: bob.address,
+  //   }); 
+
+  //   const { sources, constants } = await standardEvaluableConfig(stringExpression)
+
+  //   const EvaluableConfig_A = await generateEvaluableConfig(
+  //     sources,
+  //     constants
+  //   );
+
+  //   const orderConfig_A: OrderConfigStruct = {
+  //     validInputs: [
+  //       { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
+  //     ],
+  //     validOutputs: [
+  //       { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
+  //     ],
+  //     evaluableConfig: EvaluableConfig_A,
+  //     data: aliceOrder,
+  //   };
+
+  //   const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+
+  //   const {
+  //     order: Order_A
+  //   } = (await getEventArgs(
+  //     txOrder_A,
+  //     "AddOrder",
+  //     orderBook
+  //   )) as AddOrderEvent["args"];
+
+
+  //   // TAKE ORDER
+
+  //   // Bob takes order with direct wallet transfer
+  //   for(let i = 0 ; i < 10 ; i++){  
+
+  //     // DEPOSIT
+  //     const amountB = ethers.BigNumber.from("100" + eighteenZeros);
+
+  //     const depositConfigStructAlice: DepositConfigStruct = {
+  //       token: tokenB.address,
+  //       vaultId: aliceOutputVault,
+  //       amount: amountB,
+  //     };
+
+  //     await tokenB.transfer(alice.address, amountB);
+  //     await tokenB
+  //       .connect(alice)
+  //       .approve(orderBook.address, depositConfigStructAlice.amount);
+
+  //     // Alice deposits tokenB into her output vault
+  //      await orderBook.connect(alice).deposit(depositConfigStructAlice);
+
+  //     const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //       order: Order_A,
+  //       inputIOIndex: 0,
+  //       outputIOIndex: 0,
+  //     }; 
+
+  //     // Batch Index Remains the same hence ratio remains the same 
+  //     const ratio = await prbScale(0)
+  
+  //     const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //       output: tokenA.address,
+  //       input: tokenB.address,
+  //       minimumInput: amountB,
+  //       maximumInput: amountB,
+  //       maximumIORatio: ratio,
+  //       orders: [takeOrderConfigStruct],
+  //     };
+  
+  //     const amountA = amountB.mul(ratio).div(ONE); 
+  
+  //     await tokenA.transfer(bob.address, amountA);
+  //     await tokenA.connect(bob).approve(orderBook.address, amountA); 
+  
+  
+  //     const txTakeOrders = await orderBook
+  //       .connect(bob)
+  //       .takeOrders(takeOrdersConfigStruct);   
+        
+  //     const { sender, config, input, output } = (await getEventArgs(
+  //       txTakeOrders,
+  //       "TakeOrder",
+  //       orderBook
+  //     )) as TakeOrderEvent["args"];  
+    
+  //     assert(sender === bob.address, "wrong sender");
+  //     assert(input.eq(amountB), "wrong input");
+  //     assert(output.eq(amountA), "wrong output");
+  
+  //     compareStructs(config, takeOrderConfigStruct); 
+
+  //     // No delay is introduced as all orders are part of the same batch
+  //     // await timewarp(86400)
+  //   } 
+    
+  // });  
+
+  // it("should ensure ratio is scaled exponentially by the expressions as batch index increases", async function () { 
+
+  //   const signers = await ethers.getSigners();
+
+  //   const [, alice, bob] = signers;   
+
+
+  //   const orderBook = await deployOrderBook();
+
+  //   const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //   const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+  
+
+  //   const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
+
+  //   // Order_A
+
+  //   const strategyExpression = path.resolve(
+  //     __dirname,
+  //     "../src/0-pilot.rain"
+  //   );
+
+  //   const strategyString = await fetchFile(strategyExpression); 
+
+  //   const stringExpression = mustache.render(strategyString, {
+  //     counterparty: bob.address,
+  //   }); 
+
+  //   const { sources, constants } = await standardEvaluableConfig(stringExpression)
+
+  //   const EvaluableConfig_A = await generateEvaluableConfig(
+  //     sources,
+  //     constants
+  //   );
+
+  //   const orderConfig_A: OrderConfigStruct = {
+  //     validInputs: [
+  //       { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
+  //     ],
+  //     validOutputs: [
+  //       { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
+  //     ],
+  //     evaluableConfig: EvaluableConfig_A,
+  //     data: aliceOrder,
+  //   };
+
+  //   const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+
+  //   const {
+  //     order: Order_A
+  //   } = (await getEventArgs(
+  //     txOrder_A,
+  //     "AddOrder",
+  //     orderBook
+  //   )) as AddOrderEvent["args"];
+
+
+  //   // TAKE ORDER
+
+  //   // Bob takes order with direct wallet transfer
+  //   for(let i = 0 ; i < 10 ; i++){  
+
+  //     // DEPOSIT
+
+  //     // Deposit max amount per batch
+  //     const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+
+  //     const depositConfigStructAlice: DepositConfigStruct = {
+  //       token: tokenB.address,
+  //       vaultId: aliceOutputVault,
+  //       amount: amountB,
+  //     };
+
+  //     await tokenB.transfer(alice.address, amountB);
+  //     await tokenB
+  //       .connect(alice)
+  //       .approve(orderBook.address, depositConfigStructAlice.amount);
+
+  //     // Alice deposits tokenB into her output vault
+  //      await orderBook.connect(alice).deposit(depositConfigStructAlice);
+
+  //     const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //       order: Order_A,
+  //       inputIOIndex: 0,
+  //       outputIOIndex: 0,
+  //     }; 
+
+  //     // Scaling ratio as batch index increases 
+  //     const ratio = await prbScale(i)
+  
+  //     const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //       output: tokenA.address,
+  //       input: tokenB.address,
+  //       minimumInput: amountB,
+  //       maximumInput: amountB,
+  //       maximumIORatio: ratio,
+  //       orders: [takeOrderConfigStruct],
+  //     };
+  
+  //     const amountA = amountB.mul(ratio).div(ONE); 
+  
+  //     await tokenA.transfer(bob.address, amountA);
+  //     await tokenA.connect(bob).approve(orderBook.address, amountA); 
+  
+  
+  //     const txTakeOrders = await orderBook
+  //       .connect(bob)
+  //       .takeOrders(takeOrdersConfigStruct);   
+        
+  //     const { sender, config, input, output } = (await getEventArgs(
+  //       txTakeOrders,
+  //       "TakeOrder",
+  //       orderBook
+  //     )) as TakeOrderEvent["args"];   
+
+    
+  //     assert(sender === bob.address, "wrong sender");
+  //     assert(input.eq(amountB), "wrong input");
+  //     assert(output.eq(amountA), "wrong output");
+  
+  //     compareStructs(config, takeOrderConfigStruct); 
+
+  //     // Delay is introduced between batches
+  //     await timewarp(86400)
+  //   } 
+    
+  // }); 
+
+  // describe("should chain orders within same batch with decimals", () => { 
+
+  //   it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 18)", async function () { 
+
+  //     const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       18,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA06.initialize();
+  //     await tokenB18.initialize();
+  
+  //     const tokenADecimals = await tokenA06.decimals();
+  //     const tokenBDecimals = await tokenB18.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A
+
+  //   const strategyExpression = path.resolve(
+  //     __dirname,
+  //     "../src/0-pilot.rain"
+  //   );
+
+  //   const strategyString = await fetchFile(strategyExpression); 
+
+  //   const stringExpression = mustache.render(strategyString, {
+  //     counterparty: bob.address,
+  //   }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders within a batch
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("100" + eighteenZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB18.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB18.transfer(alice.address, amountB);
+  //       await tokenB18
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // No need to scale ratio as batch index remains the same
+  //       let ratio = await prbScale(0) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA06.address,
+  //         input: tokenB18.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA06.transfer(bob.address, amountA);
+  //       await tokenA06.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct);
+  //     } 
+      
+  //   });  
+
+  //   it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 18 vs Output Decimals: 6)", async function () { 
+
+  //     const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       18,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA18.initialize();
+  //     await tokenB06.initialize();
+  
+  //     const tokenADecimals = await tokenA18.decimals();
+  //     const tokenBDecimals = await tokenB06.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A
+
+  //   const strategyExpression = path.resolve(
+  //     __dirname,
+  //     "../src/0-pilot.rain"
+  //   );
+
+  //   const strategyString = await fetchFile(strategyExpression); 
+
+  //   const stringExpression = mustache.render(strategyString, {
+  //     counterparty: bob.address,
+  //   }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA18.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders within a batch
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("100" + sixZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB06.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB06.transfer(alice.address, amountB);
+  //       await tokenB06
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // No need to scale ratio as batch index remains the same
+  //       let ratio = await prbScale(0) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA18.address,
+  //         input: tokenB06.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA18.transfer(bob.address, amountA);
+  //       await tokenA18.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct);
+  //     } 
+      
+  //   });  
+
+  //   it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 6)", async function () { 
+
+  //     const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA06.initialize();
+  //     await tokenB06.initialize();
+  
+  //     const tokenADecimals = await tokenA06.decimals();
+  //     const tokenBDecimals = await tokenB06.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A
+
+  //     const strategyExpression = path.resolve(
+  //       __dirname,
+  //       "../src/0-pilot.rain"
+  //     );
+
+  //     const strategyString = await fetchFile(strategyExpression); 
+
+  //     const stringExpression = mustache.render(strategyString, {
+  //       counterparty: bob.address,
+  //     }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders within a batch
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("100" + sixZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB06.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB06.transfer(alice.address, amountB);
+  //       await tokenB06
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // No need to scale ratio as batch index remains the same
+  //       let ratio = await prbScale(0) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA06.address,
+  //         input: tokenB06.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA06.transfer(bob.address, amountA);
+  //       await tokenA06.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct);
+  //     } 
+      
+  //   });  
+
+  //   it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 0 vs Output Decimals: 18)", async function () { 
+
+  //     const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       0,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       18,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA00.initialize();
+  //     await tokenB18.initialize();
+  
+  //     const tokenADecimals = await tokenA00.decimals();
+  //     const tokenBDecimals = await tokenB18.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A 
+
+  //   const strategyExpression = path.resolve(
+  //     __dirname,
+  //     "../src/0-pilot.rain"
+  //   );
+
+  //   const strategyString = await fetchFile(strategyExpression); 
+
+  //   const stringExpression = mustache.render(strategyString, {
+  //     counterparty: bob.address,
+  //   }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA00.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders within a batch
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("100" + eighteenZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB18.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB18.transfer(alice.address, amountB);
+  //       await tokenB18
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // No need to scale ratio as batch index remains the same
+  //       let ratio = await prbScale(0) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA00.address,
+  //         input: tokenB18.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA00.transfer(bob.address, amountA);
+  //       await tokenA00.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct);
+  //     } 
+      
+  //   }); 
+
+  // }) 
+
+  // describe("should scale ratio exponentially for different batches with decimals", () => { 
+
+  //   it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 18)", async function () { 
+
+  //     const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       18,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA06.initialize();
+  //     await tokenB18.initialize();
+  
+  //     const tokenADecimals = await tokenA06.decimals();
+  //     const tokenBDecimals = await tokenB18.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A 
+
+  //     const strategyExpression = path.resolve(
+  //       __dirname,
+  //       "../src/0-pilot.rain"
+  //     );
+
+  //     const strategyString = await fetchFile(strategyExpression); 
+
+  //     const stringExpression = mustache.render(strategyString, {
+  //       counterparty: bob.address,
+  //     }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders for batches
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+
+  //       // Deposit amount same as max posit amount per batch
+  //       const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB18.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB18.transfer(alice.address, amountB);
+  //       await tokenB18
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // scale ratio as batch index increases
+  //       let ratio = await prbScale(i) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA06.address,
+  //         input: tokenB18.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA06.transfer(bob.address, amountA);
+  //       await tokenA06.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct); 
+
+  //       //Introduce delay
+  //       await timewarp(86400);
+  //     } 
+      
+  //   });  
+
+  //   it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 18 vs Output Decimals: 6)", async function () { 
+
+  //     const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       18,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA18.initialize();
+  //     await tokenB06.initialize();
+  
+  //     const tokenADecimals = await tokenA18.decimals();
+  //     const tokenBDecimals = await tokenB06.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A 
+
+  //     const strategyExpression = path.resolve(
+  //       __dirname,
+  //       "../src/0-pilot.rain"
+  //     );
+
+  //     const strategyString = await fetchFile(strategyExpression); 
+
+  //     const stringExpression = mustache.render(strategyString, {
+  //       counterparty: bob.address,
+  //     }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA18.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders for batches
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("1000" + sixZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB06.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB06.transfer(alice.address, amountB);
+  //       await tokenB06
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // scale ratio as batch index increases
+  //       let ratio = await prbScale(i) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA18.address,
+  //         input: tokenB06.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA18.transfer(bob.address, amountA);
+  //       await tokenA18.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct); 
+
+  //       //Introduce delay
+  //       await timewarp(86400);
+  //     } 
+      
+  //   });  
+
+  //   it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 6)", async function () { 
+
+  //     const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB06 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       6,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA06.initialize();
+  //     await tokenB06.initialize();
+  
+  //     const tokenADecimals = await tokenA06.decimals();
+  //     const tokenBDecimals = await tokenB06.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A 
+
+  //     const strategyExpression = path.resolve(
+  //       __dirname,
+  //       "../src/0-pilot.rain"
+  //     );
+
+  //     const strategyString = await fetchFile(strategyExpression); 
+
+  //     const stringExpression = mustache.render(strategyString, {
+  //       counterparty: bob.address,
+  //     }); 
+    
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA06.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB06.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders for batches
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("1000" + sixZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB06.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB06.transfer(alice.address, amountB);
+  //       await tokenB06
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // scale ratio as batch index increases
+  //       let ratio = await prbScale(i) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA06.address,
+  //         input: tokenB06.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA06.transfer(bob.address, amountA);
+  //       await tokenA06.connect(bob).approve(orderBook.address, amountA); 
+    
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct); 
+
+  //       //Introduce delay
+  //       await timewarp(86400);
+  //     } 
+      
+  //   });  
+
+  //   it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 0 vs Output Decimals: 18)", async function () { 
+
+  //     const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       0,
+  //     ])) as ReserveTokenDecimals;
+  //     const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
+  //       18,
+  //     ])) as ReserveTokenDecimals; 
+
+  //     await tokenA00.initialize();
+  //     await tokenB18.initialize();
+  
+  //     const tokenADecimals = await tokenA00.decimals();
+  //     const tokenBDecimals = await tokenB18.decimals();  
+  
+  //     const signers = await ethers.getSigners();
+  
+  //     const [, alice, bob] = signers;   
+  
+  //     const orderBook = await deployOrderBook();
+  
+  //     const aliceInputVault = ethers.BigNumber.from(randomUint256());
+  //     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+    
+  
+  //     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");  
+
+  //     // Order_A 
+
+  //     const strategyExpression = path.resolve(
+  //       __dirname,
+  //       "../src/0-pilot.rain"
+  //     );
+
+  //     const strategyString = await fetchFile(strategyExpression); 
+
+  //     const stringExpression = mustache.render(strategyString, {
+  //       counterparty: bob.address,
+  //     }); 
+  
+  //     const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  
+  //     const EvaluableConfig_A = await generateEvaluableConfig(
+  //       sources,
+  //       constants
+  //     );
+  
+  //     const orderConfig_A: OrderConfigStruct = {
+  //       validInputs: [
+  //         { token: tokenA00.address, decimals: tokenADecimals, vaultId: aliceInputVault },
+  //       ],
+  //       validOutputs: [
+  //         { token: tokenB18.address, decimals: tokenBDecimals, vaultId: aliceOutputVault },
+  //       ],
+  //       evaluableConfig: EvaluableConfig_A,
+  //       data: aliceOrder,
+  //     };
+  
+  //     const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+  
+  //     const {
+  //       order: Order_A
+  //     } = (await getEventArgs(
+  //       txOrder_A,
+  //       "AddOrder",
+  //       orderBook
+  //     )) as AddOrderEvent["args"];
+  
+  
+  //     // Recursively places orders for batches
+  //     for(let i = 0 ; i < 10 ; i++){  
+  
+  //       // DEPOSIT
+  //       const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+  
+  //       const depositConfigStructAlice: DepositConfigStruct = {
+  //         token: tokenB18.address,
+  //         vaultId: aliceOutputVault,
+  //         amount: amountB,
+  //       };
+  
+  //       await tokenB18.transfer(alice.address, amountB);
+  //       await tokenB18
+  //         .connect(alice)
+  //         .approve(orderBook.address, depositConfigStructAlice.amount);
+  
+  //       // Alice deposits tokenB into her output vault
+  //        await orderBook.connect(alice).deposit(depositConfigStructAlice);
+  
+  //       const takeOrderConfigStruct: TakeOrderConfigStruct = {
+  //         order: Order_A,
+  //         inputIOIndex: 0,
+  //         outputIOIndex: 0,
+  //       }; 
+        
+  //       // scale ratio as batch index increases
+  //       let ratio = await prbScale(i) 
+      
+  //       const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
+    
+  //       const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+  //         output: tokenA00.address,
+  //         input: tokenB18.address,
+  //         minimumInput: amountB,
+  //         maximumInput: amountB,
+  //         maximumIORatio: maximumIORatio,
+  //         orders: [takeOrderConfigStruct],
+  //       };
+    
+  //       const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        
+  //       await tokenA00.transfer(bob.address, amountA);
+  //       await tokenA00.connect(bob).approve(orderBook.address, amountA); 
+    
+  //       const txTakeOrders = await orderBook
+  //         .connect(bob)
+  //         .takeOrders(takeOrdersConfigStruct);   
+          
+  //       const { sender, config, input, output } = (await getEventArgs(
+  //         txTakeOrders,
+  //         "TakeOrder",
+  //         orderBook
+  //       )) as TakeOrderEvent["args"];  
+    
+  //       assert(sender === bob.address, "wrong sender");
+  //       assert(input.eq(amountB), "wrong input");
+  //       assert(output.eq(amountA), "wrong output");
+    
+  //       compareStructs(config, takeOrderConfigStruct); 
+
+  //       //Introduce delay
+  //       await timewarp(86400);
+  //     } 
+      
+  //   }); 
+
+//  })
+
   
 
 
 
-});
+}); 
+
+// 0xe6b62636000000000000000000000000
+// f9d1fcb0ee98bc39ade81397b37ae8c5b4d8f6c4
+// 95c23cd6cc4f149559f6b42b8b732fd3707e3abf
+// 96fb6eaf06b3122661af62200000000000000000000000000000000000000000000000
+// 3635c9adc5dea00000

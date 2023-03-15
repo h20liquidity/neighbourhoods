@@ -15,10 +15,13 @@ const config: HardhatUserConfig = {
     outDir: "typechain", // overrides upstream 'fix' for another issue which changed this to 'typechain-types'
   },
   networks: {
-    hardhat: {
-      blockGasLimit: 100000000,
-      allowUnlimitedContractSize: true,
+    hardhat: { 
+      forking:{
+        url:"https://polygon-mumbai.g.alchemy.com/v2/rn2aDBYZPFxGhDrw2EH5fl36rKOVsSde",
+        blockNumber : 33132259
+      }
     },
+
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com",
       accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
