@@ -643,7 +643,7 @@ describe("Pilot", async function () {
 
   describe("should chain orders within same batch with decimals", () => { 
 
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 18)", async function () { 
+    it("should ensure ratio is not scaled based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -778,7 +778,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 18 vs Output Decimals: 6)", async function () { 
+    it("should ensure ratio is not scaled based on input/output token decimals: (Input Decimals: 18 vs Output Decimals: 6)", async function () { 
 
       const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
         18,
@@ -913,7 +913,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 6)", async function () { 
+    it("should ensure ratio is not scaled based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 6)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -1047,7 +1047,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is not scaled based on input/output token decimals: (Iuput Decimals: 0 vs Output Decimals: 18)", async function () { 
+    it("should ensure ratio is not scaled based on input/output token decimals: (Input Decimals: 0 vs Output Decimals: 18)", async function () { 
 
       const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
         0,
@@ -1185,7 +1185,7 @@ describe("Pilot", async function () {
 
   describe("should scale ratio exponentially for different batches with decimals", () => { 
 
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 18)", async function () { 
+    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -1325,7 +1325,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 18 vs Output Decimals: 6)", async function () { 
+    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 18 vs Output Decimals: 6)", async function () { 
 
       const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
         18,
@@ -1462,7 +1462,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 6 vs Output Decimals: 6)", async function () { 
+    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 6)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -1599,7 +1599,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Iuput Decimals: 0 vs Output Decimals: 18)", async function () { 
+    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 0 vs Output Decimals: 18)", async function () { 
 
       const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
         0,
