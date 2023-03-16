@@ -10,7 +10,7 @@ dotenv.config();
 const MOCHA_TESTS_PATH = process.env.TESTS_PATH || "./test";
 const MOCHA_SHOULD_BAIL = process.env.BAIL === "true";
 
-console.log('foo', process.env["ALCHEMY_KEY"].length)
+console.log('foo', process.env.ALCHEMY_KEY.length)
 
 const config: HardhatUserConfig = {
   typechain: {
@@ -19,7 +19,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking:{
-        url: config_.hardhat.forkBaseUrl + process.env["ALCHEMY_KEY"],
+        url: config_.hardhat.forkBaseUrl + process.env.ALCHEMY_KEY,
         blockNumber : config_.hardhat.blockNumber
       }
     },
