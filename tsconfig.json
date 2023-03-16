@@ -1,11 +1,11 @@
 {
+  "include": ["./test", "./utils", "./scripts", "./deployment"],
+  "exclude": ["node_modules/*"],
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
+    "target": "ES2020",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
+    "moduleResolution": "node",
     "resolveJsonModule": true
-  }
+  },
+  "files": ["hardhat.config.ts"]
 }

@@ -17,11 +17,19 @@
   },
   "homepage": "https://github.com/h20liquidity/neighbourhoods#readme",
   "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#49794177708ed530fd3515a4a9bee2809e0b68e1",
+    "@prb/math": "=3.3.0",
+    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#6b43b46e4cada0faac8683be4b90e2d02ec922df",
+    "dotenv": "=16.0.3",
     "hardhat": "^2.13.0",
+    "hardhat-contract-sizer": "=2.6.1",
+    "mustache": "^4.2.0",
+    "rainlang": "rainprotocol/rainlang#58a5deee3e7d28058c0a7be8d6e8e51f9021326e",
     "solc": "=0.8.17",
+    "string-math": "^1.2.2",
     "ts-node": "^10.9.1",
+    "tslib": "=2.4.1",
     "typescript": "^4.9.5"
   }
 }
