@@ -10,8 +10,6 @@ dotenv.config();
 const MOCHA_TESTS_PATH = process.env.TESTS_PATH || "./test";
 const MOCHA_SHOULD_BAIL = process.env.BAIL === "true";
 
-console.log('foo', process.env.ALCHEMY_KEY.length)
-
 const config: HardhatUserConfig = {
   typechain: {
     outDir: "typechain", // overrides upstream 'fix' for another issue which changed this to 'typechain-types'
