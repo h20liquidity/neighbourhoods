@@ -3,22 +3,24 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-contract-sizer";
-import * as conifg_ from "./config/config.json"
+import * as config_ from "./config/config.json"
 import * as dotenv from "dotenv";
 dotenv.config();
 
 const MOCHA_TESTS_PATH = process.env.TESTS_PATH || "./test";
 const MOCHA_SHOULD_BAIL = process.env.BAIL === "true";
 
+console.log('foo', process.env["ALCHEMY_KEY"].length)
+
 const config: HardhatUserConfig = {
   typechain: {
     outDir: "typechain", // overrides upstream 'fix' for another issue which changed this to 'typechain-types'
   },
   networks: {
-    hardhat: { 
+    hardhat: {
       forking:{
-        url: conifg_.hardhat.forkBaseUrl + process.env["ALCHEMY_KEY"],
-        blockNumber : conifg_.hardhat.blockNumber
+        url: config_.hardhat.forkBaseUrl + process.env["ALCHEMY_KEY"],
+        blockNumber : config_.hardhat.blockNumber
       }
     },
 
