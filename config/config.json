@@ -1,6 +1,9 @@
 {
-    "address" : {
-        "orderbook" : "0xd3be6c90351C809B92352e821D6967e08202997E" ,
+    "contracts" : {
+        "orderbook" : {
+            "address" : "0xd3be6c90351C809B92352e821D6967e08202997E" ,
+            "transaction" : "0xa188ba9939e7ab3362395c04bc2a8919dd390217212d1fdf9d337baa86ad1251"
+        },
         "expressionDeployer" : "0xEbAf708C259cACDdb7C47d874Efe443337d1cD2F"
     },
     "hardhat" : {

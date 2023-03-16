@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/h20liquidity/neighbourhoods#readme",
   "devDependencies": {
+    "@ethereumjs/common": "^3.1.1",
+    "@ethereumjs/tx": "^4.1.1",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@prb/math": "=3.3.0",
