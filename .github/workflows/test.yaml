@@ -6,6 +6,8 @@ on:
 
 jobs:
   tests:
+    env:
+      - ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
     strategy:
       matrix:
         os: [ubuntu-latest]
