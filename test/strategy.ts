@@ -3,10 +3,7 @@ import { ethers  } from "hardhat";
 import { BigNumber } from "ethers";
 
 import type {  ReserveToken18, ReserveTokenDecimals } from "../typechain";
-import {
-  OrderConfigStruct,
-  AddOrderEvent,
-} from "../typechain/contracts/orderbook/OrderBook";
+
 import { randomUint256 } from "../utils/bytes";
 import {
   eighteenZeros,
@@ -21,7 +18,6 @@ import {
 import {  fixedPointMul } from "../utils/math";
 import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
-import { DepositConfigStruct, TakeOrderConfigStruct, TakeOrderEvent, TakeOrdersConfigStruct } from "../typechain/contracts/orderbook/IOrderBookV1"; 
 import * as path from 'path'; 
 import fs from "fs"  
 import { assertError, resetFork, timewarp } from "../utils";
@@ -32,6 +28,7 @@ import { getOrderBook } from "../utils/deploy/orderBook";
 import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
+import { AddOrderEvent, DepositConfigStruct, OrderConfigStruct, TakeOrderConfigStruct, TakeOrderEvent, TakeOrdersConfigStruct } from "../typechain/@rainprotocol/rain-protocol/contracts/orderbook/IOrderBookV1";
 dotenv.config();
 
 
