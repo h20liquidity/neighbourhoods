@@ -1,0 +1,44 @@
+{
+  "mumbai": {
+    "interpreter": {
+      "address": "0x2227c1db9dedd4f6b66a48ca8c47b439bf180b8f",
+      "transaction": "0x84086d714ae08169dbd61c2d2e3a20450a9f4680dc96affd84882659dd41fbb0"
+    },
+    "store": {
+      "address": "0xbb53b981e0163a52254b72ec269815f0b9108009",
+      "transaction": "0xdaabf89a4174c6d725d8e4e561443977bad3043936fafc47ba03c84d427c706f"
+    },
+    "expressionDeployer": {
+      "address": "0xebaf708c259cacddb7c47d874efe443337d1cd2f",
+      "transaction": "0x08d35318b48e61d11a503fe26ea1cf82a05f59877015ed01563894436e47bab1"
+    }
+  },
+  "snowtrace": {
+    "interpreter": {
+      "address": "0x9399464e07dc501534545c09f4e5c428c162076c",
+      "transaction": "0x223aa656aa77cfd0883a535d4c2341b2593cce4fa322aaf93433e8a38f11e010"
+    },
+    "store": {
+      "address": "0x53e1f82f8a91a81175f3d0b6538a44705473704b",
+      "transaction": "0x65d1d113409da5ccfff07bd1507c4bc1898cc3b5bda36fb2f93e14dbad2a76ba"
+    },
+    "expressionDeployer": {
+      "address": "0xe0c3952724e1f901a9214415a47792d97646963a",
+      "transaction": "0xf76aca9f9c693b0b7fff4834370db8528f4e73ec839679f37a5cb3bfe29deca3"
+    }
+  },
+  "goerli":{
+    "interpreter": {
+      "address":"",
+      "transaction":""
+    },
+    "store": {
+      "address":"",
+      "transaction":""
+    },
+    "expressionDeployer": {
+      "address":"",
+      "transaction":""
+    }
+  }
+}

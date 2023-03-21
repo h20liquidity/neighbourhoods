@@ -1,15 +1,22 @@
-import { ethers, network } from "hardhat"; 
+import { ethers } from "ethers"; 
 
-import {  Common,  CustomChain } from '@ethereumjs/common'
-import {  Transaction , FeeMarketEIP1559Transaction } from '@ethereumjs/tx'
+import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
+import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx' 
 
+
+import netConfig from "../network.config.json"
 /*
 * Get provider for a specific network
 */
-export const getProvider = (network:string) => {
+export const getProvider = (network:string) => { 
+
     let provider 
-    if (network === "mumbai"){
+    if (network === "mumbai"){ 
          provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
+    }else if(network === "goerli"){
+      provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
+    }else if(network === "snowtrace"){
+      provider = new ethers.providers.JsonRpcProvider('https://api.avax-test.network/ext/bc/C/rpc')
     }
     return provider
 } 
@@ -21,6 +28,10 @@ export const getCommons = (network:string) => {
     let common 
     if (network === "mumbai"){
         common = Common.custom(CustomChain.PolygonMumbai) 
+    }else if(network === "goerli"){
+      common = new Common({ chain: Chain.Goerli, hardfork: Hardfork.London })
+    }else if(network === "snowtrace"){
+      common = Common.custom({ chainId: 43113 })
     }
     return common
 }
@@ -30,11 +41,30 @@ export const getCommons = (network:string) => {
 */
 export const getTransactionData = async (provider: any, address:string): Promise<string> => { 
 
-    const transaction = await provider.getTransaction(address)    
+    const transaction = await provider.getTransaction(address)  
 
-    // console.log("transaction : " , transaction )
     return transaction.data
 } 
+/**
+ *Replace all DISpair instances 
+ */
+export const getTransactionDataForNetwork = (txData:string,fromNetwork:string,toNetwork:string) => {
+  
+  txData = txData.toLocaleLowerCase()
+  const fromNetworkConfig = netConfig[fromNetwork]
+  const toNetworkConfig = netConfig[toNetwork] 
+
+  if(txData.includes(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())){ 
+    txData = txData.replace(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())
+  }
+  if(txData.includes(fromNetworkConfig["store"]["address"].split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkConfig["store"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["store"]["address"].split('x')[1].toLowerCase())
+  }
+  if(txData.includes(fromNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase())
+  }
+  return txData 
+}
 
 /*
 * Deploy transaction
@@ -42,16 +72,20 @@ export const getTransactionData = async (provider: any, address:string): Promise
 export const deployContractToNetwork = async (provider: any, common: Common,  priKey: string, transactionData: string) => { 
 
   
-    const signer  = new ethers.Wallet(priKey,provider)  
-    const nonce = await provider.getTransactionCount(signer.address)
-    
+    const signer  = new ethers.Wallet(priKey,provider)   
+    console.log("signer : " , signer.address)
+
+    const nonce = await provider.getTransactionCount(signer.address) 
+
+    const feeData = await provider.getFeeData(); 
+
     // hard conded values to be calculated
     const txData = { 
       nonce: ethers.BigNumber.from(nonce).toHexString() ,
       data : transactionData ,
-      gasLimit: '0x4200A9', 
-      maxPriorityFeePerGas: '0x6B49D202',
-      maxFeePerGas: '0x6B49D21B',
+      gasLimit: '0x7A1200', 
+      maxPriorityFeePerGas: feeData["maxPriorityFeePerGas"].toHexString(),
+      maxFeePerGas: feeData["maxFeePerGas"].toHexString(),
     } 
     
     // Generate Transaction 
@@ -72,6 +106,6 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     
     return deployTransaction
   
-  }
-  
+  } 
 
+ 

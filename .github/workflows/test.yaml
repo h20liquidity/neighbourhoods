@@ -7,8 +7,8 @@ on:
 jobs:
   tests:
     env:
-      ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
-      DEPLOYMENT_KEY_MUMBAI: ${{ secrets.DEPLOYMENT_KEY_MUMBAI }}
+      ALCHEMY_KEY_MUMBAI: ${{ secrets.ALCHEMY_KEY_MUMBAI }}
+      DEPLOYMENT_KEY: ${{ secrets.DEPLOYMENT_KEY }}
     strategy:
       matrix:
         os: [ubuntu-latest]

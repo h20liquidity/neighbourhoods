@@ -23,7 +23,9 @@
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@prb/math": "=3.3.0",
     "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#6b43b46e4cada0faac8683be4b90e2d02ec922df",
+    "@wagmi/core": "^0.10.3",
     "dotenv": "=16.0.3",
+    "ethers": "^5.7.2",
     "hardhat": "^2.13.0",
     "hardhat-contract-sizer": "=2.6.1",
     "mustache": "^4.2.0",
@@ -33,5 +35,8 @@
     "ts-node": "^10.9.1",
     "tslib": "=2.4.1",
     "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@sonicswap/wagmi-core": "^3.0.0"
   }
 }

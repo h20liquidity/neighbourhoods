@@ -3,10 +3,7 @@ import { ethers  } from "hardhat";
 import { BigNumber } from "ethers";
 
 import type {  ReserveToken18, ReserveTokenDecimals } from "../typechain";
-import {
-  OrderConfigStruct,
-  AddOrderEvent,
-} from "../typechain/contracts/orderbook/OrderBook";
+
 import { randomUint256 } from "../utils/bytes";
 import {
   eighteenZeros,
@@ -21,7 +18,7 @@ import {
 import {  fixedPointMul } from "../utils/math";
 import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
-import { DepositConfigStruct, TakeOrderConfigStruct, TakeOrderEvent, TakeOrdersConfigStruct } from "../typechain/contracts/orderbook/IOrderBookV1"; 
+
 import * as path from 'path'; 
 import fs from "fs"  
 import { assertError, resetFork, timewarp } from "../utils";
@@ -32,6 +29,7 @@ import { getOrderBook } from "../utils/deploy/orderBook";
 import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
+import { AddOrderEvent, DepositConfigStruct, OrderConfigStruct, TakeOrderConfigStruct, TakeOrderEvent, TakeOrdersConfigStruct } from "../typechain/@rainprotocol/rain-protocol/contracts/orderbook/IOrderBookV1";
 dotenv.config();
 
 
@@ -86,16 +84,16 @@ describe("Pilot", async function () {
   beforeEach(async () => {
    
 
-    await resetFork(config.hardhat.forkBaseUrl+process.env["ALCHEMY_KEY"], config.hardhat.blockNumber)
+    await resetFork(config.hardhat.forkBaseUrl+process.env["ALCHEMY_KEY_MUMBAI"], config.hardhat.blockNumber)
 
     tokenA = (await basicDeploy("ReserveToken18", {})) as ReserveToken18;
     tokenB = (await basicDeploy("ReserveToken18", {})) as ReserveToken18; 
     await tokenA.initialize();
     await tokenB.initialize(); 
 
-    orderBook = await getOrderBook(config.address.orderbook) 
+    orderBook = await getOrderBook(config.contracts.orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.address.expressionDeployer)
+    expressionDeployer = await getExpressionDelopyer(config.contracts.expressionDeployer.address)
 
 
   });
@@ -110,16 +108,13 @@ describe("Pilot", async function () {
  
   it("should ensure only conterparties are able to takeOrders", async function () {  
   
-
     const signers = await ethers.getSigners();
 
     const [ , alice, bob, carol] = signers;    
 
-    
     const aliceInputVault = ethers.BigNumber.from(randomUint256());
     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
   
-
     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");   
 
     // Order_A 

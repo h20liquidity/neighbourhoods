@@ -3,8 +3,11 @@ import { ethers,  network} from "hardhat";
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "./utils";
+import { deployContractToNetwork, getCommons, getProvider, getTransactionData } from "../utils";
 dotenv.config();
+import netConfig from "../network.config.json" 
+import {writeFileSync} from "fs";
+
 
 
 async function main() {    
@@ -90,10 +93,7 @@ async function main() {
     const deployProvider = getProvider(toNetwork) 
 
     // Get transaction data
-    let txData = await getTransactionData(mumbaiProvider, txHash)  
-
-    //replace DISpair instances
-    txData = getTransactionDataForNetwork(txData,fromNetwork, toNetwork)  
+    const txData = await getTransactionData(mumbaiProvider, txHash) 
 
     // Get Chain details
     const common = getCommons(toNetwork) 
@@ -104,8 +104,20 @@ async function main() {
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
 
-    console.log(`Contract deployed to ${network.name} at : ${transactionReceipt.contractAddress}`)
+    console.log(`Contract deployed to ${network.name} at : ${transactionReceipt.contractAddress}`)  
 
+
+    let updateNetConfig = netConfig
+    updateNetConfig[toNetwork]["store"] = {
+        
+            "address" : transactionReceipt.contractAddress.toLowerCase(),
+            "transaction" : transactionReceipt.transactionHash.toLowerCase()
+    
+    } 
+
+    let data = JSON.stringify(updateNetConfig,null,2) 
+
+    writeFileSync('./scripts/network.config.json', data)
 
 
   }
