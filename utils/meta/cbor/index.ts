@@ -1,4 +1,8 @@
 import cbor from "cbor";
+import {  hexlify, arrayify, BytesLike, isBytesLike } from "ethers/lib/utils"; 
+import { format } from "prettier";
+import { deflateSync, inflateSync } from "zlib";
+
 
 /**
  * Magic numbers used to identify Rain documents. This use `BigInt` with their
@@ -106,4 +110,32 @@ export const decodeRainMetaDocument = (dataEncoded_: string): Array<any> => {
   }
 
   return cborDecode(dataEncoded_.replace(metaDocumentHex, ""));
+};  
+
+/**
+ * @public
+ * `WIP:` Inverse of `deflateJson`. Get a hex string  or Uint8Array and inflate
+ * the JSON to obtain an string with the decoded data.
+ *
+ * @param bytes - Bytes to infalte to json
+ */
+export const inflateJson = (bytes: BytesLike): string => {
+  if (!isBytesLike(bytes)) throw new Error("invalid bytes");
+  const _uint8Arr = arrayify(bytes, { allowMissingPrefix: true });
+  return format(inflateSync(_uint8Arr).toString(), { parser: "json" });
 };
+
+export const getAbiFromMeta = (meta_: string) => { 
+
+  let dataDecoded = decodeRainMetaDocument(meta_)  
+
+  const abi = dataDecoded.find(
+    (elem_) => elem_.get(1) === MAGIC_NUMBERS.SOLIDITY_ABIV2
+  ); 
+
+  let abiHex = hexlify(abi.get(0))  
+  let jsonABi = inflateJson(abiHex) 
+
+  return jsonABi
+
+}

@@ -1,10 +1,24 @@
 {
     "address" : {
-        "orderbook" : "0xd3be6c90351C809B92352e821D6967e08202997E" ,
-        "expressionDeployer" : "0xEbAf708C259cACDdb7C47d874Efe443337d1cD2F"
+        "orderbook" : {
+            "address" : "0xe54fE8eE088627365a07E3C3c8Ec21B202041Adf",
+            "deployTransaction" : "0x72ea9d57081268e4f8c17a233b698d9cb457d6661b5ee63c48c1586802585d0b"
+        } ,
+        "expressionDeployer" : {
+            "address" : "0xa0C9838d8C981632BbE528fAF7e04BD5209636ff" ,
+            "deployTransaction" : "0x9300465f53214bc442b0728dc83343b14ca61a4a43b7a3f0d4dbaa0d068325f1"
+        },
+        "cloneFactory" : {
+            "address" : "0xf201acb5596BE1d1E980c19dee15F6373B607C99",
+            "deployTransaction" : "0x4564bcdc4ce87994202baa2e538cd81c13823c45249458224c95960daa43ebe5"
+        },
+        "flowERC20" : {
+            "address" : "0xbB8098Ed980a95B764dE49e021516C3f9a517606",
+            "deployTransaction" : "0xc3b9a76854ccab0055531af15d049b80921582905b0f164adaa73a8bdd739c0c"
+        }
     },
     "hardhat" : {
         "forkBaseUrl" : "https://polygon-mumbai.g.alchemy.com/v2/" ,
-        "blockNumber" : 33144466
+        "blockNumber" : 33280549
     }
 }
