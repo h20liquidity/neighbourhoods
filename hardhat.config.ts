@@ -8,7 +8,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const MOCHA_TESTS_PATH = process.env.TESTS_PATH || "./test";
-const MOCHA_SHOULD_BAIL = process.env.BAIL === "true";
+const MOCHA_SHOULD_BAIL = process.env.BAIL === "true"; 
+console.log("debug process.env.ALCHEMY_KEY : " , process.env.ALCHEMY_KEY )
 
 const config: HardhatUserConfig = {
   typechain: {
@@ -22,21 +23,21 @@ const config: HardhatUserConfig = {
       }
     },
     goerli: { 
-      url : `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}` , 
-      accounts: process.env["DEPLOYMENT_KEY"]
-        ? [process.env["DEPLOYMENT_KEY"]]
+      url : `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_GORELI}` , 
+      accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
+        ? [process.env["DEPLOYMENT_KEY_MUMBAI"]]
         : [],
     } ,
     snowtrace: { 
       url : `https://api.avax-test.network/ext/bc/C/rpc` , 
-      accounts: process.env["DEPLOYMENT_KEY"]
-        ? [process.env["DEPLOYMENT_KEY"]]
+      accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
+        ? [process.env["DEPLOYMENT_KEY_MUMBAI"]]
         : [],
     } ,
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com",
-      accounts: process.env["DEPLOYMENT_KEY"]
-        ? [process.env["DEPLOYMENT_KEY"]]
+      accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
+        ? [process.env["DEPLOYMENT_KEY_MUMBAI"]]
         : [],
     },
   },
