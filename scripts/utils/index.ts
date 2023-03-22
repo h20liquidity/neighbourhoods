@@ -1,7 +1,15 @@
-import { ethers } from "ethers"; 
+import { BigNumber, ethers } from "ethers"; 
 
 import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
-import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx' 
+import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
+
+import {
+  allChains,
+  configureChains,
+  createClient,
+  fetchFeeData,
+} from "@sonicswap/wagmi-core";
+import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 
 import netConfig from "../network.config.json"
@@ -64,7 +72,52 @@ export const getTransactionDataForNetwork = (txData:string,fromNetwork:string,to
     txData = txData.replace(fromNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase())
   }
   return txData 
-}
+} 
+
+const estimateFeeData = async ( 
+  chainProvider:any ,
+): Promise<{
+  gasPrice: BigNumber;
+  maxFeePerGas: BigNumber;
+  maxPriorityFeePerGas: BigNumber;
+}> => {
+  if (chainProvider._network.chainId === 31337) {
+    return {
+      gasPrice: BigNumber.from("1980000104"),
+      maxFeePerGas: BigNumber.from("1500000030"),
+      maxPriorityFeePerGas: BigNumber.from("1500000000"),
+    };
+  }else if(chainProvider._network.chainId === 43113){
+    // Snowtrace Network
+    const feeData = await chainProvider.getFeeData();   
+    return {
+      gasPrice: BigNumber.from("0x7A1200"),
+      maxPriorityFeePerGas: feeData["maxPriorityFeePerGas"],
+      maxFeePerGas: feeData["maxFeePerGas"],
+    }
+  } else {
+    const chain = allChains.find((chain) => chain.id === chainProvider._network.chainId); 
+
+    const { provider, webSocketProvider } = configureChains(
+      [chain],
+      [publicProvider()]
+    );
+
+    createClient({
+      autoConnect: true,
+      provider,
+      webSocketProvider,
+    });
+    const { gasPrice, maxFeePerGas, maxPriorityFeePerGas } =
+      await fetchFeeData();
+
+    return {
+      gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    };
+  }
+};
 
 /*
 * Deploy transaction
@@ -75,19 +128,26 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     const signer  = new ethers.Wallet(priKey,provider)   
     console.log("signer : " , signer.address)
 
-    const nonce = await provider.getTransactionCount(signer.address) 
+    const nonce = await provider.getTransactionCount(signer.address)  
 
-    const feeData = await provider.getFeeData(); 
+    // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+    // but after being mined affected relevant state.
+    // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+    const gasLimit = await provider.estimateGas({
+      data: transactionData
+    })
+
+    const feeData = await estimateFeeData(provider) 
 
     // hard conded values to be calculated
     const txData = { 
       nonce: ethers.BigNumber.from(nonce).toHexString() ,
       data : transactionData ,
-      gasLimit: '0x7A1200', 
-      maxPriorityFeePerGas: feeData["maxPriorityFeePerGas"].toHexString(),
-      maxFeePerGas: feeData["maxFeePerGas"].toHexString(),
-    } 
-    
+      gasLimit : gasLimit.toHexString(), 
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(),
+      maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+    }   
+        
     // Generate Transaction 
     const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })  
   

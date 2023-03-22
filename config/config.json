@@ -6,7 +6,7 @@
         },
         "expressionDeployer" :{
             "address" : "0xEbAf708C259cACDdb7C47d874Efe443337d1cD2F" ,
-            "transaction" : "0xEbAf708C259cACDdb7C47d874Efe443337d1cD2F"
+            "transaction" : "0x08d35318b48e61d11a503fe26ea1cf82a05f59877015ed01563894436e47bab1"
         } 
     },
     "hardhat" : {
