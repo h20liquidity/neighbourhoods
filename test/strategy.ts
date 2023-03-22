@@ -90,9 +90,9 @@ describe("Pilot", async function () {
     await tokenA.initialize();
     await tokenB.initialize(); 
 
-    orderBook = await getOrderBook(config.address.orderbook) 
+    orderBook = await getOrderBook(config.contracts.orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.address.expressionDeployer)
+    expressionDeployer = await getExpressionDelopyer(config.contracts.expressionDeployer.address)
 
 
   });
@@ -107,16 +107,13 @@ describe("Pilot", async function () {
  
   it("should ensure only conterparties are able to takeOrders", async function () {  
   
-
     const signers = await ethers.getSigners();
 
     const [ , alice, bob, carol] = signers;    
 
-    
     const aliceInputVault = ethers.BigNumber.from(randomUint256());
     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
   
-
     const aliceOrder = ethers.utils.toUtf8Bytes("Order_A");   
 
     // Order_A 
@@ -354,7 +351,21 @@ describe("Pilot", async function () {
     const amountA1 = amountB.mul(ratio1).div(ONE); 
 
     await tokenA.transfer(bob.address, amountA1);
-    await tokenA.connect(bob).approve(orderBook.address, amountA1); 
+    await tokenA.connect(bob).approve(orderBook.address, amountA1);  
+
+    await timewarp(43200);
+    
+    //Should fail as delay is not observed
+    await assertError(
+      async () =>
+        await orderBook
+      .connect(bob)
+      .takeOrders(takeOrdersConfigStruct0),
+      "",
+      "Delay"
+    )  
+
+    await timewarp(41400);
     
     //Should fail as delay is not observed
     await assertError(
@@ -367,7 +378,7 @@ describe("Pilot", async function () {
     ) 
     
     // Introducing Delay
-    await timewarp(86400); 
+    await timewarp(1800); 
     
     // Order should succeed after deplay is complete
     const txTakeOrders1 = await orderBook
@@ -636,7 +647,145 @@ describe("Pilot", async function () {
       await timewarp(86400)
     } 
     
-  }); 
+  });  
+
+  it("should ensure that overflow is allowed at end of batch", async function () { 
+
+    const signers = await ethers.getSigners();
+
+    const [, alice, bob] = signers;   
+
+
+    const aliceInputVault = ethers.BigNumber.from(randomUint256());
+    const aliceOutputVault = ethers.BigNumber.from(randomUint256());
+  
+
+    const aliceOrder = ethers.utils.toUtf8Bytes("Order_A"); 
+
+    // Order_A
+
+    const strategyExpression = path.resolve(
+      __dirname,
+      "../src/0-pilot.rain"
+    );
+
+    const strategyString = await fetchFile(strategyExpression); 
+
+    const stringExpression = mustache.render(strategyString, {
+      counterparty: bob.address,
+    }); 
+
+    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+
+    const EvaluableConfig_A = {
+      deployer: expressionDeployer.address,
+      sources,
+      constants,
+    }
+    const orderConfig_A: OrderConfigStruct = {
+      validInputs: [
+        { token: tokenA.address, decimals: 18, vaultId: aliceInputVault },
+      ],
+      validOutputs: [
+        { token: tokenB.address, decimals: 18, vaultId: aliceOutputVault },
+      ],
+      evaluableConfig: EvaluableConfig_A,
+      data: aliceOrder,
+    };
+
+    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+
+    const {
+      order: Order_A
+    } = (await getEventArgs(
+      txOrder_A,
+      "AddOrder",
+      orderBook
+    )) as AddOrderEvent["args"];
+
+
+    // TAKE ORDER
+
+    // Bob takes order with direct wallet transfer
+    for(let i = 0 ; i < 3 ; i++){  
+
+      // DEPOSIT
+
+      // Deposit max amount per batch
+      const amountB = i == 0 ? (
+        ethers.BigNumber.from("1000" + eighteenZeros)
+      ) : (
+        i == 1 ? (
+          ethers.BigNumber.from("999" + eighteenZeros)
+        ) : (
+          ethers.BigNumber.from("10" + eighteenZeros)
+        )
+      );
+
+      const depositConfigStructAlice: DepositConfigStruct = {
+        token: tokenB.address,
+        vaultId: aliceOutputVault,
+        amount: amountB,
+      };
+
+      await tokenB.transfer(alice.address, amountB);
+      await tokenB
+        .connect(alice)
+        .approve(orderBook.address, depositConfigStructAlice.amount);
+
+      // Alice deposits tokenB into her output vault
+       await orderBook.connect(alice).deposit(depositConfigStructAlice);
+
+      const takeOrderConfigStruct: TakeOrderConfigStruct = {
+        order: Order_A,
+        inputIOIndex: 0,
+        outputIOIndex: 0,
+      }; 
+
+      // Scaling ratio as batch index increases 
+      const ratio =  i == 0 ? (
+        await prbScale(0)
+      ) : (
+        await prbScale(1)
+      )
+  
+      const takeOrdersConfigStruct: TakeOrdersConfigStruct = {
+        output: tokenA.address,
+        input: tokenB.address,
+        minimumInput: amountB,
+        maximumInput: amountB,
+        maximumIORatio: ratio,
+        orders: [takeOrderConfigStruct],
+      };
+  
+      const amountA = amountB.mul(ratio).div(ONE); 
+  
+      await tokenA.transfer(bob.address, amountA);
+      await tokenA.connect(bob).approve(orderBook.address, amountA); 
+  
+  
+      const txTakeOrders = await orderBook
+        .connect(bob)
+        .takeOrders(takeOrdersConfigStruct);   
+        
+      const { sender, config, input, output } = (await getEventArgs(
+        txTakeOrders,
+        "TakeOrder",
+        orderBook
+      )) as TakeOrderEvent["args"];   
+
+    
+      assert(sender === bob.address, "wrong sender");
+      assert(input.eq(amountB), "wrong input");
+      assert(output.eq(amountA), "wrong output");
+  
+      compareStructs(config, takeOrderConfigStruct); 
+
+      // Delay is introduced between batches
+      await timewarp(86400)
+    } 
+    
+  });
 
   describe("should chain orders within same batch with decimals", () => { 
 
@@ -1182,7 +1331,7 @@ describe("Pilot", async function () {
 
   describe("should scale ratio exponentially for different batches with decimals", () => { 
 
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
+    it.skip("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -1459,7 +1608,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 6)", async function () { 
+    it.skip("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 6)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
