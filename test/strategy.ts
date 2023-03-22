@@ -2,7 +2,7 @@ import { assert } from "chai";
 import { ethers  } from "hardhat";
 import { BigNumber } from "ethers";
 
-import type {  ReserveToken18, ReserveTokenDecimals } from "../typechain";
+import type {  ReserveToken18, ReserveTokenDecimals } from "../typechain/@rainprotocol/rain-protocol/contracts/test/testToken/index";
 
 import { randomUint256 } from "../utils/bytes";
 import {
@@ -43,7 +43,7 @@ export const fetchFile = (_path: string): string => {
 
 // Hacky Util
 const prbScale = async (index: number) => {  
-  let base = ethers.BigNumber.from("1100000000000000000")   
+  let base = ethers.BigNumber.from("1020000000000000000")   
   let result
   if(index == 0){
     result = ONE
