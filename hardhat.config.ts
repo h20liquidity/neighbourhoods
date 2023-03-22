@@ -9,7 +9,7 @@ dotenv.config();
 
 const MOCHA_TESTS_PATH = process.env.TESTS_PATH || "./test";
 const MOCHA_SHOULD_BAIL = process.env.BAIL === "true"; 
-console.log("debug process.env.ALCHEMY_KEY : " , process.env.ALCHEMY_KEY )
+
 
 const config: HardhatUserConfig = {
   typechain: {
