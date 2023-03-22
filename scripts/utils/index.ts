@@ -20,7 +20,7 @@ export const getProvider = (network:string) => {
 
     let provider 
     if (network === "mumbai"){ 
-         provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
+         provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY}`)   
     }else if(network === "goerli"){
       provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
     }else if(network === "snowtrace"){

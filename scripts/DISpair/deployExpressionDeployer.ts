@@ -102,7 +102,7 @@ async function main() {
     const common = getCommons(toNetwork) 
 
     //Deploy transaction
-    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY,txData)
+    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY_MUMBAI,txData)
     
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
