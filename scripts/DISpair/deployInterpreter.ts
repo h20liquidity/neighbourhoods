@@ -122,7 +122,7 @@ async function main() {
 
     // Wait 15sec before trying to Verify. That way, if the code was deployed,
     // it will be available for locate it.
-    await delay(15000);
+    await delay(30000);
 
     await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
 
