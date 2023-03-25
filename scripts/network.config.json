@@ -1,16 +1,16 @@
 {
   "mumbai": {
     "interpreter": {
-      "address": "0x2227c1db9dedd4f6b66a48ca8c47b439bf180b8f",
-      "transaction": "0x84086d714ae08169dbd61c2d2e3a20450a9f4680dc96affd84882659dd41fbb0"
+      "address": "0x9a1a9544d7a247ea50b35e6563d267f57c05d041",
+      "transaction": "0xeec072dbb681b2c1674e0aebded4da385248cfb957276f54c84bd9ebd8f83787"
     },
     "store": {
-      "address": "0xbb53b981e0163a52254b72ec269815f0b9108009",
-      "transaction": "0xdaabf89a4174c6d725d8e4e561443977bad3043936fafc47ba03c84d427c706f"
+      "address": "0xbdeb3b4ad63625db69692cf4d60fb0d092312362",
+      "transaction": "0x5dd93b93daab920fcf3cd47a22732f2fa244c7d74447cd1ef2c1a15b3930efe7"
     },
     "expressionDeployer": {
-      "address": "0xebaf708c259cacddb7c47d874efe443337d1cd2f",
-      "transaction": "0x08d35318b48e61d11a503fe26ea1cf82a05f59877015ed01563894436e47bab1"
+      "address": "0xb4daa68e3a48b5ee7b66a66374a5d552c53f7758",
+      "transaction": "0x5dfb04c5581d83a70f920349beba866e41e85fb66ebe547b96bab416f2b221af"
     }
   },
   "snowtrace": {
@@ -27,18 +27,47 @@
       "transaction": "0xf76aca9f9c693b0b7fff4834370db8528f4e73ec839679f37a5cb3bfe29deca3"
     }
   },
-  "goerli":{
+  "goerli": {
     "interpreter": {
-      "address":"",
-      "transaction":""
+      "address": "",
+      "transaction": ""
     },
     "store": {
-      "address":"",
-      "transaction":""
+      "address": "",
+      "transaction": ""
     },
     "expressionDeployer": {
-      "address":"",
-      "transaction":""
+      "address": "",
+      "transaction": ""
+    }
+  },
+  "sepolia": {
+    "interpreter": {
+      "address": "0x519a00111c6bc639157f236b5ebd4dba29a656e9",
+      "transaction": "0xf264864802603edec88f71b5435be545b389aa91751d7fe1c6e153f567b24de1"
+    },
+    "store": {
+      "address": "0xaf35ee33489f7da7b572831f8f00f3815fe1a378",
+      "transaction": "0x19ec0977cb95c8936ad55530d15e6689f89694aa0b6a8c4a2ac8f66f141531d0"
+    },
+    "expressionDeployer": {
+      "address": "0xf469f3e7a3496f495991eba46c7c818f580e90d6",
+      "transaction": "0x4efbe81cabd329b6cb877adf4ae4b2532cf01caaef8d7b9dd7d91fd7da437c84"
+    }
+  },
+  "polygon": {
+    "interpreter": {
+      "address": "",
+      "transaction": ""
+    },
+    "store": {
+      "address": "",
+      "transaction": ""
+    },
+    "expressionDeployer": {
+      "address": "",
+      "transaction": ""
     }
   }
+  
 }
