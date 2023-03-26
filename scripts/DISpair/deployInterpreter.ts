@@ -109,12 +109,20 @@ async function main() {
 
 
     let updateNetConfig = netConfig
-    updateNetConfig[toNetwork] = {
+   
+    updateNetConfig[toNetwork] ? (
+      updateNetConfig[toNetwork]["interpreter"] = {
+        "address" : transactionReceipt.contractAddress.toLowerCase(),
+        "transaction" : transactionReceipt.transactionHash.toLowerCase()
+       } 
+    ) : ( 
+       updateNetConfig[toNetwork] = {
         "interpreter" :{
             "address" : transactionReceipt.contractAddress.toLowerCase(),
             "transaction" : transactionReceipt.transactionHash.toLowerCase()
-        }
-    } 
+         }
+      }       
+    )
 
     let data = JSON.stringify(updateNetConfig,null,2) 
 

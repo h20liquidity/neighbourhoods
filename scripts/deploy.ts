@@ -29,10 +29,10 @@ async function main() {
           Hash of the transaction.
 
         --from, -f <network name>
-          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia"]
+          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia"]
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
       `
     );
   }else{ 
@@ -41,7 +41,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia"]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
 
     if (
       args.includes("--transaction") ||

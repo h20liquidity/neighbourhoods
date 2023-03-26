@@ -13,6 +13,7 @@ import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 
 import netConfig from "../network.config.json" 
+import axios from "axios";
 
 /*
 * Get etherscan key
@@ -124,7 +125,13 @@ export const getTransactionDataForNetwork = (txData:string,fromNetwork:string,to
     txData = txData.replace(fromNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase())
   }
   return txData 
-} 
+}  
+
+export const getGasDataForPolygon = async () => {
+
+  let gasData = await axios.get('https://gasstation-mainnet.matic.network/v2') 
+  return gasData
+}
 
 const estimateFeeData = async ( 
   chainProvider:any ,
@@ -133,7 +140,21 @@ const estimateFeeData = async (
   maxFeePerGas: BigNumber;
   maxPriorityFeePerGas: BigNumber;
 }> => {
-  if (chainProvider._network.chainId === 31337) {
+  if (chainProvider._network.chainId === 137) {  
+    const gasDataForPolygon = await getGasDataForPolygon()
+    return {
+      gasPrice: BigNumber.from("21000"),
+      maxFeePerGas : ethers.utils.parseUnits(
+        Math.ceil(gasDataForPolygon.data.fast.maxFee).toString(),
+        "gwei"
+      ) , 
+      maxPriorityFeePerGas : ethers.utils.parseUnits(
+        Math.ceil(gasDataForPolygon.data.fast.maxPriorityFee).toString(),
+        "gwei"
+      ) 
+    }
+
+  }else if (chainProvider._network.chainId === 31337) {
     return {
       gasPrice: BigNumber.from("1980000104"),
       maxFeePerGas: BigNumber.from("1500000030"),
@@ -180,30 +201,33 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     const signer  = new ethers.Wallet(priKey,provider)   
     console.log("signer : " , signer.address)
 
-    const nonce = await provider.getTransactionCount(signer.address)  
+    const nonce = await provider.getTransactionCount(signer.address)   
+
 
     // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
     // but after being mined affected relevant state.
     // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
     const gasLimit = await provider.estimateGas({
       data: transactionData
-    })
+    }) 
+
+    console.log("gasLimit : " , gasLimit )
 
     const feeData = await estimateFeeData(provider)  
-    console.log("feeData : " , feeData ) 
-
-
+    
+  
     // hard conded values to be calculated
     const txData = { 
       nonce: ethers.BigNumber.from(nonce).toHexString() ,
       data : transactionData ,
       gasLimit : gasLimit.toHexString(), 
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(),
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
       maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+      type: '0x02'
     }   
         
     // Generate Transaction 
-    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })  
+    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
   
     const privateKey = Buffer.from(
       priKey,

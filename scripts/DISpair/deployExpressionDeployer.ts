@@ -32,10 +32,10 @@ async function main() {
           Hash of the transaction.
 
         --from, -f <network name>
-          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia"]
+          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia"]
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
       `
     );
   }else{ 
@@ -44,7 +44,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia"]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
 
     if (
       args.includes("--transaction") ||
@@ -111,13 +111,21 @@ async function main() {
     console.log(`Contract deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)  
 
 
-    let updateNetConfig = netConfig
-    updateNetConfig[toNetwork]["expressionDeployer"] = {
-        
+    let updateNetConfig = netConfig 
+
+    updateNetConfig[toNetwork] ? (
+      updateNetConfig[toNetwork]["expressionDeployer"] = {
+        "address" : transactionReceipt.contractAddress.toLowerCase(),
+        "transaction" : transactionReceipt.transactionHash.toLowerCase()
+       } 
+    ) : ( 
+       updateNetConfig[toNetwork] = {
+        "expressionDeployer" :{
             "address" : transactionReceipt.contractAddress.toLowerCase(),
             "transaction" : transactionReceipt.transactionHash.toLowerCase()
-        
-    } 
+         }
+      }    
+    )   
 
     let data = JSON.stringify(updateNetConfig,null,2) 
 
