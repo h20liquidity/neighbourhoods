@@ -4,6 +4,7 @@ import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
 import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "./utils";
+import { delay, verify } from "./verify";
 dotenv.config();
 
 
@@ -28,10 +29,10 @@ async function main() {
           Hash of the transaction.
 
         --from, -f <network name>
-          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai"]
+          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai"]
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
       `
     );
   }else{ 
@@ -40,7 +41,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai",]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
 
     if (
       args.includes("--transaction") ||
@@ -104,7 +105,13 @@ async function main() {
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
 
-    console.log(`Contract deployed to ${network.name} at : ${transactionReceipt.contractAddress}`)
+    console.log(`Contract deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)  
+
+    // Wait 15sec before trying to Verify. That way, if the code was deployed,
+    // it will be available for locate it.
+    await delay(30000);
+
+    await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
 
 
 
