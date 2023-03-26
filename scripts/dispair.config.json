@@ -43,16 +43,16 @@
   },
   "sepolia": {
     "interpreter": {
-      "address": "0x519a00111c6bc639157f236b5ebd4dba29a656e9",
-      "transaction": "0xf264864802603edec88f71b5435be545b389aa91751d7fe1c6e153f567b24de1"
+      "address": "0x19c0b956f8cab1e78108e8f5d4cd273b8080df32",
+      "transaction": "0xb040b5661fd52d087852f38678d91683201c076e58612b890d5cabb950e0d72d"
     },
     "store": {
-      "address": "0xaf35ee33489f7da7b572831f8f00f3815fe1a378",
-      "transaction": "0x19ec0977cb95c8936ad55530d15e6689f89694aa0b6a8c4a2ac8f66f141531d0"
+      "address": "0xae870f76caf6ee851953303d66fca0d836d62e22",
+      "transaction": "0x614c23ec25688e314081d64e890341933fa1acb86fb777354969e3dd7126c338"
     },
     "expressionDeployer": {
-      "address": "0xf469f3e7a3496f495991eba46c7c818f580e90d6",
-      "transaction": "0x4efbe81cabd329b6cb877adf4ae4b2532cf01caaef8d7b9dd7d91fd7da437c84"
+      "address": "0xe45f955886fae8e64a4cddd26f9e3daf08a5ef85",
+      "transaction": "0x0b900d1b33981ce91237426cc1ccbd6de30a05a54036d11d5cb295c54c8c3fb2"
     }
   },
   "polygon": {

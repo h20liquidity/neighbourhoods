@@ -1,0 +1,18 @@
+{
+  "mumbai": {
+    "orderbook": {
+      "address": "0x067a07b7e27917281bdefb6c99267f215d5b81a0",
+      "transaction": "0x7eae8a6e95f4609329aa02ba66b7c9191a99c5f7463900657391dc88890dc045"
+    },
+    "zeroexorderbook": {
+      "address": "0xabfac36e7220e003b3ad5097441a798da0302d90",
+      "transaction": "0x24a9fc4e3d0b4701ca3401fa0aa509c81046de22870cbe46b3ea5d2da317e098"
+    }
+  },
+  "sepolia": {
+    "orderbook": {
+      "address": "0x56eb744dd1600c0d7119ecfae9ff77b56c98953e",
+      "transaction": "0xfaa12507c8842c79d6394dfde7bb88b1601a5621376af75c717ff79431d10658"
+    }
+  }
+}

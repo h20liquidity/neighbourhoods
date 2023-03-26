@@ -5,7 +5,7 @@ import { argv } from "process";
 import * as dotenv from "dotenv";
 import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "../utils";
 dotenv.config();
-import netConfig from "../network.config.json" 
+import netConfig from "../dispair.config.json" 
 import {writeFileSync} from "fs";
 import { delay, verify } from "../verify";
 
@@ -103,7 +103,7 @@ async function main() {
     const common = getCommons(toNetwork) 
 
     //Deploy transaction
-    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY_MUMBAI,txData)
+    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY,txData)
     
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
@@ -129,7 +129,10 @@ async function main() {
 
     let data = JSON.stringify(updateNetConfig,null,2) 
 
-    writeFileSync('./scripts/network.config.json', data) 
+    writeFileSync('./scripts/dispair.config.json', data)  
+
+    console.log("Submitting contract for verification...")
+
 
     // Wait 15sec before trying to Verify. That way, if the code was deployed,
     // it will be available for locate it.
