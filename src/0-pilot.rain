@@ -16,7 +16,7 @@ batch-index batch-remaining: call<2 2>(0),
 amount: max(batch-remaining 10e18),
 
 /* exponential growth */
-/* (1.1)^batch-index */
+/* (1.02)^batch-index */
 /* Power function x^y with y simple integer */
 /* https://github.com/PaulRBerg/prb-math */
 io-ratio: prb-powu(102e16 batch-index);
