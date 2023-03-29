@@ -6,7 +6,9 @@ import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
 import * as mustache from 'mustache'; 
 import * as path from "path";  
-import orderBookDetails from "../../config/Orderbook/OrderBook.json"
+import orderBookDetails from "../../config/Orderbook/OrderBook.json" 
+import {writeFileSync} from "fs";
+
 import hre from "hardhat"
 
 
@@ -28,6 +30,7 @@ import tokens from "../tokens.config.json"
 import axios from "axios";
 import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
 import { hexlify } from "ethers/lib/utils";
+import { getEventArgs } from "../../utils";
 
 /*
 * Get etherscan key
@@ -321,7 +324,36 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     
     return deployTransaction
   
-  }  
+  }   
+
+export const decodeAddOrderEventsArgs = async(transaction,orderBook) => {  
+
+  const eventObj = (await transaction.wait()).logs.find(
+    (x) =>{  
+      return (x.topics[0] == "0x73e46afa6205785bdaa1daaf8b6ccc71715ec06b3b4264f5a00fde98671c2fc6") // Checking for Add Order Event 
+    }
+      
+  ); 
+
+
+  if (!eventObj) {
+    console.log(`Could not find event data!!!`);
+  }
+
+  let eventData = orderBook.interface.decodeEventLog(
+    "AddOrder",
+    eventObj.data,
+    eventObj.topics
+  );  
+
+  let data = JSON.stringify(eventData,null,2) 
+
+  writeFileSync('./scripts/DeployStrategy/orderDetails.json', data)  
+
+ 
+
+
+}
 
 
 export const deployStrategy = async(network:string,priKey: string, common: Common,conterparty:string) => {   
@@ -408,7 +440,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
     const privateKey = Buffer.from(
       priKey,
       'hex'
-    )
+    ) 
     
     // Sign Transaction 
     const signedTx = tx.sign(privateKey)
@@ -416,7 +448,9 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
     // Send the transaction
     const contractTransaction = await provider.sendTransaction(
       "0x" + signedTx.serialize().toString("hex")
-    );   
+    );     
+
+    await decodeAddOrderEventsArgs(contractTransaction,orderBook)
     return contractTransaction
 
     

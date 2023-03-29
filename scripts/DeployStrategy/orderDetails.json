@@ -1,0 +1,37 @@
+[
+  "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
+  "0x56EB744dd1600C0D7119ECfAe9ff77B56C98953E",
+  [
+    "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
+    true,
+    [
+      "0xaE870f76CaF6EE851953303D66fCA0d836D62e22",
+      "0xE45F955886fae8e64A4CdDd26F9e3DaF08A5ef85",
+      "0xFc0b74c625AE4DFd5AbF34Be649a3c93A31FaE77"
+    ],
+    [
+      [
+        "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        6,
+        {
+          "type": "BigNumber",
+          "hex": "0x8b39136da81aa83a3c4b87683fa397a242a932040d6b00ef7c6aa9f6f59c7888"
+        }
+      ]
+    ],
+    [
+      [
+        "0x84342e932797FC62814189f01F0Fb05F52519708",
+        18,
+        {
+          "type": "BigNumber",
+          "hex": "0x8b39136da81aa83a3c4b87683fa397a242a932040d6b00ef7c6aa9f6f59c7888"
+        }
+      ]
+    ]
+  ],
+  {
+    "type": "BigNumber",
+    "hex": "0x44dcc649eed49ac83fde9ff9917521e914be118e3a232d4b4d13f130457b6f53"
+  }
+]
