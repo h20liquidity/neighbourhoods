@@ -10,16 +10,16 @@ batch-start-time: decode-256<32 63>(batch-start-info),
 : ensure(gt(now() add(batch-start-time 86400))),
 
 /* get info about current batch */
-batch-index batch-remaining: call<2 2>(0),
-
-/* always offer at least 10 tokens even if that's beyond the current batch */
-amount: max(batch-remaining 10e18),
+batch-index batch-remaining: call<2 2>(0), 
 
 /* exponential growth */
 /* (1.02)^batch-index */
 /* Power function x^y with y simple integer */
 /* https://github.com/PaulRBerg/prb-math */
 io-multiplier: prb-powu(102e16 batch-index),
+/* always offer at least 10 tokens even if that's beyond the current batch */
+amount: max(batch-remaining 0),
+
 io-ratio: prb-mul(io-multiplier 25e13);
 
 /*

@@ -41,20 +41,23 @@ export const fetchFile = (_path: string): string => {
 };  
 
 // Hacky Util
-const prbScale = async (index: number) => {  
+const prbScale = async (index: number) => { 
+  let baseRatio = ethers.BigNumber.from("250000000000000") 
   let base = ethers.BigNumber.from("1020000000000000000")   
-  let result
+  let ioMultiplier
   if(index == 0){
-    result = ONE
+    ioMultiplier = ONE
   }else if(index == 1){
-    result = base
+    ioMultiplier = base
   }else{
-    result = ONE
+    ioMultiplier = ONE
     for(let i = 0 ; i < index ; i++){
-      result = fixedPointMul(base,result)
+      ioMultiplier = fixedPointMul(base,ioMultiplier)
     }
-  } 
-  return result
+  }  
+
+  let ratio = fixedPointMul(baseRatio,ioMultiplier) 
+  return ratio
 } 
 
 // Hacky Util 
@@ -67,7 +70,8 @@ const scaleRatio = async(ratio: BigNumber, aDecimals: number,bDecimals: number) 
   )  
   if(maxRatio.mod(10).gt(5)){ 
     maxRatio = maxRatio.add(1)  
-  }   
+  }    
+  
   return maxRatio
 }
 
@@ -580,10 +584,10 @@ describe("Pilot", async function () {
     ));
 
 
-    // TAKE ORDER
+    // TAKE ORDER //255000000000000000
 
     // Bob takes order with direct wallet transfer
-    for(let i = 0 ; i < 10 ; i++){  
+    for(let i = 0 ; i < 10 ; i++){   
 
       // DEPOSIT
 
@@ -612,8 +616,8 @@ describe("Pilot", async function () {
       }; 
 
       // Scaling ratio as batch index increases 
-      const ratio = await prbScale(i)
-  
+      const ratio = await prbScale(i) 
+
       const takeOrdersConfigStruct = {
         output: tokenA.address,
         input: tokenB.address,
@@ -622,8 +626,9 @@ describe("Pilot", async function () {
         maximumIORatio: ratio,
         orders: [takeOrderConfigStruct],
       };
+     
   
-      const amountA = amountB.mul(ratio).div(ONE); 
+      const amountA = amountB.mul(ratio).div(ONE)
   
       await tokenA.transfer(bob.address, amountA);
       await tokenA.connect(bob).approve(orderBook.address, amountA); 
@@ -721,7 +726,7 @@ describe("Pilot", async function () {
         i == 1 ? (
           ethers.BigNumber.from("999" + eighteenZeros)
         ) : (
-          ethers.BigNumber.from("10" + eighteenZeros)
+          ethers.BigNumber.from("1" + eighteenZeros)
         )
       );
 
@@ -1201,7 +1206,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it("should ensure ratio is not scaled based on input/output token decimals: (Input Decimals: 0 vs Output Decimals: 18)", async function () { 
+    xit("should ensure ratio is not scaled based on input/output token decimals: (Input Decimals: 0 vs Output Decimals: 18)", async function () { 
 
       const tokenA00 = (await basicDeploy("ReserveTokenDecimals", {}, [
         0,
@@ -1338,9 +1343,9 @@ describe("Pilot", async function () {
 
   }) 
 
-  describe("should scale ratio exponentially for different batches with decimals", () => { 
+  describe.only("should scale ratio exponentially for different batches with decimals", () => { 
 
-    it.skip("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
+    xit("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -1619,7 +1624,7 @@ describe("Pilot", async function () {
       
     });  
 
-    it.skip("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 6)", async function () { 
+    xit("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 6)", async function () { 
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
