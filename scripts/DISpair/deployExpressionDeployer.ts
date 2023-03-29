@@ -5,7 +5,7 @@ import { argv } from "process";
 import * as dotenv from "dotenv";
 import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "../utils";
 dotenv.config();
-import netConfig from "../network.config.json" 
+import netConfig from "../dispair.config.json" 
 import {writeFileSync} from "fs";
 import { delay, verify } from "../verify";
 
@@ -32,10 +32,10 @@ async function main() {
           Hash of the transaction.
 
         --from, -f <network name>
-          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
+          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon","hardhat"]
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon","hardhat"]
       `
     );
   }else{ 
@@ -44,7 +44,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon","hardhat"]
 
     if (
       args.includes("--transaction") ||
@@ -103,7 +103,7 @@ async function main() {
     const common = getCommons(toNetwork) 
 
     //Deploy transaction
-    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY_MUMBAI,txData)
+    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY,txData)
     
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
@@ -129,13 +129,19 @@ async function main() {
 
     let data = JSON.stringify(updateNetConfig,null,2) 
 
-    writeFileSync('./scripts/network.config.json', data) 
+    writeFileSync('./scripts/dispair.config.json', data)  
 
-    // Wait 15sec before trying to Verify. That way, if the code was deployed,
-    // it will be available for locate it.
-    await delay(30000);
+    console.log("Submitting contract for verification...")
 
-    await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+
+    if(toNetwork != 'hardhat'){ 
+      console.log("Submitting contract for verification...")
+      // Wait 15sec before trying to Verify. That way, if the code was deployed,
+      // it will be available for locate it.
+      await delay(30000);
+  
+      await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+    }
 
 
   }

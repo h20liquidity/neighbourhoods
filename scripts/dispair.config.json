@@ -1,16 +1,16 @@
 {
   "mumbai": {
     "interpreter": {
-      "address": "0x9a1a9544d7a247ea50b35e6563d267f57c05d041",
-      "transaction": "0xeec072dbb681b2c1674e0aebded4da385248cfb957276f54c84bd9ebd8f83787"
+      "address": "0xf6ad2c9dbd2811d52130d32bb5b46d8c57389297",
+      "transaction": "0x6f2b74f6f6601f9237f21b1a622ceb321218bff4ea5929ace5a794d2e319b4ab"
     },
     "store": {
-      "address": "0xbdeb3b4ad63625db69692cf4d60fb0d092312362",
-      "transaction": "0x5dd93b93daab920fcf3cd47a22732f2fa244c7d74447cd1ef2c1a15b3930efe7"
+      "address": "0x0b95a2a3440b6e9da5284cb0e01e7c8f93d2b06a",
+      "transaction": "0x31a87d4b237bbc652ae6289b3e37511df9714f57e47179f2c65bf0e91e2acda4"
     },
     "expressionDeployer": {
-      "address": "0xb4daa68e3a48b5ee7b66a66374a5d552c53f7758",
-      "transaction": "0x5dfb04c5581d83a70f920349beba866e41e85fb66ebe547b96bab416f2b221af"
+      "address": "0x0b263250a5f67f38ab01778179df072c1fa969be",
+      "transaction": "0x85f281841633292613d4f86daf4f88e8a5c8240d6d0b8bfff9b0ef27740b8f44"
     }
   },
   "snowtrace": {
@@ -43,16 +43,16 @@
   },
   "sepolia": {
     "interpreter": {
-      "address": "0x519a00111c6bc639157f236b5ebd4dba29a656e9",
-      "transaction": "0xf264864802603edec88f71b5435be545b389aa91751d7fe1c6e153f567b24de1"
+      "address": "0x19c0b956f8cab1e78108e8f5d4cd273b8080df32",
+      "transaction": "0xb040b5661fd52d087852f38678d91683201c076e58612b890d5cabb950e0d72d"
     },
     "store": {
-      "address": "0xaf35ee33489f7da7b572831f8f00f3815fe1a378",
-      "transaction": "0x19ec0977cb95c8936ad55530d15e6689f89694aa0b6a8c4a2ac8f66f141531d0"
+      "address": "0xae870f76caf6ee851953303d66fca0d836d62e22",
+      "transaction": "0x614c23ec25688e314081d64e890341933fa1acb86fb777354969e3dd7126c338"
     },
     "expressionDeployer": {
-      "address": "0xf469f3e7a3496f495991eba46c7c818f580e90d6",
-      "transaction": "0x4efbe81cabd329b6cb877adf4ae4b2532cf01caaef8d7b9dd7d91fd7da437c84"
+      "address": "0xe45f955886fae8e64a4cddd26f9e3daf08a5ef85",
+      "transaction": "0x0b900d1b33981ce91237426cc1ccbd6de30a05a54036d11d5cb295c54c8c3fb2"
     }
   },
   "polygon": {
@@ -67,6 +67,16 @@
     "expressionDeployer": {
       "address": "0x0a8c6d9ebc0af7852f756c47b1801c500d7b2901",
       "transaction": "0x97579d16986127721f65d2f75cb43c00de9cff05e6bad42b1de80c4249ab1f61"
+    }
+  },
+  "hardhat": {
+    "store": {
+      "address": "0xc7fea81119caf970b918779f64398c5d1349d01b",
+      "transaction": "0x86015e8a396592c67399a0b51f5f417a75d7bcafe5a70740b02ed5bec65853b5"
+    },
+    "interpreter": {
+      "address": "0x4610f0d326edd73c9ead09b3b1c1ed2d63b4a804",
+      "transaction": "0x4e862caaf04164b9ca9d07fb830d2937bad00d6a9dc40197ec939eac4f21420c"
     }
   }
 }

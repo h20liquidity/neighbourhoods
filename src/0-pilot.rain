@@ -2,7 +2,7 @@
 
 /* refuse any counterparties other than named */
 allowed-counterparty: {{ counterparty }},
-: ensure(eq(allowed-counterparty context<0 2>())),
+: ensure(eq(allowed-counterparty context<1 2>())),
 
 /* 24 hour delay on new batches = 86400 seconds */
 batch-start-info: get(0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9),
@@ -29,9 +29,9 @@ total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
 
 /* new batch info due to trade */
-out-token-amount: context<3 4>(),
-out-token-decimals: context<3 1>(),
-new-total-sent new-batch-index _: call<2 3>(scale-18-dynamic<1>(out-token-decimals out-token-amount)),
+out-token-amount: context<4 4>(),
+out-token-decimals: context<4 1>(),
+new-total-sent new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(out-token-decimals out-token-amount)),
 
 /* stored batch info */
 batch-start-info: get(batch-start-info-k),

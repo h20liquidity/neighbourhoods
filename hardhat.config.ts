@@ -18,33 +18,33 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking:{
-        url: config_.hardhat.forkBaseUrl + process.env.ALCHEMY_KEY,
+        url: config_.hardhat.forkBaseUrl + process.env.ALCHEMY_KEY_MUMBAI,
         blockNumber : config_.hardhat.blockNumber
       }
     },
     goerli: { 
-      url : `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_GORELI}` , 
-      accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
-        ? [process.env["DEPLOYMENT_KEY_MUMBAI"]]
+      url : `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_MUMBAI_GORELI}` , 
+      accounts: process.env["DEPLOYMENT_KEY"]
+        ? [process.env["DEPLOYMENT_KEY"]]
         : [],
     } ,
     snowtrace: { 
       url : `https://api.avax-test.network/ext/bc/C/rpc` , 
-      accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
-        ? [process.env["DEPLOYMENT_KEY_MUMBAI"]]
+      accounts: process.env["DEPLOYMENT_KEY"]
+        ? [process.env["DEPLOYMENT_KEY"]]
         : [],
     } ,
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com",
-      accounts: process.env["DEPLOYMENT_KEY_MUMBAI"]
-        ? [process.env["DEPLOYMENT_KEY_MUMBAI"]]
+      accounts: process.env["DEPLOYMENT_KEY"]
+        ? [process.env["DEPLOYMENT_KEY"]]
         : [],
     },
   },
   solidity: {
     compilers: [
       {
-        version: "0.8.17",
+        version: "0.8.18",
         settings: {
           optimizer: {
             enabled: true,

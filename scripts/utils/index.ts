@@ -1,7 +1,13 @@
-import { BigNumber, ethers } from "ethers"; 
+import { BigNumber, ethers } from "ethers";  
 
 import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
 import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
+import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
+import fs from "fs"  
+import * as mustache from 'mustache'; 
+import * as path from "path"; 
+import hre from "hardhat"
+
 
 import {
   allChains,
@@ -12,8 +18,15 @@ import {
 import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 
-import netConfig from "../network.config.json" 
+import netConfig from "../dispair.config.json" 
+import contractConfig from "../contracts.config.json"  
+import tokens from "../tokens.config.json"  
+
+
+
 import axios from "axios";
+import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
+import { hexlify } from "ethers/lib/utils";
 
 /*
 * Get etherscan key
@@ -22,14 +35,15 @@ export const getEtherscanKey = (network:string) => {
 
   let key = ''
   if (network === "mumbai" || network === "polygon"){ 
-    key = process.env.MUMBAI_VERIFICATION_KEY
+    key = process.env.POLYGONSCAN_API_KEY
   }else if(network === "goerli"){
     key = ''
   }else if(network === "snowtrace"){
     key = ''
   }else if(network === "sepolia"){
-    key = process.env.SEPHOLIA_VERIFICATION_KEY
-    
+    key = process.env.ETHERSCAN_API_KEY
+  }else if(network === "hardhat"){
+    key = ''
   }
   return key
 }    
@@ -50,6 +64,8 @@ export const getEtherscanBaseURL = (network:string) => {
     url = 'https://api-sepolia.etherscan.io/api'
   }else if(network === "polygon"){
     url = 'https://api.polygonscan.com/api'
+  }else if(network === "hardhat"){
+    url = ''
   }
   return url
 }  
@@ -64,15 +80,18 @@ export const getProvider = (network:string) => {
 
     let provider 
     if (network === "mumbai"){ 
-         provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY}`)   
+         provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
     }else if(network === "goerli"){
       provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
     }else if(network === "snowtrace"){
       provider = new ethers.providers.JsonRpcProvider('https://api.avax-test.network/ext/bc/C/rpc')
-    }else if(network === "sepolia"){
-      provider = new ethers.providers.JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/RI3fKh5J9qDr9R48ut6mwx3Rowwe8oRK')
+    }else if(network === "sepolia"){ 
+      provider = new ethers.providers.JsonRpcProvider(`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_SEPOLIA}`)
     }else if(network === "polygon"){
-      provider = new ethers.providers.AlchemyProvider("matic",`y3BXawVv5uuP_g8BaDlKbKoTBGHo9zD9`)   
+      provider = new ethers.providers.AlchemyProvider("matic",`${process.env.ALCHEMY_KEY_POLYGON}`)   
+    }else if(network === "hardhat"){
+      provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545') 
+      
     }
     return provider
 } 
@@ -92,6 +111,9 @@ export const getCommons = (network:string) => {
       common = Common.custom({ chainId: 11155111 })
     }else if(network === "polygon"){
       common = Common.custom(CustomChain.PolygonMainnet) 
+    }else if(network === "hardhat"){
+      common = Common.custom({ chainId: 31337 })
+
     }
     
     return common
@@ -105,15 +127,52 @@ export const getTransactionData = async (provider: any, address:string): Promise
     const transaction = await provider.getTransaction(address)  
 
     return transaction.data
-} 
+}   
+
 /**
  *Replace all DISpair instances 
  */
-export const getTransactionDataForNetwork = (txData:string,fromNetwork:string,toNetwork:string) => {
+ export const getTransactionDataForZeroEx = (txData:string,fromNetwork:string,toNetwork:string) => { 
+
+  const fromProvider = getProvider(fromNetwork)
+  const toProvider = getProvider(toNetwork) 
+
+  const { exchangeProxy: fromNetworkProxy } = getContractAddressesForChainOrThrow(fromProvider._network.chainId);
+  const { exchangeProxy: toNetworkProxy } = getContractAddressesForChainOrThrow(toProvider._network.chainId);  
+
+  
+  txData = txData.toLocaleLowerCase()
+  const fromContractConfig = contractConfig[fromNetwork]
+  const toContractConfig = contractConfig[toNetwork] 
+
+  if(txData.includes(fromContractConfig["orderbook"]["address"].split('x')[1].toLowerCase())){ 
+    txData = txData.replace(fromContractConfig["orderbook"]["address"].split('x')[1].toLowerCase(), toContractConfig["orderbook"]["address"].split('x')[1].toLowerCase())
+  }
+  if(txData.includes(fromNetworkProxy.split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkProxy.split('x')[1].toLowerCase(), toNetworkProxy.split('x')[1].toLowerCase())
+  }
+  return txData 
+}   
+
+/**
+ * @returns a random 32 byte number in hexstring format
+ */
+export function randomUint256(): string {
+  return ethers.utils.hexZeroPad(ethers.utils.randomBytes(32), 32);
+} 
+
+
+/**
+ *Replace all DISpair instances 
+ */
+export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,toNetwork:string) => {
   
   txData = txData.toLocaleLowerCase()
   const fromNetworkConfig = netConfig[fromNetwork]
-  const toNetworkConfig = netConfig[toNetwork] 
+  const toNetworkConfig = netConfig[toNetwork]  
+
+  // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
+  // console.log("contract : " , contract )
 
   if(txData.includes(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())){ 
     txData = txData.replace(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())
@@ -191,15 +250,33 @@ const estimateFeeData = async (
     };
   }
 };
+ 
+
+export const fetchFile = (_path: string): string => {
+  try {
+    return fs.readFileSync(_path).toString();
+  } catch (error) {
+    console.log(error);
+    return "";
+  }
+};   
+
+export const encodeMeta = (data: string) => {
+  return (
+    "0x" +
+    BigInt(0xff0a89c674ee7874n).toString(16).toLowerCase() +
+    hexlify(ethers.utils.toUtf8Bytes(data)).split("x")[1]
+  );
+}; 
 
 /*
 * Deploy transaction
 */
 export const deployContractToNetwork = async (provider: any, common: Common,  priKey: string, transactionData: string) => { 
 
+    console.log("Deploying Contract...")
   
     const signer  = new ethers.Wallet(priKey,provider)   
-    console.log("signer : " , signer.address)
 
     const nonce = await provider.getTransactionCount(signer.address)   
 
@@ -211,7 +288,6 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
       data: transactionData
     }) 
 
-    console.log("gasLimit : " , gasLimit )
 
     const feeData = await estimateFeeData(provider)  
     
@@ -244,6 +320,108 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     
     return deployTransaction
   
-  } 
+  }  
+
+
+export const deployStrategy = async(network:string,priKey: string, common: Common,conterparty:string) => {   
+
+  console.log("Deploying Strategy...")
+    
+  //Get Provider for testnet from where the data is to be fetched 
+  const provider = getProvider(network)   
+  
+  const vaultId = ethers.BigNumber.from(randomUint256());
+
+  const signer  = new ethers.Wallet(priKey,provider) 
+
+  //Get Source code from contract
+  const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
+  const source = await axios.get(url);   
+
+  // Get Orderbook Instance
+  const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,source.data.result[0].ABI,signer) 
+
+  //Building Expression
+  const strategyExpression = path.resolve(
+      __dirname,
+      "../../src/0-pilot.rain"
+    ); 
+
+  const strategyString = await fetchFile(strategyExpression); 
+
+  const stringExpression = mustache.render(strategyString, {
+    counterparty: conterparty,
+  });  
+
+  const { sources, constants } = await standardEvaluableConfig(stringExpression)
+
+  const EvaluableConfig_A = {
+    deployer: netConfig[network].expressionDeployer.address,
+    sources,
+    constants,
+  }
+  const orderConfig_A = {
+    validInputs: [
+      { token: tokens[network].usdt.address, decimals: tokens[network].usdt.decimals, vaultId: vaultId },
+    ],
+    validOutputs: [
+      { token: tokens[network].nht.address, decimals: tokens[network].nht.decimals, vaultId: vaultId},
+    ],
+    evaluableConfig: EvaluableConfig_A,
+    meta: encodeMeta(""),
+  };  
+
+
+  const addOrderData = await orderBook.populateTransaction.addOrder(orderConfig_A);   
+
+  // Building Tx
+  const nonce = await provider.getTransactionCount(signer.address)   
+
+
+    // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+    // but after being mined affected relevant state.
+    // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+    const gasLimit = await provider.estimateGas({ 
+      to:contractConfig[network].orderbook.address ,
+      data: addOrderData.data
+    }) 
+
+    const feeData = await estimateFeeData(provider)  
+    
+  
+    // hard conded values to be calculated
+    const txData = {  
+      to: contractConfig[network].orderbook.address ,
+      from: signer.address, 
+      nonce: ethers.BigNumber.from(nonce).toHexString() ,
+      data : addOrderData.data ,
+      gasLimit : gasLimit.toHexString(), 
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+      maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+      type: '0x02'
+    }   
+        
+    // Generate Transaction 
+    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+  
+    const privateKey = Buffer.from(
+      priKey,
+      'hex'
+    )
+    
+    // Sign Transaction 
+    const signedTx = tx.sign(privateKey)
+  
+    // Send the transaction
+    const contractTransaction = await provider.sendTransaction(
+      "0x" + signedTx.serialize().toString("hex")
+    );   
+    return contractTransaction
+
+    
+
+
+}
+
 
  

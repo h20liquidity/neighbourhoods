@@ -18,7 +18,7 @@ export const verify = async (
     ) => { 
  
        try { 
-            console.log("Contract submitted for verification...")
+            
             let provider = await getProvider(fromNetwork) 
             let txReceipt = await provider.getTransaction(fromTx) 
 
@@ -87,7 +87,7 @@ export const verify = async (
                 if(isVerified){
                     console.log(`Successfully Verified`)
                 }else{
-                    console.log(`Failed to Verify`)   
+                    console.log(`Verify Callback Fail. Contract may still be verified. Check on explorer.`)   
                 }
 
             }else{

@@ -7,8 +7,13 @@ on:
 jobs:
   tests:
     env:
-      ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
-      DEPLOYMENT_KEY_MUMBAI: ${{ secrets.DEPLOYMENT_KEY_MUMBAI }}
+      DEPLOYMENT_KEY: ${{ secrets.DEPLOYMENT_KEY }}
+      ALCHEMY_KEY_MUMBAI: ${{ secrets.ALCHEMY_KEY_MUMBAI }}
+      ALCHEMY_KEY_POLYGON: ${{ secrets.ALCHEMY_KEY_POLYGON }}
+      ALCHEMY_KEY_SEPOLIA: ${{ secrets.ALCHEMY_KEY_SEPOLIA }}
+      POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+
     strategy:
       matrix:
         os: [ubuntu-latest]

@@ -3,12 +3,13 @@ import { ethers,  network} from "hardhat";
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { deployContractToNetwork, getCommons, getProvider, getTransactionData } from "../utils";
-dotenv.config();
-import netConfig from "../dispair.config.json" 
+import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "../utils";
+import { delay, verify } from "../verify"; 
 import {writeFileSync} from "fs";
-import { delay, verify } from "../verify";
 
+import contractConfig from "../contracts.config.json" 
+
+dotenv.config();
 
 
 async function main() {    
@@ -25,17 +26,17 @@ async function main() {
   ) {
     console.log(
       `
-      Clone contract from a deployed network.
+      Clone orderbook from a deployed network.
       options:
 
         --transaction, -tx, <hash>
           Hash of the transaction.
 
         --from, -f <network name>
-          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon","hardhat"]
+          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon","hardhat"]
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
       `
     );
   }else{ 
@@ -44,7 +45,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon","hardhat"]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
 
     if (
       args.includes("--transaction") ||
@@ -94,7 +95,11 @@ async function main() {
     const deployProvider = getProvider(toNetwork) 
 
     // Get transaction data
-    const txData = await getTransactionData(mumbaiProvider, txHash) 
+    let txData = await getTransactionData(mumbaiProvider, txHash)  
+
+    console.log("txData succeded ")
+    //replace DISpair instances
+    txData = getTransactionDataForNetwork(txData,fromNetwork, toNetwork)  
 
     // Get Chain details
     const common = getCommons(toNetwork) 
@@ -105,42 +110,38 @@ async function main() {
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
 
-    console.log(`Contract deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)  
+    console.log(`Contract deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)   
 
-
-    let updateNetConfig = netConfig  
+    let updateNetConfig = contractConfig 
 
     updateNetConfig[toNetwork] ? (
-      updateNetConfig[toNetwork]["store"] = {
+      updateNetConfig[toNetwork]["orderbook"] = {
         "address" : transactionReceipt.contractAddress.toLowerCase(),
         "transaction" : transactionReceipt.transactionHash.toLowerCase()
        } 
     ) : ( 
        updateNetConfig[toNetwork] = {
-        "store" :{
+        "orderbook" :{
             "address" : transactionReceipt.contractAddress.toLowerCase(),
             "transaction" : transactionReceipt.transactionHash.toLowerCase()
          }
-      }       
-    ) 
-    
-   
+      }    
+    )   
+
     let data = JSON.stringify(updateNetConfig,null,2) 
 
-    writeFileSync('./scripts/dispair.config.json', data)  
+    writeFileSync('./scripts/contracts.config.json', data)  
 
-    
+    console.log("Submitting contract for verification...")
 
-    if(toNetwork != 'hardhat'){ 
-      console.log("Submitting contract for verification...") 
-      
-      // Wait 15sec before trying to Verify. That way, if the code was deployed,
-      // it will be available for locate it.
-      await delay(30000);
 
-      await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+    // Wait 15sec before trying to Verify. That way, if the code was deployed,
+    // it will be available for locate it.
+    await delay(30000);
 
-    }
+    await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork) 
+
+
 
   }
 

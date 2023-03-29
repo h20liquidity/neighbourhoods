@@ -1,0 +1,22 @@
+{
+  "mumbai": {
+    "orderbook": {
+      "address": "0x00fb875f4d86c9c73e0176a6d244047a069ce53d",
+      "transaction": "0x701470907ff2ed2b1edcec9af8d149a969d595e230d5d0bb9dfe5c939c4dcb84"
+    },
+    "zeroexorderbook": {
+      "address": "0xd14ead3f35f1c034f9fe43316bf36edca2cb2b90",
+      "transaction": "0x01ad2f49fdb6e400264a2831e6ceb8c8354bbc5f52fcdd218396caaf14cc79b5"
+    }
+  },
+  "polygon": {
+    "orderbook": {
+      "address": "0x038919fe68cd37f9c951e4b6819e4cb67be4f885",
+      "transaction": "0x5f187df6048fc29d10056d55717229b807220205f9ee917324908aae9fa988fa"
+    },
+    "zeroexorderbook": {
+      "address": "0x02cb1fbf00e4df3c1fbfe7147349a59eb0c4087d",
+      "transaction": "0x1b45dc31cdaec5bb634839e3c37d7a602d825ff75fd1c551e371baec5edb8cdd"
+    }
+  }
+}

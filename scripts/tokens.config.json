@@ -1,0 +1,32 @@
+{
+    "mumbai":{
+        "usdt":{
+            "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
+            "decimals": 18
+        },
+        "nht":{
+            "address": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+            "decimals": 18
+        }
+    },
+    "polygon":{
+        "usdt":{
+            "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+            "decimals": 6
+        },
+        "nht":{
+            "address": "0x84342e932797FC62814189f01F0Fb05F52519708",
+            "decimals": 18
+        }
+    } ,
+    "sepolia":{
+        "usdt":{
+            "address": "0x73ff9166fc5b3e3fc381803b0f3f97308832a9f8",
+            "decimals": 18
+        },
+        "nht":{
+            "address": "0xbaa8b434323472679301b5821668e87fb94dab4a",
+            "decimals": 18
+        }
+    }
+}

@@ -20,13 +20,18 @@ export const getEventArgs = async (
 ): Promise<Result> => {
   const address = contractAddressOverride
     ? contractAddressOverride
-    : contract.address;
+    : contract.address; 
+
+
 
   const eventObj = (await tx.wait()).events.find(
-    (x) =>
-      x.topics[0] == contract.filters[eventName]().topics[0] &&
-      x.address == address
-  );
+    (x) =>{  
+      return (x.topics[0] == contract.filters[eventName]().topics[0] &&
+      x.address.toLowerCase() == address.toLowerCase()  )
+    }
+      
+  ); 
+
 
   if (!eventObj) {
     throw new Error(`Could not find event ${eventName} at address ${address}`);
@@ -69,3 +74,5 @@ export const getEventArgsFromLogs = async (
 
   return iface.decodeEventLog(eventName, log_.data, log_.topics);
 };
+ 
+
