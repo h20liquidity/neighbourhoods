@@ -1343,7 +1343,7 @@ describe("Pilot", async function () {
 
   }) 
 
-  describe.only("should scale ratio exponentially for different batches with decimals", () => { 
+  describe("should scale ratio exponentially for different batches with decimals", () => { 
 
     xit("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
 
