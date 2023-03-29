@@ -104,7 +104,7 @@ describe("Pilot", async function () {
 
 
  
-  it.only("should ensure only conterparties are able to takeOrders", async function () {  
+  it("should ensure only conterparties are able to takeOrders", async function () {  
   
     const signers = await ethers.getSigners();
 
@@ -148,8 +148,8 @@ describe("Pilot", async function () {
       meta: aliceOrder,
     }; 
 
-    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
-   
+    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A); 
+
     const {
       order: Order_A
     } = (await getEventArgs(
@@ -157,7 +157,6 @@ describe("Pilot", async function () {
       "AddOrder",
       orderBook
     ));
-
 
      // TAKE ORDER
 
