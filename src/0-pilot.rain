@@ -13,13 +13,13 @@ batch-start-time: decode-256<32 63>(batch-start-info),
 batch-index batch-remaining: call<2 2>(0),
 
 /* always offer at least 10 tokens even if that's beyond the current batch */
-amount: max(batch-remaining 10e18),
+amount: max(batch-remaining 0),
 
 /* exponential growth */
 /* (1.02)^batch-index */
 /* Power function x^y with y simple integer */
 /* https://github.com/PaulRBerg/prb-math */
-io-ratio: prb-powu(102e16 batch-index);
+io-ratio: prb-powu(102e16 batch-index) ;
 
 /*
  * Handle IO
@@ -45,7 +45,8 @@ batch-start-time: decode-256<32 63>(batch-start-info),
     gt(new-batch-index batch-start-index)
     encode-256<32 63>(now() encode-256<0 31>(new-batch-index 0))
     batch-start-info)),
-:set(total-sent-k new-total-sent);
+:set(total-sent-k new-total-sent),
+: debug<0>();
 
 /* Calculate batch */
 new-sent:,
