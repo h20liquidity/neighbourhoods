@@ -5,7 +5,8 @@ import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'
 import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
 import * as mustache from 'mustache'; 
-import * as path from "path";
+import * as path from "path"; 
+import hre from "hardhat"
 
 
 import {
@@ -41,7 +42,8 @@ export const getEtherscanKey = (network:string) => {
     key = ''
   }else if(network === "sepolia"){
     key = process.env.ETHERSCAN_API_KEY
-    
+  }else if(network === "hardhat"){
+    key = ''
   }
   return key
 }    
@@ -62,6 +64,8 @@ export const getEtherscanBaseURL = (network:string) => {
     url = 'https://api-sepolia.etherscan.io/api'
   }else if(network === "polygon"){
     url = 'https://api.polygonscan.com/api'
+  }else if(network === "hardhat"){
+    url = ''
   }
   return url
 }  
@@ -85,6 +89,9 @@ export const getProvider = (network:string) => {
       provider = new ethers.providers.JsonRpcProvider(`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_SEPOLIA}`)
     }else if(network === "polygon"){
       provider = new ethers.providers.AlchemyProvider("matic",`${process.env.ALCHEMY_KEY_POLYGON}`)   
+    }else if(network === "hardhat"){
+      provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545') 
+      
     }
     return provider
 } 
@@ -104,6 +111,9 @@ export const getCommons = (network:string) => {
       common = Common.custom({ chainId: 11155111 })
     }else if(network === "polygon"){
       common = Common.custom(CustomChain.PolygonMainnet) 
+    }else if(network === "hardhat"){
+      common = Common.custom({ chainId: 31337 })
+
     }
     
     return common
@@ -155,11 +165,14 @@ export function randomUint256(): string {
 /**
  *Replace all DISpair instances 
  */
-export const getTransactionDataForNetwork = (txData:string,fromNetwork:string,toNetwork:string) => {
+export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,toNetwork:string) => {
   
   txData = txData.toLocaleLowerCase()
   const fromNetworkConfig = netConfig[fromNetwork]
-  const toNetworkConfig = netConfig[toNetwork] 
+  const toNetworkConfig = netConfig[toNetwork]  
+
+  // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
+  // console.log("contract : " , contract )
 
   if(txData.includes(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())){ 
     txData = txData.replace(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())

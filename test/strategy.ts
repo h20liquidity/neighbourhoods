@@ -91,7 +91,7 @@ describe("Pilot", async function () {
 
     orderBook = await getOrderBook(config.contracts.orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.contracts.expressionDeployer.address)
+    expressionDeployer = await getExpressionDelopyer(config.contracts.expressionDeployer.address) 
 
 
   });

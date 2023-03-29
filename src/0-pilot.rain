@@ -31,7 +31,7 @@ batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e
 /* new batch info due to trade */
 out-token-amount: context<4 4>(),
 out-token-decimals: context<4 1>(),
-new-total-sent new-batch-index _: call<2 3>(scale-18-dynamic<1>(out-token-decimals out-token-amount)),
+new-total-sent new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(out-token-decimals out-token-amount)),
 
 /* stored batch info */
 batch-start-info: get(batch-start-info-k),

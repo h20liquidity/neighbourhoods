@@ -44,7 +44,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon","hardhat"]
 
     if (
       args.includes("--transaction") ||
@@ -128,14 +128,16 @@ async function main() {
 
     writeFileSync('./scripts/dispair.config.json', data)  
 
-    console.log("Submitting contract for verification...")
+    
 
-
-    // Wait 15sec before trying to Verify. That way, if the code was deployed,
-    // it will be available for locate it.
-    await delay(30000);
-
-    await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+    if(toNetwork != 'hardhat'){ 
+      console.log("Submitting contract for verification...")
+      // Wait 15sec before trying to Verify. That way, if the code was deployed,
+      // it will be available for locate it.
+      await delay(30000);
+  
+      await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+    }
 
 
   }

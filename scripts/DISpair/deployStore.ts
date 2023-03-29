@@ -32,10 +32,10 @@ async function main() {
           Hash of the transaction.
 
         --from, -f <network name>
-          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
+          Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon","hardhat"]
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon","hardhat"]
       `
     );
   }else{ 
@@ -44,7 +44,7 @@ async function main() {
     let txHash  
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon","hardhat"]
 
     if (
       args.includes("--transaction") ||
@@ -129,14 +129,18 @@ async function main() {
 
     writeFileSync('./scripts/dispair.config.json', data)  
 
-    console.log("Submitting contract for verification...")
+    
 
-    // Wait 15sec before trying to Verify. That way, if the code was deployed,
-    // it will be available for locate it.
-    await delay(30000);
+    if(toNetwork != 'hardhat'){ 
+      console.log("Submitting contract for verification...") 
+      
+      // Wait 15sec before trying to Verify. That way, if the code was deployed,
+      // it will be available for locate it.
+      await delay(30000);
 
-    await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+      await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
 
+    }
 
   }
 
