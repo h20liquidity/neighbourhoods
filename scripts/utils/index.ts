@@ -5,7 +5,8 @@ import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'
 import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
 import * as mustache from 'mustache'; 
-import * as path from "path"; 
+import * as path from "path";  
+import orderBookDetails from "../../config/Orderbook/OrderBook.json"
 import hre from "hardhat"
 
 
@@ -335,11 +336,11 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   const signer  = new ethers.Wallet(priKey,provider) 
 
   //Get Source code from contract
-  const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
-  const source = await axios.get(url);   
+  // const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
+  // const source = await axios.get(url);   
 
   // Get Orderbook Instance
-  const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,source.data.result[0].ABI,signer) 
+  const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer) 
 
   //Building Expression
   const strategyExpression = path.resolve(
