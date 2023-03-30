@@ -1,7 +1,7 @@
-[
-  "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
-  "0x56EB744dd1600C0D7119ECfAe9ff77B56C98953E",
-  [
+{
+  "sender": "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
+  "expressionDeployer": "0x56EB744dd1600C0D7119ECfAe9ff77B56C98953E",
+  "order" : [
     "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
     true,
     [
@@ -30,8 +30,8 @@
       ]
     ]
   ],
-  {
+  "orderHash" : {
     "type": "BigNumber",
     "hex": "0x44dcc649eed49ac83fde9ff9917521e914be118e3a232d4b4d13f130457b6f53"
   }
-]
+}

@@ -137,7 +137,24 @@ where arguments for the script are :
 - `--to, -t <taget-network-name>` : Target network to deploy startegy to. 
 -  `--counterparty, -c <address>` : Conterparty address (public key) used for the startegy. 
 
-Wait for the transaction to be confirmed.
+Wait for the transaction to be confirmed.  
+
+You'll Notice that the order details are updated in the `scripts/DeployStrategy/orderDetails.json` file which will be used to deposit tokens.
+
+#### Depositing NHT Tokens into vault.  
+
+Deposit some tokens into the vault. First make sure that the wallet has enough number of tokens you want to deposit
+
+To deposit tokens run the following command in your shell 
+
+```sh
+ts-node scripts/DeployStrategy/deposit.ts --to <target-network-name> --amount <NHT-Amount>
+``` 
+where arguments for the script are : 
+- `--to, -t <taget-network-name>` : Target network. 
+-  `--amount, -a <token-amount>` : Amount of tokens to deposit. Eg : To deposit 5.2 NHT this vaslue will be 5.2 . 
+
+wait for the transaction to be confirmed. 
 
 
 
