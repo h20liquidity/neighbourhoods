@@ -471,7 +471,14 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
 
 export const approveDepositToken = async(tokenContract, spender, amount, signer, provider, common , priKey) => {  
   
-    console.log("Approving Tokens For Deposit.....")
+    console.log("Approving Tokens For Deposit.....")   
+    
+    const balance = await tokenContract.balanceOf(signer.address) 
+
+    if( amount.gt(balance) ){
+      console.log(`Not Enough balance, please make sure to have enough balance`)
+      return null
+    }
 
     const approveData = await tokenContract.populateTransaction.approve(spender.toLowerCase(), amount.toString());  
 
