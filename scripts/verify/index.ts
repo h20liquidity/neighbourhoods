@@ -20,9 +20,12 @@ export const verify = async (
        try { 
             
             let provider = await getProvider(fromNetwork) 
-            let txReceipt = await provider.getTransaction(fromTx) 
+            let txReceipt = await provider.getTransaction(fromTx)  
 
-            let contractyAddress = txReceipt.creates 
+            console.log("txReceipt ; " , txReceipt )
+
+            let contractyAddress = txReceipt.creates  
+            console.log("contractyAddress : " , contractyAddress )
             
             if(contractyAddress != ''){  
 
@@ -100,5 +103,15 @@ export const verify = async (
         
         
 
+}  
+
+async function test(){
+    await verify(
+        "0x42cc063a0730a99ff2fc25218c606eb4969ca2eb",
+        "0xa2aafeacc86ee8f0967481a2c89b65bfccac171d1d66c9d49b4a08013222dd63",
+        "mumbai",
+        "polygon"
+    )
 } 
+test()
 

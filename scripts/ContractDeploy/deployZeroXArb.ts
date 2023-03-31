@@ -114,13 +114,13 @@ async function main() {
     let updateNetConfig = contractConfig 
 
     updateNetConfig[toNetwork] ? (
-      updateNetConfig[toNetwork]["zeroexorderbook"] = {
+      updateNetConfig[toNetwork]["zeroexorderbookimplmentation"] = {
         "address" : transactionReceipt.contractAddress.toLowerCase(),
         "transaction" : transactionReceipt.transactionHash.toLowerCase()
        } 
     ) : ( 
        updateNetConfig[toNetwork] = {
-        "zeroexorderbook" :{
+        "zeroexorderbookimplmentation" :{
             "address" : transactionReceipt.contractAddress.toLowerCase(),
             "transaction" : transactionReceipt.transactionHash.toLowerCase()
          }

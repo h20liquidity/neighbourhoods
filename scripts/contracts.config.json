@@ -19,12 +19,20 @@
   },
   "polygon": {
     "orderbook": {
-      "address": "0x8c025f3002b70511b4725d038b14de4d5c7da6cb",
-      "transaction": "0x048aa59cb7110b5d6ec1f5ab4b404914cca4efda68bf0f013a3c81c6c7fdbf55"
+      "address": "0x42cc063a0730a99ff2fc25218c606eb4969ca2eb",
+      "transaction": "0x9beb218927b72940515ae0b228f3d8a0feb77278ba52d24868e7a60a42510539"
     },
-    "zeroexorderbook": {
-      "address": "0x9399464e07dc501534545c09f4e5c428c162076c",
-      "transaction": "0x0512d291904dcc21cc278401d5232771ce70c4daeeac55061756a02efba2d099"
+    "zeroexorderbookimplmentation": {
+      "address": "0x8ca0918ede8bad0a55d451176bfb8ca45b650841",
+      "transaction": "0xe26a135619e8189fd020fb6c9964b6d1aa0373b3547df4fe8c47495aa790ce1f"
+    },
+    "clonefactory": {
+      "address": "0xf73d944e5d2c5a61d5821df1b275e0eaf016ff39",
+      "transaction": "0x3448688d180ccfec7cbf07befc89e43a08b72c53e8449f3ee0c692d3eb468a1f"
+    },
+    "zeroexorderbookinstance": {
+      "address": "0x392dd58209f5b6ff6f721f4cf87713a4de643ef6",
+      "transaction": "0x5728f486f14186a5a656a877360aae8432ca6460f7375cece988d1ca25928cb8"
     }
   }
 }

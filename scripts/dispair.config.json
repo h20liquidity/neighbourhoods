@@ -15,16 +15,16 @@
   },
   "polygon": {
     "interpreter": {
-      "address": "0xae870f76caf6ee851953303d66fca0d836d62e22",
-      "transaction": "0x0c3f9da389a206ffc31ea9d765841a67b457b5f2825c4202022d9b0851cc9286"
+      "address": "0x8ecd48e70954dec0f45e4551f039a0d24038c536",
+      "transaction": "0x94935ba07686b421c7b1f3b1eb4a934dcd81f8c086002c43d558bae053202e06"
     },
     "store": {
-      "address": "0xe45f955886fae8e64a4cddd26f9e3daf08a5ef85",
-      "transaction": "0xe36e854f4888a02af5d225cdea82496f2699542e8dec7624948f25ed2d0a4e10"
+      "address": "0x13cdd62f032125fea331cf8b79eade8830cd5dab",
+      "transaction": "0xe9f16c65a87874598548a8879fc6568a503452b26c1da247b56c713830631462"
     },
     "expressionDeployer": {
-      "address": "0x56eb744dd1600c0d7119ecfae9ff77b56c98953e",
-      "transaction": "0xb5f522b215e74ec4eff97ce06ce6c09c6c52ce4ac8f72255b53b9c24cf1b7377"
+      "address": "0x68181074a3929f51be86078e584e1ddc2cb3007c",
+      "transaction": "0x58c08d8389ddf4abd4a24099c2355ce14a82e0770a07a06a7fce68e4eadfe6dd"
     }
   }
 }
