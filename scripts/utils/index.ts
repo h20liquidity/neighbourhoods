@@ -6,7 +6,10 @@ import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
 import * as mustache from 'mustache'; 
 import * as path from "path";  
-import orderBookDetails from "../../config/Orderbook/OrderBook.json"
+import orderBookDetails from "../../config/Orderbook/OrderBook.json" 
+import {writeFileSync} from "fs"; 
+import orderDetails from "../DeployStrategy/orderDetails.json"
+import abi from 'erc-20-abi' 
 import hre from "hardhat"
 
 
@@ -28,6 +31,7 @@ import tokens from "../tokens.config.json"
 import axios from "axios";
 import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
 import { hexlify } from "ethers/lib/utils";
+import { getEventArgs } from "../../utils";
 
 /*
 * Get etherscan key
@@ -80,7 +84,8 @@ export const getEtherscanBaseURL = (network:string) => {
 export const getProvider = (network:string) => { 
 
     let provider 
-    if (network === "mumbai"){ 
+    if (network === "mumbai"){  
+      console.log("mumbai provider ")
          provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
     }else if(network === "goerli"){
       provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
@@ -321,7 +326,45 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     
     return deployTransaction
   
-  }  
+  }   
+
+export const decodeAddOrderEventsArgs = async(transaction,orderBook) => {  
+
+  const eventObj = (await transaction.wait()).logs.find(
+    (x) =>{  
+      return (x.topics[0] == "0x73e46afa6205785bdaa1daaf8b6ccc71715ec06b3b4264f5a00fde98671c2fc6") // Checking for Add Order Event 
+    }
+      
+  ); 
+
+
+  if (!eventObj) {
+    console.log(`Could not find event data!!!`);
+  }
+
+  let eventData = orderBook.interface.decodeEventLog(
+    "AddOrder",
+    eventObj.data,
+    eventObj.topics
+  );    
+
+  const orderDetailsObject = {
+    sender : eventData.sender ,
+    expressionDeployer: eventData.expressionDeployer ,
+    order : eventData.order ,
+    orderHash : eventData.orderHash
+  }
+
+  console.log()
+
+  let data = JSON.stringify(orderDetailsObject,null,2) 
+
+  writeFileSync('./scripts/DeployStrategy/orderDetails.json', data)  
+
+ 
+
+
+}
 
 
 export const deployStrategy = async(network:string,priKey: string, common: Common,conterparty:string) => {   
@@ -334,7 +377,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   const vaultId = ethers.BigNumber.from(randomUint256());
 
   const signer  = new ethers.Wallet(priKey,provider) 
-
+ 
   //Get Source code from contract
   // const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
   // const source = await axios.get(url);   
@@ -408,7 +451,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
     const privateKey = Buffer.from(
       priKey,
       'hex'
-    )
+    ) 
     
     // Sign Transaction 
     const signedTx = tx.sign(privateKey)
@@ -416,8 +459,172 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
     // Send the transaction
     const contractTransaction = await provider.sendTransaction(
       "0x" + signedTx.serialize().toString("hex")
-    );   
+    );     
+
+    await decodeAddOrderEventsArgs(contractTransaction,orderBook)
     return contractTransaction
+
+    
+
+
+}  
+
+export const approveDepositToken = async(tokenContract, spender, amount, signer, provider, common , priKey) => {  
+  
+    console.log("Approving Tokens For Deposit.....")   
+    
+    const balance = await tokenContract.balanceOf(signer.address) 
+
+    if( amount.gt(balance) ){
+      console.log(`Not Enough balance, please make sure to have enough balance`)
+      return null
+    }
+
+    const approveData = await tokenContract.populateTransaction.approve(spender.toLowerCase(), amount.toString());  
+
+    // Building Tx
+    const nonce = await provider.getTransactionCount(signer.address)   
+
+    // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+    // but after being mined affected relevant state.
+    // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+    const gasLimit = await provider.estimateGas({ 
+      to: approveData.to.toLowerCase() ,
+      from : approveData.from.toLowerCase(),
+      data: approveData.data
+    }) 
+
+    const feeData = await estimateFeeData(provider)  
+    
+  
+    // hard conded values to be calculated
+    const txData = {  
+      to: tokenContract.address.toLowerCase() ,
+      from: signer.address, 
+      nonce: ethers.BigNumber.from(nonce).toHexString() ,
+      data : approveData.data ,
+      gasLimit : gasLimit.toHexString(), 
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+      maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+      type: '0x02'
+    }   
+        
+    // Generate Transaction 
+    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+  
+    const privateKey = Buffer.from(
+      priKey,
+      'hex'
+    ) 
+    
+    // Sign Transaction 
+    const signedTx = tx.sign(privateKey)
+  
+    // Send the transaction
+    const contractTransaction = await provider.sendTransaction(
+      "0x" + signedTx.serialize().toString("hex")
+    );      
+
+    return contractTransaction
+
+}
+
+export const depositNHTTokens = async(network:string,priKey: string, common: Common,amount:string) => {  
+ 
+    if(orderDetails.order[4][0]){   
+
+      const outputTokenVault = orderDetails.order[4][0]  
+
+      const depositToken = outputTokenVault[0]
+      const depositAmount = ethers.utils.parseUnits(amount , outputTokenVault[1] )
+      const vaultId = ethers.BigNumber.from(outputTokenVault[2].hex)
+
+    
+      //Get Provider for testnet from where the data is to be fetched 
+      const provider = getProvider(network)  
+      
+      const signer = new ethers.Wallet(priKey,provider)   
+
+      const tokenContract = new ethers.Contract(outputTokenVault[0],abi,signer)  
+
+     
+      const approveTx = await approveDepositToken(tokenContract, contractConfig[network].orderbook.address, depositAmount, signer, provider, common , priKey) 
+
+      const approveReceipt = await approveTx.wait()  
+
+  
+      if(approveReceipt.transactionHash){   
+
+        console.log("Tokens Approved")
+        console.log("Depositing Tokens...")   
+
+         // Get Orderbook Instance
+        const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer)  
+
+        const depositConfigStruct = {
+          token: depositToken ,
+          vaultId: vaultId ,
+          amount: depositAmount,
+        }; 
+
+        const depositData = await orderBook.populateTransaction.deposit(depositConfigStruct);   
+
+        // Building Tx
+        const nonce = await provider.getTransactionCount(signer.address)   
+
+
+          // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+          // but after being mined affected relevant state.
+          // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+          const gasLimit = await provider.estimateGas({ 
+            to:depositData.to.toLowerCase() , 
+            from:depositData.from.toLowerCase() , 
+            data: depositData.data
+          }) 
+
+          const feeData = await estimateFeeData(provider)  
+          
+        
+          // hard conded values to be calculated
+          const txData = {  
+            to: contractConfig[network].orderbook.address ,
+            from: signer.address, 
+            nonce: ethers.BigNumber.from(nonce).toHexString() ,
+            data : depositData.data ,
+            gasLimit : gasLimit.toHexString(), 
+            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+            maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+            type: '0x02'
+          }   
+              
+          // Generate Transaction 
+          const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+        
+          const privateKey = Buffer.from(
+            priKey,
+            'hex'
+          ) 
+          
+          // Sign Transaction 
+          const signedTx = tx.sign(privateKey)
+        
+          // Send the transaction
+          const contractTransaction = await provider.sendTransaction(
+            "0x" + signedTx.serialize().toString("hex")
+          );     
+
+          return contractTransaction
+
+      }else{
+      console.log("Token Approval failed")
+      }
+
+     
+ 
+
+    }else{
+      console.log("Order Details Not Found")
+    }
 
     
 

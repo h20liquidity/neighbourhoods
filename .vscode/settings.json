@@ -1,8 +1,8 @@
 {
-    "rainlang.opmeta": {
-        "deployerAddress": "0x0b263250a5f67f38ab01778179df072c1fa969be",
-        "source": {
-          "chainId": 80001
-        }
-      },
+  "rainlang.opmeta": {
+    "deployerAddress": "0x7b81E4619ea1742e7d033aA2750434dB7357B649",
+    "source": {
+      "chainId": 524289
+    }
+  }
 }
