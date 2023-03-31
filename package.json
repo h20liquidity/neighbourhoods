@@ -22,7 +22,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@prb/math": "=3.3.0",
-    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#97c11b4092138d3fe469c025ef7658b50f9dda14",
+    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#26060fa8e7b97f9a488edb3a4e161448e7aa2b98",
     "@wagmi/core": "^0.10.3",
     "dotenv": "=16.0.3",
     "ethers": "^5.7.2",

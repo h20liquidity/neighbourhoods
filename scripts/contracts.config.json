@@ -1,12 +1,20 @@
 {
   "mumbai": {
     "orderbook": {
-      "address": "0x00fb875f4d86c9c73e0176a6d244047a069ce53d",
-      "transaction": "0x701470907ff2ed2b1edcec9af8d149a969d595e230d5d0bb9dfe5c939c4dcb84"
+      "address": "0xb7396c87bb4ea042bcf5b6b2489aea0a3a2d70cb",
+      "transaction": "0xa2aafeacc86ee8f0967481a2c89b65bfccac171d1d66c9d49b4a08013222dd63"
     },
-    "zeroexorderbook": {
+    "zeroexorderbookimplmentation": {
       "address": "0xf06fa7be6caad7f3572f0286ca527ec7d6c29cd1",
       "transaction": "0x4017c0acc6d57f9fed21fa72ee9e59bf0ab30b3208f92778a8df00c4869aec84"
+    },
+    "clonefactory": {
+      "address": "0x276f7a4068d5a59104dd34740eaad681d1006025",
+      "transaction": "0x62e61d1cc9540db534127cbca344be820a45c2ca0e5be10aae1335635ead91c8"
+    },
+    "zeroexorderbookinstance": {
+      "address": "0x72e86be9ae8f81d53d414ecb64f1bea3f86ffbfb",
+      "transaction": "0xbe0d3275653139c633cca48e96794093edf67b877579e1aaeb5aec24979fa26d"
     }
   },
   "polygon": {
