@@ -22,9 +22,9 @@ import {
 import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 
-import netConfig from "../dispair.config.json" 
-import contractConfig from "../contracts.config.json"  
-import tokens from "../tokens.config.json"  
+
+import contractConfig from "../config/contracts.config.json"  
+import tokens from "../config/tokens.config.json"  
 
 
 
@@ -85,8 +85,7 @@ export const getProvider = (network:string) => {
 
     let provider 
     if (network === "mumbai"){  
-      console.log("mumbai provider ")
-         provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
+      provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
     }else if(network === "goerli"){
       provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
     }else if(network === "snowtrace"){
@@ -141,7 +140,7 @@ export const getTransactionData = async (provider: any, address:string): Promise
  export const getTransactionDataForZeroEx = (txData:string,fromNetwork:string,toNetwork:string) => { 
 
   const fromProvider = getProvider(fromNetwork)
-  const toProvider = getProvider(toNetwork) 
+  const toProvider = getProvider(toNetwork)  
 
   const { exchangeProxy: fromNetworkProxy } = getContractAddressesForChainOrThrow(fromProvider._network.chainId);
   const { exchangeProxy: toNetworkProxy } = getContractAddressesForChainOrThrow(toProvider._network.chainId);  
@@ -174,8 +173,8 @@ export function randomUint256(): string {
 export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,toNetwork:string) => {
   
   txData = txData.toLocaleLowerCase()
-  const fromNetworkConfig = netConfig[fromNetwork]
-  const toNetworkConfig = netConfig[toNetwork]  
+  const fromNetworkConfig = contractConfig[fromNetwork]
+  const toNetworkConfig = contractConfig[toNetwork]  
 
   // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
   // console.log("contract : " , contract )
@@ -422,7 +421,8 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
 
   const strategyString = await fetchFile(strategyExpression);  
 
-  const arbCounterParty = contractConfig[network].zeroexorderbookinstance.address
+  const arbCounterParty = contractConfig[network].zeroexorderbookinstance.address 
+  console.log("arbCounterParty: ",arbCounterParty)
 
   const stringExpression = mustache.render(strategyString, {
     counterparty: arbCounterParty,
@@ -431,7 +431,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   const { sources, constants } = await standardEvaluableConfig(stringExpression)
 
   const EvaluableConfig_A = {
-    deployer: netConfig[network].expressionDeployer.address,
+    deployer: contractConfig[network].expressionDeployer.address,
     sources,
     constants,
   }
@@ -691,7 +691,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     orderBook : contractConfig[network].orderbook.address,
     zeroExExchangeProxy: exchangeProxy,
     evaluableConfig: {
-      deployer: netConfig[network].expressionDeployer.address,
+      deployer: contractConfig[network].expressionDeployer.address,
       sources,
       constants
     }

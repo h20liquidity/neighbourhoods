@@ -5,6 +5,13 @@ import { argv } from "process";
 import * as dotenv from "dotenv";
 import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "./utils";
 import { delay, verify } from "./verify";
+import { deployInterpreter } from "./DISpair/deployInterpreter";
+import { deployStore } from "./DISpair/deployStore";
+import { deployExpressionDeployer } from "./DISpair/deployExpressionDeployer";
+import { deployOrderBook } from "./ContractDeploy/deployOrderbook";
+import { deployCloneFactory } from "./ContractDeploy/deployCloneFactory";
+import { deployZeroExInstance } from "./ContractDeploy/deployArbImplnstance";
+import { deployArbImplementation } from "./ContractDeploy/deployZeroXArb";
 dotenv.config();
 
 
@@ -22,39 +29,26 @@ async function main() {
   ) {
     console.log(
       `
-      Clone contract from a deployed network.
-      options:
-
-        --transaction, -tx, <hash>
-          Hash of the transaction.
+      Deploy contracts
 
         --from, -f <network name>
           Name of the network to deploy from. Any of ["snowtrace","goerli","mumbai","sepolia","polygon"]
 
         --to, -t <network name>
           Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
+
+        --counterparty, -c <address>
+          Counterparty address for strategy.
       `
     );
   }else{ 
     let fromNetwork 
-    let toNetwork
-    let txHash  
+    let toNetwork  
+    let counterparty 
 
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
 
-    if (
-      args.includes("--transaction") ||
-      args.includes("-tx")
-    ) {
-      const _i =
-        args.indexOf("--transaction") > -1
-          ? args.indexOf("--transaction")
-          : args.indexOf("-tx")
-      const _tmp = args.splice(_i, _i + 2);
-      if (_tmp.length != 2) throw new Error("expected transaction hash"); 
-      txHash = _tmp[1]
-    }  
 
     if (
       args.includes("--from") ||
@@ -83,38 +77,34 @@ async function main() {
       if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
       toNetwork = _tmp[1]
     }  
-
-    //Get Provider for testnet from where the data is to be fetched 
-    const mumbaiProvider = getProvider(fromNetwork)  
-
-    //Get Provider for the network where the contract is to be deployed to
-    const deployProvider = getProvider(toNetwork) 
-
-    // Get transaction data
-    let txData = await getTransactionData(mumbaiProvider, txHash)  
-
-    //replace DISpair instances
-    txData = getTransactionDataForNetwork(txData,fromNetwork, toNetwork)  
-
-    // Get Chain details
-    const common = getCommons(toNetwork) 
-
-    //Deploy transaction
-    const deployTransaction = await deployContractToNetwork(deployProvider,common,process.env.DEPLOYMENT_KEY,txData)
     
-    //Wait for confirmation and get receipt
-    const transactionReceipt = await deployTransaction.wait()  
+    if (
+      args.includes("--counterparty") ||
+      args.includes("-c")
+    ) {
+      const _i =
+        args.indexOf("--counterparty") > -1
+          ? args.indexOf("--counterparty")
+          : args.indexOf("-c")
+      const _tmp = args.splice(_i, _i + 2);
+      if (_tmp.length != 2) throw new Error("expected counterparty");
+      counterparty = _tmp[1]
+    }
 
-    console.log(`Contract deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)   
+    await deployInterpreter(fromNetwork,toNetwork)  
 
-    console.log("Submitting contract for verification...")
+    await deployStore(fromNetwork,toNetwork)  
 
-    // Wait 15sec before trying to Verify. That way, if the code was deployed,
-    // it will be available for locate it.
-    await delay(30000);
+    await deployExpressionDeployer(fromNetwork,toNetwork) 
 
-    await verify(transactionReceipt.contractAddress,txHash,fromNetwork,toNetwork)
+    await deployOrderBook(fromNetwork,toNetwork) 
 
+    await deployCloneFactory(fromNetwork,toNetwork)
+
+    await deployArbImplementation(fromNetwork,toNetwork) 
+
+    await deployZeroExInstance(toNetwork,counterparty) 
+   
   }
 
   
