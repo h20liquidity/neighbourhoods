@@ -22,7 +22,7 @@ Note that wallet corresponding to the `DEPLOYMENT_KEY` *must* have **atleast 5 M
 #### Config files :  
 
 
-- `config/contracts.config.json` contains all *verified* smart contract address across network.
+- `scripts/config/contracts.config.json` contains all *verified* smart contract address across network.
 - Contracts include DISpair contracts, orderbook and arbitrage contracts.
 ```sh
 {
@@ -38,7 +38,7 @@ Note that wallet corresponding to the `DEPLOYMENT_KEY` *must* have **atleast 5 M
   }
 }
 ``` 
-- `config/tokens.config.json` contains any ERC20 tokens related details across chains. 
+- `scripts/config/tokens.config.json` contains any ERC20 tokens related details across chains. 
 ```sh
 {
 "polygon":{
@@ -60,17 +60,17 @@ Arguments to run the script are :
 - `--to, -t <network name>` : Network name of target network where new contract is to be deployed.Any of ["mumbai","sepolia","polygon"]. Usally this will be a main network for a chain.
 - `--counterparty, -c <address>` : Conterparty address (public key) used for the startegy.
  
-To deploy contracts run the following command in shell.
+To deploy contracts **run** the following command in shell from the **root of the project**.
 ```sh
 ts-node scripts/deployContracts.ts --from <origin-network-name> --to <target-network-name> --counterparty <counterparty-address>
 ``` 
 Wait for all the contracts to be deployed and verified . 
 
 #### Deploying Startegy. 
-To deploy strategy make sure that Orderbook and ZeroEx contracts are deployed on target network and corresponding address are updated in `config/contracts.config.json` . 
-Also make sure that all the necessary ERC20 token details on the target network required for the strategy are updated in `config/tokens.config.json` 
+To deploy strategy make sure that Orderbook and ZeroEx contracts are deployed on target network and corresponding address are updated in `scripts/config/contracts.config.json` . 
+Also make sure that all the necessary ERC20 token details on the target network required for the strategy are updated in `scripts/config/tokens.config.json` 
 
-To deploy startegy run the following command in your shell : 
+To deploy startegy **run** the following command in your shell from the **root of the project** : 
 ```sh
 ts-node scripts/deployStrategy.ts --to <taget-network-name>
 ``` 
@@ -79,13 +79,13 @@ where arguments for the script are :
 
 Wait for the transaction to be confirmed.  
 
-You'll notice after transaction is confirmed that the order details are updated in the `DeployStrategy/orderDetails.json` file which will be used to deposit tokens.
+You'll notice after transaction is confirmed that the order details are updated in the `scripts/DeployStrategy/orderDetails.json` file which will be used to deposit tokens.
 
 #### Depositing NHT Tokens into vault.  
 
 Deposit some tokens into the vault. First make sure that the wallet has enough number of tokens you want to deposit
 
-To deposit tokens run the following command in your shell 
+To deposit tokens run the following command in your shell from the **root of the project**
 
 ```sh
 ts-node scripts/depositAmount.ts --to <target-network-name> --amount <NHT-Amount>
