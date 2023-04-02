@@ -22,9 +22,9 @@ import {
 import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 
-import netConfig from "../dispair.config.json" 
-import contractConfig from "../contracts.config.json"  
-import tokens from "../tokens.config.json"  
+
+import contractConfig from "../config/contracts.config.json"  
+import tokens from "../config/tokens.config.json"  
 
 
 
@@ -85,8 +85,7 @@ export const getProvider = (network:string) => {
 
     let provider 
     if (network === "mumbai"){  
-      console.log("mumbai provider ")
-         provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
+      provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
     }else if(network === "goerli"){
       provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
     }else if(network === "snowtrace"){
@@ -141,7 +140,7 @@ export const getTransactionData = async (provider: any, address:string): Promise
  export const getTransactionDataForZeroEx = (txData:string,fromNetwork:string,toNetwork:string) => { 
 
   const fromProvider = getProvider(fromNetwork)
-  const toProvider = getProvider(toNetwork) 
+  const toProvider = getProvider(toNetwork)  
 
   const { exchangeProxy: fromNetworkProxy } = getContractAddressesForChainOrThrow(fromProvider._network.chainId);
   const { exchangeProxy: toNetworkProxy } = getContractAddressesForChainOrThrow(toProvider._network.chainId);  
@@ -174,8 +173,8 @@ export function randomUint256(): string {
 export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,toNetwork:string) => {
   
   txData = txData.toLocaleLowerCase()
-  const fromNetworkConfig = netConfig[fromNetwork]
-  const toNetworkConfig = netConfig[toNetwork]  
+  const fromNetworkConfig = contractConfig[fromNetwork]
+  const toNetworkConfig = contractConfig[toNetwork]  
 
   // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
   // console.log("contract : " , contract )
@@ -364,10 +363,39 @@ export const decodeAddOrderEventsArgs = async(transaction,orderBook) => {
  
 
 
+} 
+
+export const decodeCloneEvent = async(transaction,cloneFactory) => {  
+
+  const eventObj = (await transaction.wait()).logs.find(
+    (x) =>{  
+      return (x.topics[0] == "0x274b5f356634f32a865af65bdc3d8205939d9413d75e1f367652e4f3b24d0c3a") // Checking for New Clone Event 
+    }
+      
+  ); 
+
+  if (!eventObj) {
+    console.log(`Could not find event data!!!`);
+  }
+
+  let eventData = cloneFactory.interface.decodeEventLog(
+    "NewClone",
+    eventObj.data,
+    eventObj.topics
+  );    
+
+  const cloneObject = {
+    sender : eventData.sender ,
+    implementation: eventData.implementation ,
+    clone : eventData.clone ,
+  }
+
+  return cloneObject
+
 }
 
 
-export const deployStrategy = async(network:string,priKey: string, common: Common,conterparty:string) => {   
+export const deployStrategy = async(network:string,priKey: string, common: Common) => {   
 
   console.log("Deploying Strategy...")
     
@@ -391,16 +419,19 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
       "../../src/0-pilot.rain"
     ); 
 
-  const strategyString = await fetchFile(strategyExpression); 
+  const strategyString = await fetchFile(strategyExpression);  
+
+  const arbCounterParty = contractConfig[network].zeroexorderbookinstance.address 
+  console.log("arbCounterParty: ",arbCounterParty)
 
   const stringExpression = mustache.render(strategyString, {
-    counterparty: conterparty,
+    counterparty: arbCounterParty,
   });  
 
   const { sources, constants } = await standardEvaluableConfig(stringExpression)
 
   const EvaluableConfig_A = {
-    deployer: netConfig[network].expressionDeployer.address,
+    deployer: contractConfig[network].expressionDeployer.address,
     sources,
     constants,
   }
@@ -629,7 +660,122 @@ export const depositNHTTokens = async(network:string,priKey: string, common: Com
     
 
 
-}
+} 
+
+
+export const deployArbContractInstance = async (provider: any, common: Common,  priKey: string, network: string, counterparty: string) => { 
+
+  console.log("Deploying Arb Instance...")
+
+  const signer  = new ethers.Wallet(priKey,provider)   
+
+  const nonce = await provider.getTransactionCount(signer.address)    
+
+  const arbExp = path.resolve(
+    __dirname,
+    "../../src/0-arb.rain"
+  );
+
+  const arbString = await fetchFile(arbExp); 
+
+  const arbExpression = mustache.render(arbString, {
+    counterparty: counterparty,
+  }); 
+
+  const { sources, constants } = await standardEvaluableConfig(arbExpression)  
+
+  const { exchangeProxy } = getContractAddressesForChainOrThrow(provider._network.chainId);
+  
+
+  const borrowerConfig = {
+    orderBook : contractConfig[network].orderbook.address,
+    zeroExExchangeProxy: exchangeProxy,
+    evaluableConfig: {
+      deployer: contractConfig[network].expressionDeployer.address,
+      sources,
+      constants
+    }
+
+  }
+  const encodedConfig = ethers.utils.defaultAbiCoder.encode(
+    [
+      "tuple(address orderBook,address zeroExExchangeProxy,tuple(address deployer,bytes[] sources,uint256[] constants) evaluableConfig)",
+    ],
+    [borrowerConfig]
+  ); 
+ 
+
+  if(contractConfig[network].zeroexorderbookimplmentation.address){
+    const zeroExImplementation = contractConfig[network].zeroexorderbookimplmentation.address 
+    const cloneFactoryAddress = contractConfig[network].clonefactory.address  
+
+    //Get Source code from contract
+    const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${cloneFactoryAddress}&apikey=${getEtherscanKey(network)}`;
+    const source = await axios.get(url);    
+
+    // Create Clone Factory Instance
+    const cloneFactory = new ethers.Contract(cloneFactoryAddress,source.data.result[0].ABI,signer)  
+
+    const cloneData = await cloneFactory.populateTransaction.clone(zeroExImplementation,encodedConfig);   
+    
+    // Building Tx
+    const nonce = await provider.getTransactionCount(signer.address)   
+
+
+    // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+    // but after being mined affected relevant state.
+    // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+    const gasLimit = await provider.estimateGas({ 
+      to:cloneData.to ,
+      from:cloneData.from ,
+      data: cloneData.data
+    }) 
+
+    const feeData = await estimateFeeData(provider)  
+    
+
+    // hard conded values to be calculated
+    const txData = {  
+      to: cloneFactoryAddress.toLowerCase() ,
+      from: signer.address, 
+      nonce: ethers.BigNumber.from(nonce).toHexString() ,
+      data : cloneData.data ,
+      gasLimit : gasLimit.toHexString(), 
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+      maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+      type: '0x02'
+    }   
+        
+    // Generate Transaction 
+    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+
+    const privateKey = Buffer.from(
+      priKey,
+      'hex'
+    ) 
+    
+    // Sign Transaction 
+    const signedTx = tx.sign(privateKey)
+
+    // Send the transaction
+    const contractTransaction = await provider.sendTransaction(
+      "0x" + signedTx.serialize().toString("hex")
+    );      
+
+    const cloneEventData = await decodeCloneEvent(contractTransaction,cloneFactory)
+
+  
+    return {cloneEventData,contractTransaction}
+
+  }
+
+
+
+
+
+
+  
+}  
 
 
  

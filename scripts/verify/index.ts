@@ -20,9 +20,9 @@ export const verify = async (
        try { 
             
             let provider = await getProvider(fromNetwork) 
-            let txReceipt = await provider.getTransaction(fromTx) 
+            let txReceipt = await provider.getTransaction(fromTx)  
 
-            let contractyAddress = txReceipt.creates 
+            let contractyAddress = txReceipt.creates  
             
             if(contractyAddress != ''){  
 
@@ -92,7 +92,9 @@ export const verify = async (
 
             }else{
                 console.log("Verification Failed")
-            }
+            } 
+
+            console.log(`--------------------------------------------`)
         
        } catch (error) {
             console.log("Verification Failed")
@@ -100,5 +102,6 @@ export const verify = async (
         
         
 
-} 
+}  
+
 

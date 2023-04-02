@@ -1,0 +1,3 @@
+/* refuse any counterparties other than bot */
+allowed-counterparty: {{ counterparty }},
+: ensure(eq(allowed-counterparty context<0 0>()));

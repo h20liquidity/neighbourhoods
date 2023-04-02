@@ -1,7 +1,7 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import {  deployStrategy,  depositNHTTokens,  getCommons} from "../utils";
+import { depositAmount } from "./Deposit/deposit";
 
 
 dotenv.config();
@@ -69,15 +69,7 @@ async function main() {
         amount = _tmp[1]
       }  
 
-   // Get Chain details
-   const common = getCommons(toNetwork) 
-
-   const depositTransaction =  await depositNHTTokens(toNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
-
-   const receipt = await depositTransaction.wait()
-  
-   console.log(`Amount Deposited : ${receipt.transactionHash}`)
-
+        await depositAmount(toNetwork,amount)
   }
 
   

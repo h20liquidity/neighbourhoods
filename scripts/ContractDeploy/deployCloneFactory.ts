@@ -12,10 +12,11 @@ import contractConfig from "../config/contracts.config.json"
 dotenv.config();
 
 
-export const deployOrderBook = async (fromNetwork:string, toNetwork:string) => {    
+export const deployCloneFactory = async (fromNetwork,toNetwork) => {    
 
-    const txHash  = contractConfig[fromNetwork].orderbook.transaction
-  
+    const txHash = contractConfig[fromNetwork].clonefactory.transaction
+
+
     //Get Provider for testnet from where the data is to be fetched 
     const mumbaiProvider = getProvider(fromNetwork)  
 
@@ -38,18 +39,18 @@ export const deployOrderBook = async (fromNetwork:string, toNetwork:string) => {
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
 
-    console.log(`OrderBook deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)   
+    console.log(`Clone Factory deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)   
 
     let updateContractConfig = contractConfig 
 
     updateContractConfig[toNetwork] ? (
-      updateContractConfig[toNetwork]["orderbook"] = {
+      updateContractConfig[toNetwork]["clonefactory"] = {
         "address" : transactionReceipt.contractAddress.toLowerCase(),
         "transaction" : transactionReceipt.transactionHash.toLowerCase()
        } 
     ) : ( 
        updateContractConfig[toNetwork] = {
-        "orderbook" :{
+        "clonefactory" :{
             "address" : transactionReceipt.contractAddress.toLowerCase(),
             "transaction" : transactionReceipt.transactionHash.toLowerCase()
          }
