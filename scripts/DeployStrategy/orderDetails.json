@@ -7,7 +7,7 @@
     [
       "0x8ECd48e70954Dec0f45e4551f039A0D24038c536",
       "0x13cdD62F032125Fea331Cf8B79eADE8830CD5dab",
-      "0xD5d1f6b6D2d0c33e210A72a95942124ffe70f331"
+      "0xF77F4C334F3De948BaEdf814Af7f82365171e559"
     ],
     [
       [
@@ -15,7 +15,7 @@
         6,
         {
           "type": "BigNumber",
-          "hex": "0x5b6c41c7e48403ffec542496c80578e9df74964fa2f1ec6959214a890de99f35"
+          "hex": "0x84e4bec2eccb5e3f00d2db11f82a85c0329fa210edb34fbc266e8d2e9d10ee28"
         }
       ]
     ],
@@ -25,13 +25,13 @@
         18,
         {
           "type": "BigNumber",
-          "hex": "0x5b6c41c7e48403ffec542496c80578e9df74964fa2f1ec6959214a890de99f35"
+          "hex": "0x84e4bec2eccb5e3f00d2db11f82a85c0329fa210edb34fbc266e8d2e9d10ee28"
         }
       ]
     ]
   ],
   "orderHash": {
     "type": "BigNumber",
-    "hex": "0xfdd70b42dfe5c31ed0daaeac83ca4c6af42685d308db9e780284efd06515c66f"
+    "hex": "0xb148a15fb7732ed984f1ac9a8d2624c3dd4db9bc6e2bd53ddb159d64d7869f22"
   }
 }
