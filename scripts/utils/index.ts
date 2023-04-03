@@ -345,16 +345,40 @@ export const decodeAddOrderEventsArgs = async(transaction,orderBook) => {
     "AddOrder",
     eventObj.data,
     eventObj.topics
-  );    
+  );  
+  
+  let order = eventData.order 
 
-  const orderDetailsObject = {
-    sender : eventData.sender ,
-    expressionDeployer: eventData.expressionDeployer ,
-    order : eventData.order ,
-    orderHash : eventData.orderHash
-  }
+  let orderValidInputs = order.validInputs.map(e => { 
+    return {
+      token:e.token,
+      decimals:e.decimals,
+      vaultId:e.vaultId._hex
+    }
+  }) 
 
-  console.log()
+  let orderValidOutputs = order.validOutputs.map(e => {
+    return {
+      token:e.token,
+      decimals:e.decimals,
+      vaultId:e.vaultId._hex
+    }
+  })
+
+  const orderDetailsObject = [{
+    owner : order.owner ,
+    handleIO: order.handleIO ,
+    evaluable: {
+      interpreter: order.evaluable.interpreter,
+      store: order.evaluable.store ,
+      expression: order.evaluable.expression
+    },
+    validInputs : orderValidInputs , 
+    validOutputs: orderValidOutputs
+  } 
+  ]
+
+  
 
   let data = JSON.stringify(orderDetailsObject,null,2) 
 
@@ -562,13 +586,13 @@ export const approveDepositToken = async(tokenContract, spender, amount, signer,
 
 export const depositNHTTokens = async(network:string,priKey: string, common: Common,amount:string) => {  
  
-    if(orderDetails.order[4][0]){   
+    if(orderDetails[0].validOutputs){   
 
-      const outputTokenVault = orderDetails.order[4][0]  
+      const outputTokenVault = orderDetails[0].validOutputs[0]  
 
-      const depositToken = outputTokenVault[0]
-      const depositAmount = ethers.utils.parseUnits(amount , outputTokenVault[1] )
-      const vaultId = ethers.BigNumber.from(outputTokenVault[2].hex)
+      const depositToken = outputTokenVault.token
+      const depositAmount = ethers.utils.parseUnits(amount , outputTokenVault.decimals )
+      const vaultId = ethers.BigNumber.from(outputTokenVault.vaultId)
 
     
       //Get Provider for testnet from where the data is to be fetched 
@@ -576,7 +600,7 @@ export const depositNHTTokens = async(network:string,priKey: string, common: Com
       
       const signer = new ethers.Wallet(priKey,provider)   
 
-      const tokenContract = new ethers.Contract(outputTokenVault[0],abi,signer)  
+      const tokenContract = new ethers.Contract(depositToken,abi,signer)  
 
      
       const approveTx = await approveDepositToken(tokenContract, contractConfig[network].orderbook.address, depositAmount, signer, provider, common , priKey) 

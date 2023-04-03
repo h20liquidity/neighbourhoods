@@ -1,37 +1,25 @@
-{
-  "sender": "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
-  "expressionDeployer": "0x68181074A3929f51Be86078E584E1DDc2cB3007C",
-  "order": [
-    "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
-    true,
-    [
-      "0x8ECd48e70954Dec0f45e4551f039A0D24038c536",
-      "0x13cdD62F032125Fea331Cf8B79eADE8830CD5dab",
-      "0xF77F4C334F3De948BaEdf814Af7f82365171e559"
+[
+  {
+    "owner": "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
+    "handleIO": true,
+    "evaluable": {
+      "interpreter": "0x1E57947652b81B1F7d3866B6c063B607a7D54c2d",
+      "store": "0x10a076bF950940d4fE4FfaE35Bb7589FB2B3BB01",
+      "expression": "0x91f3dBBb2Bce5733A57802d21d15cE45D3E3E199"
+    },
+    "validInputs": [
+      {
+        "token": "0x05cE0B29D94Cb8b156638D06336228b935212652",
+        "decimals": 18,
+        "vaultId": "0x3617c2371bfafc4748e16081566398d9835f2d36ed3f6bb6317d24a1e9de9dca"
+      }
     ],
-    [
-      [
-        "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-        6,
-        {
-          "type": "BigNumber",
-          "hex": "0x84e4bec2eccb5e3f00d2db11f82a85c0329fa210edb34fbc266e8d2e9d10ee28"
-        }
-      ]
-    ],
-    [
-      [
-        "0x84342e932797FC62814189f01F0Fb05F52519708",
-        18,
-        {
-          "type": "BigNumber",
-          "hex": "0x84e4bec2eccb5e3f00d2db11f82a85c0329fa210edb34fbc266e8d2e9d10ee28"
-        }
-      ]
+    "validOutputs": [
+      {
+        "token": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+        "decimals": 18,
+        "vaultId": "0x3617c2371bfafc4748e16081566398d9835f2d36ed3f6bb6317d24a1e9de9dca"
+      }
     ]
-  ],
-  "orderHash": {
-    "type": "BigNumber",
-    "hex": "0xb148a15fb7732ed984f1ac9a8d2624c3dd4db9bc6e2bd53ddb159d64d7869f22"
   }
-}
+]

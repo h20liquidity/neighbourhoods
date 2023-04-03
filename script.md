@@ -79,7 +79,9 @@ where arguments for the script are :
 
 Wait for the transaction to be confirmed.  
 
-You'll notice after transaction is confirmed that the order details are updated in the `scripts/DeployStrategy/orderDetails.json` file which will be used to deposit tokens.
+You'll notice after transaction is confirmed that the order details are updated in the `scripts/DeployStrategy/orderDetails.json` file which will be used to deposit tokens. 
+The deployed order information is also useful for with the bot. You can just copy the entire file and paste it in [orders.json](https://github.com/h20liquidity/zeroex-take-order-bot/blob/master/orders.json) for the bot to pick up. 
+
 
 #### Depositing NHT Tokens into vault.  
 
