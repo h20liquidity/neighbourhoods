@@ -1,26 +1,79 @@
+# Deploying the first Neighbourhoods expressions
+
+## Strategy summary
+
+Goal
+- Make tokens available to help mitigate price spikes that hurt retail access
+- Sabbatical after inventory allocated to each price point is exhausted to mitigate exposure of the strat itself to sustained (but still temporary) price spikes
+- New price after sabbatical is higher than previous price according to growth curve
+- Tight access control on counterparty to mitigate regulatory risk
+- Onchain strategy for transparency and to mitigate mempool risk
+
+Onchain strategy
+- Restrict counterparty to known named address
+- Stepwise price function based on batches and % price increase per batch
+- Enforce time delay on new batches/price increases
+- Always offer a minimum amount to counterparty to avoid dust issues near end of batch
+- Batch overflow eats inventory available to next batch
+
+The strategy can be found here:
+
+[0-pilot.rain](/src/0-pilot.rain)
+
+Next step is to prepare to deploy the contracts, strategy and deposit tokens into the vault to get the strategy ready. Final step is set up and deploy the bot that will clear your order periodically. 
+
 ## Deploying a strategy 
 
-In order to deploy startegy, we need to first deploy DISpair(Deployter,Interpreter,Store) contracts, followed by Orderbook and ZeroExArb Contracts, and then finally the startegy itself. We will also deposit some amount for the startegy . 
+As this is the first time you are deploying a strategy with H20 you will need to deploy all of the contracts:
+1. Deploy DISpair (Deployer, Interpreter, Store) contracts
+2. Deploy Orderbook
 
-### Setting up script environment  
+Once everything up to the Orderbook is already deployed then you only need to:
+1. Deploy the ZeroExArb Contracts
+2. Deploy the strategy
+3. Deposit $ for the strategy
 
-#### Env Variables : 
-Make an `.env` file and populate it with keys from `.env.example` . 
+## Setting up script environment  
+
+#### Preparing my environment : 
+
+- Assume github desktop is installed locally
+- Clone the Neighbourhoods repo, https://github.com/h20liquidity/neighbourhoods
+
+![](https://i.imgur.com/2xVzld5.png)
+
+- Open in Visual Studio
+- Open .env.example
+- Save file as `.env` (the fullstop means it is hidden it is not designating an extension, you need to name the file exactly as written, .env)
+
+#### Populating .env file: 
+
+In order to be able to deploy contracts and expressions, the wallet corresponding to the `DEPLOYMENT_KEY` *must* have **atleast 5 MATIC** as balance and must hold a few **NHT tokens**
 
 ```sh
 DEPLOYMENT_KEY = <private-key-of-wallet-to-deploy-from>
 
 ALCHEMY_KEY_MUMBAI =  <alchemy-key-mumbai>
 ALCHEMY_KEY_POLYGON = <alchemy-key-polygon-mainnet>
-ALCHEMY_KEY_SEPOLIA = <alchemy-key-sepolia>
 
 POLYGONSCAN_API_KEY = <polygonscan-api-key>
-ETHERSCAN_API_KEY= <etherscan-api-key>
 ```   
 
-Note that wallet corresponding to the `DEPLOYMENT_KEY` *must* have **atleast 5 MATIC** as balance and must hold a few **NHT tokens**
+The private key you get from your metamask or other wallet. Please note if you share your private key people can have access to your wallet assets. Your private key will remain on your computer, it will never be uploaded and it can be deleted once your strategy is deployed. 
+
+Sign up to Alchemy to get your Mumbai and Polygon mainnet API keys. Any questions follow the Alchemy help. You need to create two apps to get the API keys for both Polygon mainet and mumbai.
+
+https://dashboard.alchemy.com
+
+Sign up to Polygonscan 
+
+https://polygonscan.com/
+
+Save the `.env` file and now you are ready to configure the deployment of the contracts.
+
 #### Config files :  
 
+We have prepopulated `scripts/config/contracts.config.json`. You can skip this section.
 
 - `scripts/config/contracts.config.json` contains all *verified* smart contract address across network.
 - Contracts include DISpair contracts, orderbook and arbitrage contracts.
@@ -54,17 +107,21 @@ Note that wallet corresponding to the `DEPLOYMENT_KEY` *must* have **atleast 5 M
 }
 ``` 
 #### Deploying Contracts 
+
 The script clones the contract deployed on one network to another. 
+
 Arguments to run the script are : 
 - `--from, -f <network name>` : Network name of originating network. Any of ["mumbai","sepolia","polygon"]. Usally this will be a test network.
 - `--to, -t <network name>` : Network name of target network where new contract is to be deployed.Any of ["mumbai","sepolia","polygon"]. Usally this will be a main network for a chain.
 - `--counterparty, -c <address>` : Conterparty address (public key) used for the startegy.
  
 To deploy contracts **run** the following command in shell from the **root of the project**.
+
 ```sh
 ts-node scripts/deployContracts.ts --from <origin-network-name> --to <target-network-name> --counterparty <counterparty-address>
 ``` 
-Wait for all the contracts to be deployed and verified . 
+
+Wait for all the contracts to be deployed and verified .
 
 #### Deploying Startegy. 
 To deploy strategy make sure that Orderbook and ZeroEx contracts are deployed on target network and corresponding address are updated in `scripts/config/contracts.config.json` . 
@@ -95,10 +152,3 @@ where arguments for the script are :
 -  `--amount, -a <token-amount>` : Amount of tokens to deposit. Eg : To deposit 5.2 NHT this vaslue will be 5.2 . 
 
 Wait for the transaction to be confirmed. 
-
-
-
-
-
-
-
