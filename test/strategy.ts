@@ -41,8 +41,9 @@ export const fetchFile = (_path: string): string => {
 };  
 
 // Hacky Util
-const prbScale = async (index: number) => { 
-  let baseRatio = ethers.BigNumber.from("250000000000000") 
+const prbScale = async (index: number, orderRatio: string) => {  
+  let numRatio = new Number(orderRatio)
+  let baseRatio = ethers.BigNumber.from(numRatio.toString()) 
   let base = ethers.BigNumber.from("1020000000000000000")   
   let ioMultiplier
   if(index == 0){
@@ -120,7 +121,7 @@ describe("Pilot", async function () {
     const aliceOrder = encodeMeta("Order_A");   
 
     // Order_A 
-
+    const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -130,6 +131,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     });   
 
     
@@ -191,7 +193,7 @@ describe("Pilot", async function () {
        signedContext: []
      }; 
  
-     let ratio = await prbScale(0) 
+     let ratio = await prbScale(0,strategyRatio) 
  
      const takeOrdersConfigStruct = {
        output: tokenA.address,
@@ -231,7 +233,7 @@ describe("Pilot", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
     
     // Order_A
-
+    const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -241,6 +243,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
 
     const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -300,7 +303,7 @@ describe("Pilot", async function () {
        signedContext : []
      }; 
  
-     let ratio0 = await prbScale(0) 
+     let ratio0 = await prbScale(0,strategyRatio) 
      
      const takeOrdersConfigStruct0 = {
        output: tokenA.address,
@@ -342,7 +345,7 @@ describe("Pilot", async function () {
       signedContext : []
     }; 
 
-    let ratio1 = await prbScale(1) 
+    let ratio1 = await prbScale(1,strategyRatio) 
     
     const takeOrdersConfigStruct1 = {
       output: tokenA.address,
@@ -418,7 +421,7 @@ describe("Pilot", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
 
     // Order_A
-
+    const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -428,6 +431,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
 
     const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -490,7 +494,7 @@ describe("Pilot", async function () {
       }; 
 
       // Batch Index Remains the same hence ratio remains the same 
-      const ratio = await prbScale(0)
+      const ratio = await prbScale(0,strategyRatio)
   
       const takeOrdersConfigStruct = {
         output: tokenA.address,
@@ -540,7 +544,9 @@ describe("Pilot", async function () {
     const aliceOutputVault = ethers.BigNumber.from(randomUint256());
   
 
-    const aliceOrder = encodeMeta("Order_A"); 
+    const aliceOrder = encodeMeta("Order_A");  
+
+    const strategyRatio = "25e13"
 
     // Order_A
 
@@ -553,6 +559,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
 
     const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -616,7 +623,7 @@ describe("Pilot", async function () {
       }; 
 
       // Scaling ratio as batch index increases 
-      const ratio = await prbScale(i) 
+      const ratio = await prbScale(i,strategyRatio) 
 
       const takeOrdersConfigStruct = {
         output: tokenA.address,
@@ -671,7 +678,7 @@ describe("Pilot", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
 
     // Order_A
-
+    const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -681,6 +688,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
 
     const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -757,9 +765,9 @@ describe("Pilot", async function () {
 
       // Scaling ratio as batch index increases 
       const ratio =  i == 0 ? (
-        await prbScale(0)
+        await prbScale(0,strategyRatio)
       ) : (
-        await prbScale(1)
+        await prbScale(1,strategyRatio)
       )
   
       const takeOrdersConfigStruct = {
@@ -841,10 +849,10 @@ describe("Pilot", async function () {
 
       // Scaling ratio as batch index increases 
       const ratio =  i == 0 ? (
-        await prbScale(i+2)
+        await prbScale(i+2,strategyRatio)
       ) : ( 
         // check for the third batch
-        await prbScale(3)
+        await prbScale(3,strategyRatio)
       )
   
       const takeOrdersConfigStruct = {
@@ -930,7 +938,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A
-
+      const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -940,6 +948,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
   
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1000,7 +1009,7 @@ describe("Pilot", async function () {
         }; 
         
         // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
+        let ratio = await prbScale(0,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -1066,7 +1075,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A
-
+      const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -1076,6 +1085,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
   
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1136,7 +1146,7 @@ describe("Pilot", async function () {
         }; 
         
         // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
+        let ratio = await prbScale(0,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -1201,7 +1211,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A
-
+      const strategyRatio = "25e13"
       const strategyExpression = path.resolve(
         __dirname,
         "../src/0-pilot.rain"
@@ -1211,6 +1221,7 @@ describe("Pilot", async function () {
 
       const stringExpression = mustache.render(strategyString, {
         counterparty: bob.address,
+        ratio: strategyRatio
       }); 
   
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1271,7 +1282,7 @@ describe("Pilot", async function () {
         }; 
         
         // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
+        let ratio = await prbScale(0,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -1337,7 +1348,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A 
-
+      const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
       "../src/0-pilot.rain"
@@ -1347,6 +1358,7 @@ describe("Pilot", async function () {
 
     const stringExpression = mustache.render(strategyString, {
       counterparty: bob.address,
+      ratio: strategyRatio
     }); 
   
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1407,7 +1419,7 @@ describe("Pilot", async function () {
         }; 
         
         // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0) 
+        let ratio = await prbScale(0,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -1478,7 +1490,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A 
-
+      const strategyRatio = "25e13"
       const strategyExpression = path.resolve(
         __dirname,
         "../src/0-pilot.rain"
@@ -1488,6 +1500,7 @@ describe("Pilot", async function () {
 
       const stringExpression = mustache.render(strategyString, {
         counterparty: bob.address,
+        ratio: strategyRatio
       }); 
   
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1550,7 +1563,7 @@ describe("Pilot", async function () {
         }; 
         
         // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
+        let ratio = await prbScale(i,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -1618,7 +1631,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A 
-
+      const strategyRatio = "25e13"
       const strategyExpression = path.resolve(
         __dirname,
         "../src/0-pilot.rain"
@@ -1627,7 +1640,8 @@ describe("Pilot", async function () {
       const strategyString = await fetchFile(strategyExpression); 
 
       const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address,
+        counterparty: bob.address, 
+        ratio: strategyRatio
       }); 
   
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1688,7 +1702,7 @@ describe("Pilot", async function () {
         }; 
         
         // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
+        let ratio = await prbScale(i,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -1757,7 +1771,7 @@ describe("Pilot", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A 
-
+      const strategyRatio = "25e13"
       const strategyExpression = path.resolve(
         __dirname,
         "../src/0-pilot.rain"
@@ -1766,7 +1780,8 @@ describe("Pilot", async function () {
       const strategyString = await fetchFile(strategyExpression); 
 
       const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address,
+        counterparty: bob.address, 
+        ratio: strategyRatio
       }); 
     
       const { sources, constants } = await standardEvaluableConfig(stringExpression)
@@ -1827,7 +1842,7 @@ describe("Pilot", async function () {
         }; 
         
         // scale ratio as batch index increases
-        let ratio = await prbScale(i) 
+        let ratio = await prbScale(i,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
