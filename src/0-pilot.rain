@@ -20,8 +20,7 @@ io-multiplier: prb-powu(102e16 batch-index),
 /* always offer at least 10 tokens even if that's beyond the current batch */
 amount: max(batch-remaining 0),
 
-io-ratio: prb-mul(io-multiplier 25e13),
-: debug<0>();
+io-ratio: prb-mul(io-multiplier 25e13);
 
 /*
  * Handle IO
