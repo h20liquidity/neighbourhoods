@@ -176,4 +176,4 @@ Where arguments for the script are :
 - `--to, -t <taget-network-name>` : Target network.
 - `--amount, -a <token-amount>` : Amount of tokens to deposit. Eg : To deposit 5.2 NHT this value will be 5.2 .
 
-Wait for the transaction to be confirmed.
+Wait for the transaction to be confirmed.The amount will be deposited
