@@ -419,9 +419,11 @@ export const decodeCloneEvent = async(transaction,cloneFactory) => {
 }
 
 
-export const deployStrategy = async(network:string,priKey: string, common: Common) => {   
+export const deployStrategy = async(network:string,priKey: string, common: Common,ratio:string) => {   
 
-  console.log("Deploying Strategy...")
+  console.log("Deploying Strategy...") 
+
+  if(!ratio) return null
     
   //Get Provider for testnet from where the data is to be fetched 
   const provider = getProvider(network)   
@@ -432,7 +434,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
  
   //Get Source code from contract
   // const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
-  // const source = await axios.get(url);   
+  // const source = await axios.get(url);    
 
   // Get Orderbook Instance
   const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer) 
@@ -450,9 +452,10 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
 
   const stringExpression = mustache.render(strategyString, {
     counterparty: arbCounterParty,
-  });  
+    ratio: ratio
+  });    
 
-  const { sources, constants } = await standardEvaluableConfig(stringExpression)
+  const { sources, constants } = await standardEvaluableConfig(stringExpression)  
 
   const EvaluableConfig_A = {
     deployer: contractConfig[network].expressionDeployer.address,
