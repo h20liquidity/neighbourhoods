@@ -149,12 +149,13 @@ Also make sure that all the necessary ERC20 token details on the target network 
 To deploy strategy **run** the following command in your shell from the **root of the project** :
 
 ```sh
-ts-node scripts/deployStrategy.ts --to polygon
+ts-node scripts/deployStrategy.ts --to polygon --ratio 25e13
 ```
 
 Where arguments for the script are:
 
 - `--to, -t <target-network-name>` : Target network to deploy the strategy to.
+- `--ratio -r <value>`  : Ratio value for the startegy represented as exponential notation. Note that ***exponent*** and ***power*** are both ***whole number*** values. Eg  : **25e13** , **1e18** etc.
 
 Wait for the transaction to be confirmed.
 
