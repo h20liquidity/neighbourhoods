@@ -25,13 +25,16 @@ async function main() {
       options:
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"].
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"].  
+
+        --ratio -r <ratio value> 
+          Ratio for the startegy
       `
     );
   }else{ 
 
     let toNetwork
-
+    let ratio
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
    
@@ -47,9 +50,22 @@ async function main() {
       if (_tmp.length != 2) throw new Error("expected network to deploy to");
       if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
       toNetwork = _tmp[1]
+    }   
+
+    if (
+      args.includes("--ratio") ||
+      args.includes("-r")
+    ) {
+      const _i =
+        args.indexOf("--ratio") > -1
+          ? args.indexOf("--ratio")
+          : args.indexOf("-r")
+      const _tmp = args.splice(_i, _i + 2); 
+      if (_tmp.length != 2) throw new Error("expected ratio");
+      ratio = _tmp[1]
     }  
 
-     await deployPilotStrategy(toNetwork)
+     await deployPilotStrategy(toNetwork,ratio)
 
   }
 

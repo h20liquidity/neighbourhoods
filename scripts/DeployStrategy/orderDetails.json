@@ -5,20 +5,20 @@
     "evaluable": {
       "interpreter": "0x1E57947652b81B1F7d3866B6c063B607a7D54c2d",
       "store": "0x10a076bF950940d4fE4FfaE35Bb7589FB2B3BB01",
-      "expression": "0x80164E7598A478a38f584571742886d0cEE8B70c"
+      "expression": "0xCa4777aCdCae11e6B6BC7Ae3134Ded7D86A61425"
     },
     "validInputs": [
       {
         "token": "0x05cE0B29D94Cb8b156638D06336228b935212652",
         "decimals": 18,
-        "vaultId": "0x7f7ce9307b5921fadc8793aba01431580ea46af42cffb922d33a2bee3f62014f"
+        "vaultId": "0x5b19c3848fb3bcec03d6240bf66843cc9977fa767330dc6d8a94e70446b2f094"
       }
     ],
     "validOutputs": [
       {
         "token": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
         "decimals": 18,
-        "vaultId": "0x7f7ce9307b5921fadc8793aba01431580ea46af42cffb922d33a2bee3f62014f"
+        "vaultId": "0x5b19c3848fb3bcec03d6240bf66843cc9977fa767330dc6d8a94e70446b2f094"
       }
     ]
   }
