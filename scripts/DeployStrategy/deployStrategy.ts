@@ -7,13 +7,17 @@ import {  deployStrategy,  getCommons} from "../utils";
 dotenv.config();
 
 
-export const deployPilotStrategy = async(toNetwork)=> {    
+export const deployPilotStrategy = async(toNetwork,ratio)=> {    
 
 
    // Get Chain details
    const common = getCommons(toNetwork) 
 
-   const strategyTransaction =  await deployStrategy(toNetwork,process.env.DEPLOYMENT_KEY,common ) 
+   const strategyTransaction =  await deployStrategy(toNetwork,process.env.DEPLOYMENT_KEY,common ,ratio)  
+
+   if(!strategyTransaction){
+      console.log("Err...something went wrong")
+   }
 
    const receipt = await strategyTransaction.wait()
   
