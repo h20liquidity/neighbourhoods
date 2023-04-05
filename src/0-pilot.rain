@@ -5,12 +5,13 @@ allowed-counterparty: {{ counterparty }},
 : ensure(eq(allowed-counterparty context<1 2>())),
 
 /* 24 hour delay on new batches = 86400 seconds */
-batch-start-info: get(0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9),
+batch-start-info-k: context<1 0>(),
+batch-start-info: get(batch-start-info-k),
 batch-start-time: decode-256<32 63>(batch-start-info),
 : ensure(gt(now() add(batch-start-time 86400))),
 
 /* get info about current batch */
-batch-index batch-remaining: call<2 2>(0), 
+batch-index batch-remaining: call<2 2>(0),
 
 /* exponential growth */
 /* (1.02)^batch-index */
@@ -26,8 +27,8 @@ io-ratio: prb-mul(io-multiplier {{ ratio }});
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
-total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
-batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
+batch-start-info-k: context<1 0>(),
+total-sent-k: hash(context<1 0>()),
 
 /* new batch info due to trade */
 out-token-amount: context<4 4>(),
@@ -50,7 +51,7 @@ batch-start-time: decode-256<32 63>(batch-start-info),
 
 /* Calculate batch */
 new-sent:,
-total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
+total-sent-k: hash(context<1 0>()),
 amount-per-batch: 1000e18,
 new-total-amount-sent: add(get(total-sent-k) new-sent),
 /* use the flooring from integer division to simply batch the order */
