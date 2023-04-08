@@ -1,6 +1,5 @@
 import { assert } from "chai";
 import { ethers  } from "hardhat";
-import { BigNumber } from "ethers";
 
 
 import { randomUint256 } from "../utils/bytes";
@@ -14,7 +13,6 @@ import { getEventArgs } from "../utils/events";
 import {
   standardEvaluableConfig
 } from "../utils/interpreter/interpreter";
-import {  fixedPointMul } from "../utils/math";
 import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
@@ -28,6 +26,7 @@ import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
 import { encodeMeta } from "../scripts/utils";
+import { prbScale, scaleRatio, takeOrder } from "../utils/orderBook";
 dotenv.config();
 
 
@@ -40,41 +39,7 @@ export const fetchFile = (_path: string): string => {
   }
 };  
 
-// Hacky Util
-const prbScale = async (index: number, orderRatio: string) => {  
-  let numRatio = new Number(orderRatio)
-  let baseRatio = ethers.BigNumber.from(numRatio.toString()) 
-  let base = ethers.BigNumber.from("1020000000000000000")   
-  let ioMultiplier
-  if(index == 0){
-    ioMultiplier = ONE
-  }else if(index == 1){
-    ioMultiplier = base
-  }else{
-    ioMultiplier = ONE
-    for(let i = 0 ; i < index ; i++){
-      ioMultiplier = fixedPointMul(base,ioMultiplier)
-    }
-  }  
 
-  let ratio = fixedPointMul(baseRatio,ioMultiplier) 
-  return ratio
-} 
-
-// Hacky Util 
-const scaleRatio = async(ratio: BigNumber, aDecimals: number,bDecimals: number) => {   
- 
-  let maxRatio
-  maxRatio = fixedPointMul(
-    ratio,
-    ethers.BigNumber.from(10).pow(18 + aDecimals - bDecimals)
-  )  
-  if(maxRatio.mod(10).gt(5)){ 
-    maxRatio = maxRatio.add(1)  
-  }    
-  
-  return maxRatio
-}
 
 
 describe("Pilot", async function () {
@@ -105,7 +70,7 @@ describe("Pilot", async function () {
     // Deploy ERC1820Registry
     const signers = await ethers.getSigners();
     await deploy1820(signers[0]);
-  }); 
+  });  
 
 
  
@@ -662,6 +627,197 @@ describe("Pilot", async function () {
       await timewarp(86400)
     } 
     
+  });  
+
+  it("should ensure batch info is not shared across orders in case of multiple orders by a same user ", async function () { 
+
+    const signers = await ethers.getSigners();
+
+    const [, alice, bob] = signers;   
+
+
+    const aliceVaultA = ethers.BigNumber.from(randomUint256());
+    const aliceVaultB = ethers.BigNumber.from(randomUint256());
+    const aliceVaultC = ethers.BigNumber.from(randomUint256());
+
+  
+
+    const aliceOrder = encodeMeta("Order_A");  
+    
+    const strategyExpression = path.resolve(
+      __dirname,
+      "../src/0-pilot.rain"
+    );
+
+    const strategyString = await fetchFile(strategyExpression); 
+
+   
+    // Order_A 
+
+    const strategyRatio_A = "25e13"
+
+    
+    const stringExpression_A = mustache.render(strategyString, {
+      counterparty: bob.address,
+      ratio: strategyRatio_A
+    }); 
+
+    const { sources, constants } = await standardEvaluableConfig(stringExpression_A)
+
+    const EvaluableConfig_A = {
+      deployer: expressionDeployer.address,
+      sources,
+      constants,
+    }
+    const orderConfig_A= {
+      validInputs: [
+        { token: tokenA.address, decimals: 18, vaultId: aliceVaultA },
+      ],
+      validOutputs: [
+        { token: tokenB.address, decimals: 18, vaultId: aliceVaultA },
+      ],
+      evaluableConfig: EvaluableConfig_A,
+      meta: aliceOrder,
+    };
+
+    const txOrder_A = await orderBook.connect(alice).addOrder(orderConfig_A);
+
+    const {
+      order: Order_A
+    } = (await getEventArgs(
+      txOrder_A,
+      "AddOrder",
+      orderBook
+    )); 
+
+    // Order B 
+    // Placing order with diff ratio
+    const strategyRatio_B = "30e13" 
+
+    const stringExpression_B = mustache.render(strategyString, {
+      counterparty: bob.address,
+      ratio: strategyRatio_B
+    }); 
+
+    const { sources:sourceB, constants:constantsB } = await standardEvaluableConfig(stringExpression_B)
+
+    const EvaluableConfig_B = {
+      deployer: expressionDeployer.address,
+      sources: sourceB,
+      constants: constantsB,
+    }
+    const orderConfig_B= {
+      validInputs: [
+        { token: tokenA.address, decimals: 18, vaultId: aliceVaultB },
+      ],
+      validOutputs: [
+        { token: tokenB.address, decimals: 18, vaultId: aliceVaultB },
+      ],
+      evaluableConfig: EvaluableConfig_B,
+      meta: aliceOrder,
+    };
+
+    const txOrder_B = await orderBook.connect(alice).addOrder(orderConfig_B);
+
+    const {
+      order: Order_B
+    } = (await getEventArgs(
+      txOrder_B,
+      "AddOrder",
+      orderBook
+    ));  
+
+    // Order C
+    // Placing order with exact params as order A.
+    // Even if the params are same order hash computed is different
+    const strategyRatio_C = "25e13" 
+
+    const stringExpression_C = mustache.render(strategyString, {
+      counterparty: bob.address,
+      ratio: strategyRatio_C
+    }); 
+
+    const { sources:sourceC, constants:constantsC } = await standardEvaluableConfig(stringExpression_C)
+
+    const EvaluableConfig_C = {
+      deployer: expressionDeployer.address,
+      sources: sourceC,
+      constants: constantsC,
+    }
+    const orderConfig_C= {
+      validInputs: [
+        { token: tokenA.address, decimals: 18, vaultId: aliceVaultC },
+      ],
+      validOutputs: [
+        { token: tokenB.address, decimals: 18, vaultId: aliceVaultC },
+      ],
+      evaluableConfig: EvaluableConfig_C,
+      meta: aliceOrder,
+    };
+
+    const txOrder_C = await orderBook.connect(alice).addOrder(orderConfig_C);
+
+    const {
+      order: Order_C
+    } = (await getEventArgs(
+      txOrder_C,
+      "AddOrder",
+      orderBook
+    ));
+ 
+
+    // TAKE ORDER 
+
+    // Bob takes order with direct wallet transfer for order A and order B
+    for(let i = 0 ; i < 10 ; i++){   
+
+        // Since orders are different orders , bob should be able to take orders concurrently/with delay 
+        await takeOrder(
+          alice, 
+          bob, 
+          tokenA,
+          tokenB, 
+          aliceVaultA,
+          Order_A,
+          orderBook,
+          i,
+          strategyRatio_A
+        )  
+        // placing delay
+        await timewarp(3600) 
+
+        await takeOrder(
+          alice, 
+          bob, 
+          tokenA,
+          tokenB, 
+          aliceVaultB,
+          Order_B,
+          orderBook,
+          i,
+          strategyRatio_B
+        )   
+
+        // placing delay
+        await timewarp(3600) 
+
+        await takeOrder(
+          alice, 
+          bob, 
+          tokenA,
+          tokenB, 
+          aliceVaultC,
+          Order_C,
+          orderBook,
+          i,
+          strategyRatio_C
+        )
+
+      // Delay is introduced between batches
+      await timewarp(86400)
+    }   
+
+       
   });  
 
   it("should ensure there is no overflow is allowed at end of batch", async function () { 
