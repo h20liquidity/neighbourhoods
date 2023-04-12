@@ -1,24 +1,24 @@
 [
   {
-    "owner": "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
+    "owner": "0xf098172786a87FA7426eA811Ff25D31D599f766D",
     "handleIO": true,
     "evaluable": {
-      "interpreter": "0x1E57947652b81B1F7d3866B6c063B607a7D54c2d",
-      "store": "0x10a076bF950940d4fE4FfaE35Bb7589FB2B3BB01",
-      "expression": "0xCa4777aCdCae11e6B6BC7Ae3134Ded7D86A61425"
+      "interpreter": "0x3c088d52176cec895a24b0e5ff77397c61fe76d8",
+      "store": "0xa0f549dfa50ccfb06b1f32ce22acdfcb107465c6",
+      "expression": "0x18bc034eff3747da767066f0add1b094688a3522"
     },
     "validInputs": [
       {
-        "token": "0x05cE0B29D94Cb8b156638D06336228b935212652",
-        "decimals": 18,
-        "vaultId": "0x5b19c3848fb3bcec03d6240bf66843cc9977fa767330dc6d8a94e70446b2f094"
+        "token": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        "decimals": 6,
+        "vaultId": "0x6e844f3117659a033e3666d07f76a335ba8f104cbaa9d969443c8c54ae1b0fe3"
       }
     ],
     "validOutputs": [
       {
-        "token": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+        "token": "0x84342e932797FC62814189f01F0Fb05F52519708",
         "decimals": 18,
-        "vaultId": "0x5b19c3848fb3bcec03d6240bf66843cc9977fa767330dc6d8a94e70446b2f094"
+        "vaultId": "0x6e844f3117659a033e3666d07f76a335ba8f104cbaa9d969443c8c54ae1b0fe3"
       }
     ]
   }
