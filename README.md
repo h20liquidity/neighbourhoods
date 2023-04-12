@@ -177,4 +177,38 @@ Where arguments for the script are :
 - `--to, -t <taget-network-name>` : Target network.
 - `--amount, -a <token-amount>` : Amount of tokens to deposit. Eg : To deposit 5.2 NHT this value will be 5.2 .
 
-Wait for the transaction to be confirmed.The amount will be deposited
+Wait for the transaction to be confirmed.The amount will be deposited 
+
+#### Withdraw NHT Tokens from the vault.
+
+Withdrawing NHT tokens that you have deposited.
+
+To withdraw NHT tokens run the following command in your shell from the **root of the project**
+
+```sh
+ts-node scripts/withdrawNHT.ts --from polygon --amount <NHT-Amount>
+```
+
+Where arguments for the script are :
+
+- `--from, -f <network-name>` : Network where strategy is deployed and tokens are deposited
+- `--amount, -a <token-amount>` : Amount of tokens to withdraw. Eg : To withdraw 5.2 NHT this value will be 5.2 .
+
+Wait for the transaction to be confirmed.The amount will be withdrawn.  
+
+#### Withdraw USDT Tokens from the vault.
+
+Withdrawing USDT tokens from the vault.This maybe useful when you want to withdraw USDT tokens that have been obtained by trading NHT tokens. 
+
+To withdraw USDT tokens run the following command in your shell from the **root of the project**
+
+```sh
+ts-node scripts/withdrawUSDT.ts --from polygon --amount <USDT-Amount>
+```
+
+Where arguments for the script are :
+
+- `--from, -f <network-name>` : Network where strategy is deployed .
+- `--amount, -a <token-amount>` : Amount of tokens to withdraw. Eg : To withdraw 3.01 USDT this value will be 3.01 .
+
+Wait for the transaction to be confirmed.The amount will be withdrawn. 
