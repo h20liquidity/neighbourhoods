@@ -13,27 +13,23 @@ batch-start-time: decode-256<32 63>(batch-start-info),
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
 
-/* exponential growth */
-/* (1.02)^batch-index */
-/* Power function x^y with y simple integer */
-/* https://github.com/PaulRBerg/prb-math */
-io-multiplier: prb-powu(102e16 batch-index),
-/* always offer at least 10 tokens even if that's beyond the current batch */
-amount: max(batch-remaining 0),
+/* 2% exponential growth */
+/* initial * (1.02)^batch-index */
+io-ratio: prb-mul({{ initial-ratio }} prb-powu(102e16 batch-index)),
 
-io-ratio: prb-mul(io-multiplier {{ ratio }});
+amount ratio: prb-div<0>(batch-remaining io-ratio) io-ratio;
 
 /*
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
 batch-start-info-k: context<1 0>(),
-total-sent-k: hash(context<1 0>()),
+total-received-k: hash(context<1 0>()),
 
 /* new batch info due to trade */
-out-token-amount: context<4 4>(),
-out-token-decimals: context<4 1>(),
-new-total-sent new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(out-token-decimals out-token-amount)),
+in-token-amount: context<3 4>(),
+in-token-decimals: context<3 1>(),
+new-total-received new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(in-token-decimals in-token-amount)),
 
 /* stored batch info */
 batch-start-info: get(batch-start-info-k),
@@ -47,17 +43,17 @@ batch-start-time: decode-256<32 63>(batch-start-info),
     gt(new-batch-index batch-start-index)
     encode-256<32 63>(now() encode-256<0 31>(new-batch-index 0))
     batch-start-info)),
-:set(total-sent-k new-total-sent);
+:set(total-received-k new-total-received);
 
 /* Calculate batch */
-new-sent:,
-total-sent-k: hash(context<1 0>()),
+new-received:,
+total-received-k: hash(context<1 0>()),
 amount-per-batch: 1000e18,
-new-total-amount-sent: add(get(total-sent-k) new-sent),
+new-total-amount-received: add(get(total-received-k) new-received),
 /* use the flooring from integer division to simply batch the order */
-new-batch-index: div(new-total-amount-sent amount-per-batch),
+new-batch-index: div(new-total-amount-received amount-per-batch),
 new-batch-remaining: sub(
   mul(
     add(new-batch-index 1)
     amount-per-batch)
-  new-total-amount-sent);
+  new-total-amount-received);
