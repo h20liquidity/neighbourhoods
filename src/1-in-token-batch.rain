@@ -8,16 +8,16 @@ allowed-counterparty: {{ counterparty }},
 batch-start-info-k: context<1 0>(),
 batch-start-info: get(batch-start-info-k),
 batch-start-time: decode-256<32 63>(batch-start-info),
-: ensure(gt(now() add(batch-start-time 86400))),
+: ensure(gt(now() int-add(batch-start-time 86400))),
 
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
 
 /* 2% exponential growth */
 /* initial * (1.02)^batch-index */
-io-ratio: prb-mul({{ initial-ratio }} prb-powu(102e16 batch-index)),
+io-ratio: decimal18-mul({{ initial-ratio }} decimal18-pow-int(102e16 batch-index)),
 
-amount ratio: prb-div<0>(batch-remaining io-ratio) io-ratio;
+amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
 
 /*
  * Handle IO
@@ -49,11 +49,11 @@ batch-start-time: decode-256<32 63>(batch-start-info),
 new-received:,
 total-received-k: hash(context<1 0>()),
 amount-per-batch: 1000e18,
-new-total-amount-received: add(get(total-received-k) new-received),
+new-total-amount-received: int-add(get(total-received-k) new-received),
 /* use the flooring from integer division to simply batch the order */
-new-batch-index: div(new-total-amount-received amount-per-batch),
-new-batch-remaining: sub(
-  mul(
-    add(new-batch-index 1)
+new-batch-index: int-div(new-total-amount-received amount-per-batch),
+new-batch-remaining: int-sub(
+  int-mul(
+    int-add(new-batch-index 1)
     amount-per-batch)
   new-total-amount-received);
