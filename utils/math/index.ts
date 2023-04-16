@@ -13,6 +13,10 @@ import { ONE } from "../constants";
  * @returns `a_` multiplied by `b_` to 18 fixed point decimals.
  */
 export const fixedPointMul = (a: BigNumber, b: BigNumber): BigNumber =>
-  a.mul(b).div(ONE);
+  a.mul(b).div(ONE); 
+
+export const fixedPointDiv = (a: BigNumber, b: BigNumber): BigNumber =>
+  a.mul(ONE).div(b);
+
 
 

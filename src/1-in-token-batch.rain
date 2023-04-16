@@ -9,13 +9,13 @@ batch-start-info-k: context<1 0>(),
 batch-start-info: get(batch-start-info-k),
 batch-start-time: decode-256<32 63>(batch-start-info),
 : ensure(gt(now() int-add(batch-start-time 86400))),
-
+ 
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
 
 /* 2% exponential growth */
 /* initial * (1.02)^batch-index */
-io-ratio: decimal18-mul({{ initial-ratio }} decimal18-pow-int(102e16 batch-index)),
+io-ratio: decimal18-mul({{ ratio }} decimal18-pow-int(102e16 batch-index)),
 
 amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
 
@@ -43,7 +43,8 @@ batch-start-time: decode-256<32 63>(batch-start-info),
     gt(new-batch-index batch-start-index)
     encode-256<32 63>(now() encode-256<0 31>(new-batch-index 0))
     batch-start-info)),
-:set(total-received-k new-total-received);
+:set(total-received-k new-total-received),
+:debug<0>();
 
 /* Calculate batch */
 new-received:,
@@ -56,4 +57,5 @@ new-batch-remaining: int-sub(
   int-mul(
     int-add(new-batch-index 1)
     amount-per-batch)
-  new-total-amount-received);
+  new-total-amount-received),
+  :debug<0>();
