@@ -7,9 +7,9 @@ allowed-counterparty: {{ counterparty }},
 /* 24 hour delay on new batches = 86400 seconds */
 batch-start-info-k: context<1 0>(),
 batch-start-info: get(batch-start-info-k),
-batch-start-time: decode-256<32 63>(batch-start-info),
+batch-start-time: decode-256<32 32>(batch-start-info),
 : ensure(gt(now() int-add(batch-start-time 86400))),
- 
+
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
 
@@ -33,15 +33,15 @@ new-total-received new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(in-token-d
 
 /* stored batch info */
 batch-start-info: get(batch-start-info-k),
-batch-start-index: decode-256<0 31>(batch-start-info),
-batch-start-time: decode-256<32 63>(batch-start-info),
+batch-start-index: decode-256<0 32>(batch-start-info),
+batch-start-time: decode-256<32 32>(batch-start-info),
 
 /* if we're in a new batch record current time as batch start time */
 :set(
   batch-start-info-k
   if(
     gt(new-batch-index batch-start-index)
-    encode-256<32 63>(now() encode-256<0 31>(new-batch-index 0))
+    encode-256<32 32>(now() encode-256<0 32>(new-batch-index 0))
     batch-start-info)),
 :set(total-received-k new-total-received);
 
