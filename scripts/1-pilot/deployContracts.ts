@@ -99,12 +99,6 @@ async function main() {
 
     await deployOrderBook(fromNetwork,toNetwork) 
 
-    // await deployCloneFactory(fromNetwork,toNetwork)
-
-    // await deployArbImplementation(fromNetwork,toNetwork) 
-
-    // await deployZeroExInstance(toNetwork,counterparty) 
-   
   }
 
   

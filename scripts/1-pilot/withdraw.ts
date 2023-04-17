@@ -2,16 +2,10 @@ import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
 import { depositAmount } from "../Deposit/deposit";
-import { withdrawNHTAmount, withdrawUSDTAmount } from "../Withdraw/withdraw";
-import { ethers } from "ethers";
-import contractConfig from "../../config/config.json"
-import orderBookDetails0 from "../../config/Orderbook/0-OrderBook.json"  
-import orderBookDetails1 from "../../config/Orderbook/1-OrderBook.json"  
+import { withdrawNHTAmount } from "../Withdraw/withdraw";
+import { getCommons } from "../utils";
+import { withdrawNHTTokensOB, withdrawUSDTTokensOB } from "../utils/1-pilot.utils";
 
-import orderDetails from "../DeployStrategy/orderDetails.json"
-
-import { getCommons, getProvider } from "../utils";
-import { depositNHTTokensOB } from "../utils/1-pilot.utils";
 
 dotenv.config();
 
@@ -30,23 +24,29 @@ async function main() {
   ) {
     console.log(
       `
-      Withdraw NHT token from the vault.
+      Withdraw tokens from the vault.
       options:
 
         --from, -f <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]. 
-        
-        --contract -c <contract address>
-          OrderBook Contract
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"].
+
+        --token, -tk <token symbol>
+          Symbol of the token to withdraw. Any of ["USDT","NHT"].
+
+        --amount, -a <Amount in NHT or USDT>
+          Amount in NHT or USDT to withdraw
       `
     );
   }else{ 
 
     let fromNetwork
-    let contractAdress    
+    let token
+    let amount
 
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"] 
+    const validTokens = ["USDT","NHT"] 
+
 
     if (
         args.includes("--from") ||
@@ -60,49 +60,53 @@ async function main() {
         if (_tmp.length != 2) throw new Error("expected network to deploy from");
         if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
         fromNetwork = _tmp[1]
-     }
-     
-     if (
-        args.includes("--contract") ||
-        args.includes("-c")
+      }   
+
+    if (
+        args.includes("--amount") ||
+        args.includes("-a")
       ) {
         const _i =
-          args.indexOf("--contract") > -1
-            ? args.indexOf("--contract")
-            : args.indexOf("-c")
+          args.indexOf("--amount") > -1
+            ? args.indexOf("--amount")
+            : args.indexOf("-a")
         const _tmp = args.splice(_i, _i + 2);
-        if (_tmp.length != 2) throw new Error("expected contract address");
-        contractAdress = _tmp[1]
+        if (_tmp.length != 2) throw new Error("Expected Amount");
+        amount = _tmp[1]
+      }  
+
+    if (
+        args.includes("--token") ||
+        args.includes("-tk")
+      ) {
+        const _i =
+          args.indexOf("--token") > -1
+            ? args.indexOf("--token")
+            : args.indexOf("-tk")
+        const _tmp = args.splice(_i, _i + 2);
+        if (_tmp.length != 2) throw new Error("Expected Amount");
+        if(validTokens.indexOf(_tmp[1]) == -1 ) throw new Error(`Invalid token : ${_tmp[1]}`);
+        token = _tmp[1]
       } 
 
-      //Get Provider for testnet from where the data is to be fetched 
-      const provider = getProvider(fromNetwork)  
-      
-      const signer = new ethers.Wallet(process.env.DEPLOYMENT_KEY,provider)  
-
-      const orderBook = new ethers.Contract(contractAdress,orderBookDetails0.abi,signer)  
-
-      //Withdraw Output Tokens 
-      let nhtBalance = await orderBook.vaultBalance(
-        signer.address ,
-        contractConfig.contracts[fromNetwork].nht.address ,
-        ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
-      )
-      nhtBalance = ethers.utils.formatUnits(nhtBalance.toString(),orderDetails[0].validOutputs[0].decimals) 
-      console.log("nhtBalance : " , nhtBalance )
-      await withdrawNHTAmount(fromNetwork,nhtBalance) 
-
-      //Withdraw Input Tokens 
-      let usdtBalance = await orderBook.vaultBalance(
-        signer.address ,
-        contractConfig.contracts[fromNetwork].usdt.address ,
-        ethers.BigNumber.from(orderDetails[0].validInputs[0].vaultId)
-      )  
-      usdtBalance = ethers.utils.formatUnits(usdtBalance.toString(),orderDetails[0].validInputs[0].decimals)
-      console.log("usdtBalance : " , usdtBalance )
-      await withdrawUSDTAmount(fromNetwork,usdtBalance)  
-
     
+      const common = getCommons(fromNetwork)  
+
+      let withdrawTransaction  
+
+      if(token != 'USDT' && token != 'NHT'){
+        console.log("Invalid Token")
+        return
+      }
+
+      if(token == 'USDT'){
+        withdrawTransaction =  await withdrawUSDTTokensOB(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+      }else if(token == 'NHT'){
+        withdrawTransaction =  await withdrawNHTTokensOB(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+      }
+
+      const receipt = await withdrawTransaction.wait() 
+      console.log(`Amount Withdrawn : ${receipt.transactionHash}`) 
 
   }
 

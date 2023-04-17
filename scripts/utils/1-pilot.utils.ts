@@ -85,7 +85,7 @@ export const decodeAddOrderEventsArgsPilot1 = async(transaction,orderBook) => {
   
     let data = JSON.stringify(orderDetailsObject,null,2) 
   
-    writeFileSync('./scripts/1-pilot/orderDetails.json', data)  
+    writeFileSync('./scripts/1-pilot/1-orderDetails.json', data)  
   
     
   
@@ -114,7 +114,7 @@ export const deployStrategyWithVault = async(network:string,priKey: string, comm
     //Building Expression
     const strategyExpression = path.resolve(
         __dirname,
-        "../../src/1-pilot.rain"
+        "../../src/1-in-token-batch.rain"
       ); 
   
     const strategyString = await fetchFile(strategyExpression);  
@@ -256,7 +256,6 @@ export const approveDepositTokenOB = async(tokenContract, spender, amount, signe
 
 }
 
-
 export const depositNHTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => {  
  
     if(orderDetails[0].validOutputs){   
@@ -358,3 +357,290 @@ export const depositNHTTokensOB = async(network:string,priKey: string, common: C
 
 
 }  
+
+export const depositUSDTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => {  
+ 
+  if(orderDetails[0].validInputs){   
+
+    const inputTokenVault = orderDetails[0].validInputs[0]  
+
+    const depositToken = inputTokenVault.token
+    const depositAmount = ethers.utils.parseUnits(amount , inputTokenVault.decimals )
+    const vaultId = ethers.BigNumber.from(inputTokenVault.vaultId)
+
+  
+    //Get Provider for testnet from where the data is to be fetched 
+    const provider = getProvider(network)  
+    
+    const signer = new ethers.Wallet(priKey,provider)   
+
+    const tokenContract = new ethers.Contract(depositToken,abi,signer)  
+
+   
+    const approveTx = await approveDepositTokenOB(tokenContract, contractConfig.contracts[network].orderbook.address, depositAmount, signer, provider, common , priKey) 
+
+    const approveReceipt = await approveTx.wait()  
+
+
+    if(approveReceipt.transactionHash){   
+
+      console.log("Tokens Approved")
+      console.log("Depositing Tokens...")   
+
+       // Get Orderbook Instance
+      const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer)  
+
+      const depositConfigStruct = {
+        token: depositToken ,
+        vaultId: vaultId ,
+        amount: depositAmount,
+      }; 
+
+      const depositData = await orderBook.populateTransaction.deposit(depositConfigStruct);   
+
+      // Building Tx
+      const nonce = await provider.getTransactionCount(signer.address)   
+
+
+        // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+        // but after being mined affected relevant state.
+        // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+        const gasLimit = await provider.estimateGas({ 
+          to:depositData.to.toLowerCase() , 
+          from:depositData.from.toLowerCase() , 
+          data: depositData.data
+        }) 
+
+        const feeData = await estimateFeeData(provider)  
+        
+      
+        // hard conded values to be calculated
+        const txData = {  
+          to: contractConfig.contracts[network].orderbook.address ,
+          from: signer.address, 
+          nonce: ethers.BigNumber.from(nonce).toHexString() ,
+          data : depositData.data ,
+          gasLimit : gasLimit.toHexString(), 
+          maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+          maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+          type: '0x02'
+        }   
+            
+        // Generate Transaction 
+        const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+      
+        const privateKey = Buffer.from(
+          priKey,
+          'hex'
+        ) 
+        
+        // Sign Transaction 
+        const signedTx = tx.sign(privateKey)
+      
+        // Send the transaction
+        const contractTransaction = await provider.sendTransaction(
+          "0x" + signedTx.serialize().toString("hex")
+        );     
+
+        return contractTransaction
+
+    }else{
+    console.log("Token Approval failed")
+    }
+
+   
+
+
+  }else{
+    console.log("Order Details Not Found")
+  }
+
+  
+
+
+} 
+
+export const withdrawNHTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => { 
+
+  if(orderDetails[0].validOutputs){  
+
+    const outputTokenVault = orderDetails[0].validOutputs[0]  
+
+      const withdrawToken = outputTokenVault.token
+      const withdrawAmount = ethers.utils.parseUnits(amount , outputTokenVault.decimals )
+      const vaultId = ethers.BigNumber.from(outputTokenVault.vaultId) 
+
+      //Get Provider for testnet from where the data is to be fetched 
+      const provider = getProvider(network)  
+      
+      const signer = new ethers.Wallet(priKey,provider)   
+
+      const tokenContract = new ethers.Contract(withdrawToken,abi,signer)  
+
+      // Get Orderbook Instance
+      const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer)   
+
+      const balance = await orderBook.vaultBalance(
+        signer.address ,
+        withdrawToken ,
+        vaultId
+      )   
+
+      if(withdrawAmount.gt(balance)){
+        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), outputTokenVault.decimals)} NHT`) 
+        return null
+      }
+     
+      const withdrawConfigStruct = {
+        token: withdrawToken ,
+        vaultId: vaultId ,
+        amount: withdrawAmount,
+      }; 
+
+      const withdrawData = await orderBook.populateTransaction.withdraw(withdrawConfigStruct);   
+
+      // Building Tx
+      const nonce = await provider.getTransactionCount(signer.address)   
+
+
+      // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+      // but after being mined affected relevant state.
+      // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+      const gasLimit = await provider.estimateGas({ 
+        to:withdrawData.to.toLowerCase() , 
+        from:withdrawData.from.toLowerCase() , 
+        data: withdrawData.data
+      }) 
+
+      const feeData = await estimateFeeData(provider)  
+      
+    
+      // hard conded values to be calculated
+      const txData = {  
+        to: contractConfig.contracts[network].orderbook.address ,
+        from: signer.address, 
+        nonce: ethers.BigNumber.from(nonce).toHexString() ,
+        data : withdrawData.data ,
+        gasLimit : gasLimit.toHexString(), 
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+        maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+        type: '0x02'
+      }   
+          
+      // Generate Transaction 
+      const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+    
+      const privateKey = Buffer.from(
+        priKey,
+        'hex'
+      ) 
+      
+      // Sign Transaction 
+      const signedTx = tx.sign(privateKey)
+    
+      // Send the transaction
+      const contractTransaction = await provider.sendTransaction(
+        "0x" + signedTx.serialize().toString("hex")
+      );     
+
+      return contractTransaction
+
+
+
+
+   }
+
+} 
+
+export const withdrawUSDTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => { 
+
+  if(orderDetails[0].validInputs){  
+
+    const inputTokenVault = orderDetails[0].validInputs[0]  
+
+      const withdrawToken = inputTokenVault.token
+      const withdrawAmount = ethers.utils.parseUnits(amount , inputTokenVault.decimals )
+      const vaultId = ethers.BigNumber.from(inputTokenVault.vaultId)  
+
+      //Get Provider for testnet from where the data is to be fetched 
+      const provider = getProvider(network)  
+      
+      const signer = new ethers.Wallet(priKey,provider)   
+
+      const tokenContract = new ethers.Contract(withdrawToken,abi,signer)  
+
+      // Get Orderbook Instance
+      const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer)   
+
+      const balance = await orderBook.vaultBalance(
+        signer.address ,
+        withdrawToken ,
+        vaultId
+      )   
+
+
+      if(withdrawAmount.gt(balance)){
+        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), inputTokenVault.decimals)} USDT`) 
+        return null
+      }
+     
+      const withdrawConfigStruct = {
+        token: withdrawToken ,
+        vaultId: vaultId ,
+        amount: withdrawAmount,
+      }; 
+
+      const withdrawData = await orderBook.populateTransaction.withdraw(withdrawConfigStruct);   
+
+      // Building Tx
+      const nonce = await provider.getTransactionCount(signer.address)   
+
+
+      // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+      // but after being mined affected relevant state.
+      // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+      const gasLimit = await provider.estimateGas({ 
+        to:withdrawData.to.toLowerCase() , 
+        from:withdrawData.from.toLowerCase() , 
+        data: withdrawData.data
+      }) 
+
+      const feeData = await estimateFeeData(provider)  
+      
+    
+      // hard conded values to be calculated
+      const txData = {  
+        to: contractConfig.contracts[network].orderbook.address ,
+        from: signer.address, 
+        nonce: ethers.BigNumber.from(nonce).toHexString() ,
+        data : withdrawData.data ,
+        gasLimit : gasLimit.toHexString(), 
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+        maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+        type: '0x02'
+      }   
+          
+      // Generate Transaction 
+      const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+    
+      const privateKey = Buffer.from(
+        priKey,
+        'hex'
+      ) 
+      
+      // Sign Transaction 
+      const signedTx = tx.sign(privateKey)
+    
+      // Send the transaction
+      const contractTransaction = await provider.sendTransaction(
+        "0x" + signedTx.serialize().toString("hex")
+      );     
+
+      return contractTransaction
+
+
+
+
+   }
+
+}
