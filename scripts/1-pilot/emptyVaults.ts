@@ -89,8 +89,9 @@ async function main() {
         ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
       )
       nhtBalance = ethers.utils.formatUnits(nhtBalance.toString(),orderDetails[0].validOutputs[0].decimals) 
-      console.log("nhtBalance : " , nhtBalance )
-      await withdrawNHTAmount(fromNetwork,nhtBalance) 
+      console.log("NHT Balance : " , nhtBalance )
+      await withdrawNHTAmount(fromNetwork,nhtBalance)  
+
 
       //Withdraw Input Tokens 
       let usdtBalance = await orderBook.vaultBalance(
@@ -99,10 +100,8 @@ async function main() {
         ethers.BigNumber.from(orderDetails[0].validInputs[0].vaultId)
       )  
       usdtBalance = ethers.utils.formatUnits(usdtBalance.toString(),orderDetails[0].validInputs[0].decimals)
-      console.log("usdtBalance : " , usdtBalance )
+      console.log("USDT Balance : " , usdtBalance )
       await withdrawUSDTAmount(fromNetwork,usdtBalance)  
-
-    
 
   }
 

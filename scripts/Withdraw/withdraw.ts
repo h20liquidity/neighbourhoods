@@ -14,7 +14,7 @@
     if(depositTransaction){
         const receipt = await depositTransaction.wait()
        
-        console.log(`Amount Withdrawn : ${receipt.transactionHash}`)
+        console.log(`NHT Amount Withdrawn : ${receipt.transactionHash}`)
     }
  } 
 
@@ -28,7 +28,7 @@
     if(depositTransaction){
         const receipt = await depositTransaction.wait()
        
-        console.log(`Amount Withdrawn : ${receipt.transactionHash}`)
+        console.log(`USDT Amount Withdrawn : ${receipt.transactionHash}`)
     }
 
  }
