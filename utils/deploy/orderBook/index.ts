@@ -1,6 +1,7 @@
 import { artifacts } from "hardhat"; 
 import { ethers  } from "hardhat"; 
-import config from "../../../config/config.json"
+import config from "../../../config/config.json" 
+import ob from "../../../config/Orderbook/1-OrderBook.json"
 import axios from "axios"
 
 export const getOrderBook = async (address: string) => { 
@@ -10,10 +11,10 @@ export const getOrderBook = async (address: string) => {
     // In near future this will de done from sg  
     
     //Get Source code ABI from contract
-    const url = `https://api-testnet.polygonscan.com/api?module=contract&action=getsourcecode&address=${config.contracts.orderbook.address}&apikey=${process.env.POLYGONSCAN_API_KEY}`;
-    const source = await axios.get(url);   
+    // const url = `https://api-testnet.polygonscan.com/api?module=contract&action=getsourcecode&address=${config.contracts["mumbai"].orderbook.address}&apikey=${process.env.POLYGONSCAN_API_KEY}`;
+    // const source = await axios.get(url);   
     
-    const orderBook = new ethers.Contract(address,source.data.result[0].ABI,signers[0])    
+    const orderBook = new ethers.Contract(address,ob.abi,signers[0])    
 
 
 

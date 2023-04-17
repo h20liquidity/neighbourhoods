@@ -6,7 +6,7 @@ import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
 import * as mustache from 'mustache'; 
 import * as path from "path";  
-import orderBookDetails from "../../config/Orderbook/OrderBook.json" 
+import orderBookDetails from "../../config/Orderbook/0-OrderBook.json" 
 import {writeFileSync} from "fs"; 
 import orderDetails from "../DeployStrategy/orderDetails.json"
 import abi from 'erc-20-abi' 
@@ -21,12 +21,7 @@ import {
 } from "@sonicswap/wagmi-core";
 import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
-
-
-import contractConfig from "../config/contracts.config.json"  
-import tokens from "../config/tokens.config.json"  
-
-
+import contractConfig from "../../config/config.json"
 
 import axios from "axios";
 import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
@@ -147,8 +142,8 @@ export const getTransactionData = async (provider: any, address:string): Promise
 
   
   txData = txData.toLocaleLowerCase()
-  const fromContractConfig = contractConfig[fromNetwork]
-  const toContractConfig = contractConfig[toNetwork] 
+  const fromContractConfig = contractConfig.contracts[fromNetwork]
+  const toContractConfig = contractConfig.contracts[toNetwork] 
 
   if(txData.includes(fromContractConfig["orderbook"]["address"].split('x')[1].toLowerCase())){ 
     txData = txData.replace(fromContractConfig["orderbook"]["address"].split('x')[1].toLowerCase(), toContractConfig["orderbook"]["address"].split('x')[1].toLowerCase())
@@ -173,8 +168,8 @@ export function randomUint256(): string {
 export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,toNetwork:string) => {
   
   txData = txData.toLocaleLowerCase()
-  const fromNetworkConfig = contractConfig[fromNetwork]
-  const toNetworkConfig = contractConfig[toNetwork]  
+  const fromNetworkConfig = contractConfig.contracts[fromNetwork]
+  const toNetworkConfig = contractConfig.contracts[toNetwork]  
 
   // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
   // console.log("contract : " , contract )
@@ -197,7 +192,7 @@ export const getGasDataForPolygon = async () => {
   return gasData
 }
 
-const estimateFeeData = async ( 
+export const estimateFeeData = async ( 
   chainProvider:any ,
 ): Promise<{
   gasPrice: BigNumber;
@@ -327,6 +322,7 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
   
   }   
 
+
 export const decodeAddOrderEventsArgs = async(transaction,orderBook) => {  
 
   const eventObj = (await transaction.wait()).logs.find(
@@ -416,7 +412,9 @@ export const decodeCloneEvent = async(transaction,cloneFactory) => {
 
   return cloneObject
 
-}
+} 
+
+ 
 
 
 export const deployStrategy = async(network:string,priKey: string, common: Common,ratio:string) => {   
@@ -437,7 +435,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   // const source = await axios.get(url);    
 
   // Get Orderbook Instance
-  const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer) 
+  const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer) 
 
   //Building Expression
   const strategyExpression = path.resolve(
@@ -447,7 +445,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
 
   const strategyString = await fetchFile(strategyExpression);  
 
-  const arbCounterParty = contractConfig[network].zeroexorderbookinstance.address 
+  const arbCounterParty = contractConfig.contracts[network].zeroexorderbookinstance.address 
   console.log("arbCounterParty: ",arbCounterParty)
 
   const stringExpression = mustache.render(strategyString, {
@@ -458,16 +456,16 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   const { sources, constants } = await standardEvaluableConfig(stringExpression)  
 
   const EvaluableConfig_A = {
-    deployer: contractConfig[network].expressionDeployer.address,
+    deployer: contractConfig.contracts[network].expressionDeployer.address,
     sources,
     constants,
   }
   const orderConfig_A = {
     validInputs: [
-      { token: tokens[network].usdt.address, decimals: tokens[network].usdt.decimals, vaultId: vaultId },
+      { token: contractConfig.contracts[network].usdt.address, decimals: contractConfig.contracts[network].usdt.decimals, vaultId: vaultId },
     ],
     validOutputs: [
-      { token: tokens[network].nht.address, decimals: tokens[network].nht.decimals, vaultId: vaultId},
+      { token: contractConfig.contracts[network].nht.address, decimals: contractConfig.contracts[network].nht.decimals, vaultId: vaultId},
     ],
     evaluableConfig: EvaluableConfig_A,
     meta: encodeMeta(""),
@@ -484,7 +482,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
     // but after being mined affected relevant state.
     // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
     const gasLimit = await provider.estimateGas({ 
-      to:contractConfig[network].orderbook.address ,
+      to:contractConfig.contracts[network].orderbook.address ,
       data: addOrderData.data
     }) 
 
@@ -493,7 +491,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   
     // hard conded values to be calculated
     const txData = {  
-      to: contractConfig[network].orderbook.address ,
+      to: contractConfig.contracts[network].orderbook.address ,
       from: signer.address, 
       nonce: ethers.BigNumber.from(nonce).toHexString() ,
       data : addOrderData.data ,
@@ -606,7 +604,7 @@ export const depositNHTTokens = async(network:string,priKey: string, common: Com
       const tokenContract = new ethers.Contract(depositToken,abi,signer)  
 
      
-      const approveTx = await approveDepositToken(tokenContract, contractConfig[network].orderbook.address, depositAmount, signer, provider, common , priKey) 
+      const approveTx = await approveDepositToken(tokenContract, contractConfig.contracts[network].orderbook.address, depositAmount, signer, provider, common , priKey) 
 
       const approveReceipt = await approveTx.wait()  
 
@@ -617,7 +615,7 @@ export const depositNHTTokens = async(network:string,priKey: string, common: Com
         console.log("Depositing Tokens...")   
 
          // Get Orderbook Instance
-        const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer)  
+        const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer)  
 
         const depositConfigStruct = {
           token: depositToken ,
@@ -645,7 +643,7 @@ export const depositNHTTokens = async(network:string,priKey: string, common: Com
         
           // hard conded values to be calculated
           const txData = {  
-            to: contractConfig[network].orderbook.address ,
+            to: contractConfig.contracts[network].orderbook.address ,
             from: signer.address, 
             nonce: ethers.BigNumber.from(nonce).toHexString() ,
             data : depositData.data ,
@@ -707,7 +705,7 @@ export const withdrawNHTTokens = async(network:string,priKey: string, common: Co
       const tokenContract = new ethers.Contract(withdrawToken,abi,signer)  
 
       // Get Orderbook Instance
-      const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer)   
+      const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer)   
 
       const balance = await orderBook.vaultBalance(
         signer.address ,
@@ -746,7 +744,7 @@ export const withdrawNHTTokens = async(network:string,priKey: string, common: Co
     
       // hard conded values to be calculated
       const txData = {  
-        to: contractConfig[network].orderbook.address ,
+        to: contractConfig.contracts[network].orderbook.address ,
         from: signer.address, 
         nonce: ethers.BigNumber.from(nonce).toHexString() ,
         data : withdrawData.data ,
@@ -799,7 +797,7 @@ export const withdrawUSDTTokens = async(network:string,priKey: string, common: C
       const tokenContract = new ethers.Contract(withdrawToken,abi,signer)  
 
       // Get Orderbook Instance
-      const orderBook = new ethers.Contract(contractConfig[network].orderbook.address,orderBookDetails.abi,signer)   
+      const orderBook = new ethers.Contract(contractConfig.contracts[network].orderbook.address,orderBookDetails.abi,signer)   
 
       const balance = await orderBook.vaultBalance(
         signer.address ,
@@ -839,7 +837,7 @@ export const withdrawUSDTTokens = async(network:string,priKey: string, common: C
     
       // hard conded values to be calculated
       const txData = {  
-        to: contractConfig[network].orderbook.address ,
+        to: contractConfig.contracts[network].orderbook.address ,
         from: signer.address, 
         nonce: ethers.BigNumber.from(nonce).toHexString() ,
         data : withdrawData.data ,
@@ -900,10 +898,10 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   
 
   const borrowerConfig = {
-    orderBook : contractConfig[network].orderbook.address,
+    orderBook : contractConfig.contracts[network].orderbook.address,
     zeroExExchangeProxy: exchangeProxy,
     evaluableConfig: {
-      deployer: contractConfig[network].expressionDeployer.address,
+      deployer: contractConfig.contracts[network].expressionDeployer.address,
       sources,
       constants
     }
@@ -917,9 +915,9 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   ); 
  
 
-  if(contractConfig[network].zeroexorderbookimplmentation.address){
-    const zeroExImplementation = contractConfig[network].zeroexorderbookimplmentation.address 
-    const cloneFactoryAddress = contractConfig[network].clonefactory.address  
+  if(contractConfig.contracts[network].zeroexorderbookimplmentation.address){
+    const zeroExImplementation = contractConfig.contracts[network].zeroexorderbookimplmentation.address 
+    const cloneFactoryAddress = contractConfig.contracts[network].clonefactory.address  
 
     //Get Source code from contract
     const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${cloneFactoryAddress}&apikey=${getEtherscanKey(network)}`;

@@ -7,7 +7,7 @@ import { deployContractToNetwork, getCommons, getProvider, getTransactionData, g
 import { delay, verify } from "../verify"; 
 import {writeFileSync} from "fs";
 
-import contractConfig from "../config/contracts.config.json" 
+import contractConfig from "../../config/config.json"  
 
 dotenv.config();
 
@@ -28,7 +28,7 @@ export const deployZeroExInstance = async(toNetwork,counterparty) => {
     
     console.log(`Arb Instance deployed to ${toNetwork} at : ${cloneEventData.clone}`)    
 
-    let updateContractConfig = contractConfig 
+    let updateContractConfig = contractConfig["contracts"]  
 
     updateContractConfig[toNetwork] ? (
       updateContractConfig[toNetwork]["zeroexorderbookinstance"] = {
@@ -44,9 +44,10 @@ export const deployZeroExInstance = async(toNetwork,counterparty) => {
       }    
     )   
 
-    let data = JSON.stringify(updateContractConfig,null,2) 
+    contractConfig["contracts"] = updateContractConfig
+    let data = JSON.stringify(contractConfig,null,2)  
 
-    writeFileSync('./scripts/config/contracts.config.json', data)  
+    writeFileSync('./config/config.json', data)  
 
   
 }

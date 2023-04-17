@@ -1,8 +1,9 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { depositAmount } from "./Deposit/deposit";
-import { withdrawNHTAmount } from "./Withdraw/withdraw";
+import { depositAmount } from "../Deposit/deposit";
+import { getCommons } from "../utils";
+import { depositNHTTokensOB } from "../utils/1-pilot.utils";
 
 
 dotenv.config();
@@ -22,10 +23,10 @@ async function main() {
   ) {
     console.log(
       `
-      Withdraw NHT token from the vault.
+      Deposit MHT token into output vault of the deployed strategy.
       options:
 
-        --from, -f <network name>
+        --to, -t <network name>
           Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"].
 
         --amount, -a <Amount in NHT>
@@ -34,25 +35,28 @@ async function main() {
     );
   }else{ 
 
-    let fromNetwork
+    let toNetwork
     let amount
 
     //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"] 
+    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
 
+    
+
+   
     if (
-        args.includes("--from") ||
-        args.includes("-f")
-      ) {
-        const _i =
-          args.indexOf("--from") > -1
-            ? args.indexOf("--from")
-            : args.indexOf("-f")
-        const _tmp = args.splice(_i, _i + 2);
-        if (_tmp.length != 2) throw new Error("expected network to deploy from");
-        if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
-        fromNetwork = _tmp[1]
-      }   
+      args.includes("--to") ||
+      args.includes("-t")
+    ) {
+      const _i =
+        args.indexOf("--to") > -1
+          ? args.indexOf("--to")
+          : args.indexOf("-t")
+      const _tmp = args.splice(_i, _i + 2);
+      if (_tmp.length != 2) throw new Error("expected network to deploy to");
+      if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
+      toNetwork = _tmp[1]
+    }  
 
     if (
         args.includes("--amount") ||
@@ -67,7 +71,16 @@ async function main() {
         amount = _tmp[1]
       }  
 
-        await withdrawNHTAmount(fromNetwork,amount)
+      //Deposit NHT into new contract 
+
+      // Get Chain details
+      const common = getCommons(toNetwork) 
+        
+      const depositTransaction =  await depositNHTTokensOB(toNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+
+      const receipt = await depositTransaction.wait()
+        
+      console.log(`Amount Deposited : ${receipt.transactionHash}`)
   }
 
   

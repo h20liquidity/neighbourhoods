@@ -7,14 +7,14 @@ import { deployContractToNetwork, getCommons, getProvider, getTransactionData, g
 import { delay, verify } from "../verify"; 
 import {writeFileSync} from "fs";
 
-import contractConfig from "../config/contracts.config.json" 
+import contractConfig from "../../config/config.json" 
 
 dotenv.config();
 
 
 export const deployOrderBook = async (fromNetwork:string, toNetwork:string) => {    
 
-    const txHash  = contractConfig[fromNetwork].orderbook.transaction
+    const txHash  = contractConfig.contracts[fromNetwork].orderbook.transaction
   
     //Get Provider for testnet from where the data is to be fetched 
     const mumbaiProvider = getProvider(fromNetwork)  
@@ -40,7 +40,7 @@ export const deployOrderBook = async (fromNetwork:string, toNetwork:string) => {
 
     console.log(`OrderBook deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)   
 
-    let updateContractConfig = contractConfig 
+    let updateContractConfig = contractConfig["contracts"] 
 
     updateContractConfig[toNetwork] ? (
       updateContractConfig[toNetwork]["orderbook"] = {
@@ -56,9 +56,10 @@ export const deployOrderBook = async (fromNetwork:string, toNetwork:string) => {
       }    
     )   
 
-    let data = JSON.stringify(updateContractConfig,null,2) 
+    contractConfig["contracts"] = updateContractConfig
+    let data = JSON.stringify(contractConfig,null,2)  
 
-    writeFileSync('./scripts/config/contracts.config.json', data)  
+    writeFileSync('./config/config.json', data) 
 
     console.log("Submitting contract for verification...")
 

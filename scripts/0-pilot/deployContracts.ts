@@ -3,15 +3,15 @@ import { ethers,  network} from "hardhat";
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "./utils";
-import { delay, verify } from "./verify";
-import { deployInterpreter } from "./DISpair/deployInterpreter";
-import { deployStore } from "./DISpair/deployStore";
-import { deployExpressionDeployer } from "./DISpair/deployExpressionDeployer";
-import { deployOrderBook } from "./ContractDeploy/deployOrderbook";
-import { deployCloneFactory } from "./ContractDeploy/deployCloneFactory";
-import { deployZeroExInstance } from "./ContractDeploy/deployArbImplnstance";
-import { deployArbImplementation } from "./ContractDeploy/deployZeroXArb";
+import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "../utils";
+import { delay, verify } from "../verify";
+import { deployInterpreter } from "../DISpair/deployInterpreter";
+import { deployStore } from "../DISpair/deployStore";
+import { deployExpressionDeployer } from "../DISpair/deployExpressionDeployer";
+import { deployOrderBook } from "../ContractDeploy/deployOrderbook";
+import { deployCloneFactory } from "../ContractDeploy/deployCloneFactory";
+import { deployZeroExInstance } from "../ContractDeploy/deployArbImplnstance";
+import { deployArbImplementation } from "../ContractDeploy/deployZeroXArb";
 dotenv.config();
 
 
@@ -91,19 +91,19 @@ async function main() {
       counterparty = _tmp[1]
     }
 
-    await deployInterpreter(fromNetwork,toNetwork)  
+    // await deployInterpreter(fromNetwork,toNetwork)  
 
-    await deployStore(fromNetwork,toNetwork)  
+    // await deployStore(fromNetwork,toNetwork)  
 
-    await deployExpressionDeployer(fromNetwork,toNetwork) 
+    // await deployExpressionDeployer(fromNetwork,toNetwork) 
 
     await deployOrderBook(fromNetwork,toNetwork) 
 
-    await deployCloneFactory(fromNetwork,toNetwork)
+    // await deployCloneFactory(fromNetwork,toNetwork)
 
-    await deployArbImplementation(fromNetwork,toNetwork) 
+    // await deployArbImplementation(fromNetwork,toNetwork) 
 
-    await deployZeroExInstance(toNetwork,counterparty) 
+    // await deployZeroExInstance(toNetwork,counterparty) 
    
   }
 

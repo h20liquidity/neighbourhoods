@@ -1,8 +1,8 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { depositAmount } from "./Deposit/deposit";
-import { withdrawNHTAmount, withdrawUSDTAmount } from "./Withdraw/withdraw";
+import { depositAmount } from "../Deposit/deposit";
+import { withdrawNHTAmount, withdrawUSDTAmount } from "../Withdraw/withdraw";
 
 
 dotenv.config();

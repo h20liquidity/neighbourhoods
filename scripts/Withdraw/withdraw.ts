@@ -22,7 +22,8 @@
     // Get Chain details
     const common = getCommons(fromNetwork) 
  
-    const depositTransaction =  await withdrawUSDTTokens(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+    const depositTransaction =  await withdrawUSDTTokens(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount )  
+    
     
     if(depositTransaction){
         const receipt = await depositTransaction.wait()
