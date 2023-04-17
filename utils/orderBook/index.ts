@@ -6,10 +6,9 @@ import { getEventArgs } from "../events";
 import { fixedPointDiv, fixedPointMul } from "../math";
 import { compareStructs } from "../test"; 
 
-export const scaleOutputMax = async (orderRatio: string, decimals : number) => { 
-    let a = ethers.BigNumber.from(1 + "0".repeat(decimals)).mul(1000) 
-    let b = ethers.BigNumber.from(orderRatio) 
-    return fixedPointDiv(a,b) 
+
+export const scaleOutputMax = async (orderRatio, opMax) => { 
+  return fixedPointDiv(opMax,orderRatio) 
 }
 
 // Hacky Util
@@ -63,7 +62,7 @@ export const takeOrder = async (
     const ratio = await prbScale(index,orderRatio)  
 
     // Deposit max amount per batch
-    const amountB = await scaleOutputMax(ratio.toString(),18) ;
+    const amountB = await scaleOutputMax(ratio,ONE.mul(1000)) ;
 
     const depositConfigStructAlice = {
       token: tokenB.address,

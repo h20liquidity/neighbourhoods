@@ -17,7 +17,8 @@ batch-index batch-remaining: call<2 2>(0),
 /* initial * (1.02)^batch-index */
 io-ratio: decimal18-mul({{ ratio }} decimal18-pow-int(102e16 batch-index)),
 
-amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
+amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio,
+:debug<0>();
 
 /*
  * Handle IO
@@ -43,8 +44,7 @@ batch-start-time: decode-256<32 63>(batch-start-info),
     gt(new-batch-index batch-start-index)
     encode-256<32 63>(now() encode-256<0 31>(new-batch-index 0))
     batch-start-info)),
-:set(total-received-k new-total-received),
-:debug<0>();
+:set(total-received-k new-total-received);
 
 /* Calculate batch */
 new-received:,
@@ -57,5 +57,4 @@ new-batch-remaining: int-sub(
   int-mul(
     int-add(new-batch-index 1)
     amount-per-batch)
-  new-total-amount-received),
-  :debug<0>();
+  new-total-amount-received);

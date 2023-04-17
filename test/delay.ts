@@ -5,8 +5,7 @@ import { ethers  } from "hardhat";
 import { randomUint256 } from "../utils/bytes";
 import {
   eighteenZeros,
-  ONE,
-  sixZeros,
+  ONE
 } from "../utils/constants/bigNumber";
 
 import { getEventArgs } from "../utils/events";
@@ -16,8 +15,7 @@ import {
 import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
-import fs from "fs"  
-import { assertError, resetFork, timewarp } from "../utils";
+import { assertError, fetchFile, resetFork, timewarp } from "../utils";
 import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
@@ -26,23 +24,11 @@ import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
 import { encodeMeta } from "../scripts/utils";
-import { prbScale, scaleOutputMax, scaleRatio, takeOrder } from "../utils/orderBook";
+import { prbScale, scaleOutputMax } from "../utils/orderBook";
 dotenv.config();
 
 
-export const fetchFile = (_path: string): string => {
-  try {
-    return fs.readFileSync(_path).toString();
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
-};  
-
-
-
-
-describe("Pilot", async function () {
+describe("Delay", async function () {
   let tokenA;
   let tokenB; 
 
@@ -129,7 +115,7 @@ describe("Pilot", async function () {
      // BATCH 0
      const ratio0 = await prbScale(0,strategyRatio)  
 
-     const amountB = await scaleOutputMax(ratio0.toString(),18) ; 
+     const amountB = await scaleOutputMax(ratio0,ONE.mul(1000)) ; 
      
      // DEPOSIT
      // Deposit token equal to the size of the batch 
@@ -192,7 +178,7 @@ describe("Pilot", async function () {
       // BATCH 1
      const ratio1 = await prbScale(1,strategyRatio)  
 
-     const amountB1 = await scaleOutputMax(ratio1.toString(),18) ; 
+     const amountB1 = await scaleOutputMax(ratio1,ONE.mul(1000)) ; 
      
      // DEPOSIT
      // Deposit token equal to the size of the batch 

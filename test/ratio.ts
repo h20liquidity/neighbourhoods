@@ -1,14 +1,10 @@
 import { assert } from "chai";
 import { ethers  } from "hardhat";
-
-
 import { randomUint256 } from "../utils/bytes";
 import {
   eighteenZeros,
   ONE,
-  sixZeros,
 } from "../utils/constants/bigNumber";
-
 import { getEventArgs } from "../utils/events";
 import {
   standardEvaluableConfig
@@ -16,8 +12,8 @@ import {
 import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
-import fs from "fs"  
-import { assertError, resetFork, timewarp } from "../utils";
+  
+import {  fetchFile, resetFork, timewarp } from "../utils";
 import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
@@ -26,23 +22,11 @@ import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
 import { encodeMeta } from "../scripts/utils";
-import { prbScale, scaleOutputMax, scaleRatio, takeOrder } from "../utils/orderBook";
+import { prbScale, scaleOutputMax } from "../utils/orderBook";
 dotenv.config();
 
 
-export const fetchFile = (_path: string): string => {
-  try {
-    return fs.readFileSync(_path).toString();
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
-};  
-
-
-
-
-describe("Pilot", async function () {
+describe("Order Ratio", async function () {
   let tokenA;
   let tokenB; 
 
@@ -199,7 +183,7 @@ describe("Pilot", async function () {
     
   });  
 
-  it.only("should ensure ratio is scaled exponentially by the expressions as batch index increases", async function () { 
+  it("should ensure ratio is scaled exponentially by the expressions as batch index increases", async function () { 
 
     const signers = await ethers.getSigners();
 
@@ -268,7 +252,7 @@ describe("Pilot", async function () {
       const ratio = await prbScale(i,strategyRatio)  
 
       // Deposit max amount per batch 
-      const amountB = await scaleOutputMax(ratio.toString(),18) 
+      const amountB = await scaleOutputMax(ratio,ONE.mul(1000)) 
 
       const depositConfigStructAlice = {
         token: tokenB.address,
@@ -305,8 +289,7 @@ describe("Pilot", async function () {
       if(amountB.mul(ratio).mod(ONE).gt(ethers.BigNumber.from('1'))){
         amountA = amountA.add(1)
       }
-      console.log("amountA : " , amountA )
-  
+      
       await tokenA.transfer(bob.address, amountA);
       await tokenA.connect(bob).approve(orderBook.address, amountA); 
   

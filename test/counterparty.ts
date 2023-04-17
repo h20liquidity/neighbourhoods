@@ -5,19 +5,16 @@ import { ethers  } from "hardhat";
 import { randomUint256 } from "../utils/bytes";
 import {
   eighteenZeros,
-  ONE,
-  sixZeros,
+  ONE
 } from "../utils/constants/bigNumber";
 
 import { getEventArgs } from "../utils/events";
 import {
   standardEvaluableConfig
 } from "../utils/interpreter/interpreter";
-import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
-import * as path from 'path'; 
-import fs from "fs"  
-import { assertError, resetFork, timewarp } from "../utils";
+import * as path from 'path';
+import { assertError, fetchFile, resetFork } from "../utils";
 import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
@@ -26,23 +23,10 @@ import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
 import { encodeMeta } from "../scripts/utils";
-import { prbScale, scaleRatio, takeOrder } from "../utils/orderBook";
+import { prbScale } from "../utils/orderBook";
 dotenv.config();
 
-
-export const fetchFile = (_path: string): string => {
-  try {
-    return fs.readFileSync(_path).toString();
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
-};  
-
-
-
-
-describe("Pilot", async function () {
+describe("Counterparty", async function () {
   let tokenA;
   let tokenB; 
 

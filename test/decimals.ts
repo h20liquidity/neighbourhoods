@@ -18,7 +18,7 @@ import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
 import fs from "fs"  
-import { assertError, resetFork, timewarp } from "../utils";
+import { assertError, fetchFile, resetFork, timewarp } from "../utils";
 import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
@@ -31,19 +31,8 @@ import { prbScale, scaleOutputMax, scaleRatio, takeOrder } from "../utils/orderB
 dotenv.config();
 
 
-export const fetchFile = (_path: string): string => {
-  try {
-    return fs.readFileSync(_path).toString();
-  } catch (error) {
-    console.log(error);
-    return "";
-  }
-};  
 
-
-
-
-describe("Pilot", async function () {
+describe("Decimals", async function () {
   let tokenA;
   let tokenB; 
 
@@ -148,9 +137,13 @@ describe("Pilot", async function () {
   
       // Recursively places orders within a batch
       for(let i = 0 ; i < 10 ; i++){  
+
+         // No need to scale ratio as batch index remains the same
+         let ratio = await prbScale(0,strategyRatio) 
   
         // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + eighteenZeros);
+        // Max deposit for batch
+        const amountB = ethers.BigNumber.from("400000" + eighteenZeros);
   
         const depositConfigStructAlice = {
           token: tokenB18.address,
@@ -173,8 +166,7 @@ describe("Pilot", async function () {
           signedContext : []
         }; 
         
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0,strategyRatio) 
+       
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -284,10 +276,13 @@ describe("Pilot", async function () {
   
   
       // Recursively places orders within a batch
-      for(let i = 0 ; i < 10 ; i++){  
+      for(let i = 0 ; i < 10 ; i++){   
+
+        // No need to scale ratio as batch index remains the same
+        let ratio = await prbScale(0,strategyRatio) 
   
         // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + sixZeros);
+        const amountB = ethers.BigNumber.from("400000" + sixZeros);
   
         const depositConfigStructAlice = {
           token: tokenB06.address,
@@ -310,8 +305,6 @@ describe("Pilot", async function () {
           signedContext : []
         }; 
         
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0,strategyRatio) 
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -420,10 +413,13 @@ describe("Pilot", async function () {
   
   
       // Recursively places orders within a batch
-      for(let i = 0 ; i < 10 ; i++){  
+      for(let i = 0 ; i < 10 ; i++){   
+
+        // No need to scale ratio as batch index remains the same
+        let ratio = await prbScale(0,strategyRatio)
   
         // DEPOSIT
-        const amountB = ethers.BigNumber.from("100" + sixZeros);
+        const amountB = ethers.BigNumber.from("400000" + sixZeros);
   
         const depositConfigStructAlice = {
           token: tokenB06.address,
@@ -445,9 +441,7 @@ describe("Pilot", async function () {
           outputIOIndex: 0,
           signedContext : []
         }; 
-        
-        // No need to scale ratio as batch index remains the same
-        let ratio = await prbScale(0,strategyRatio) 
+         
       
         const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
     
@@ -624,10 +618,11 @@ describe("Pilot", async function () {
 
   }) 
 
-  describe.only("should scale ratio exponentially for different batches with decimals", () => { 
+  describe("should scale ratio exponentially for different batches with decimals", () => { 
 
-    // Scaling ratio based on FixedPointMath `scaleRatio`
-    it.only("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
+    
+    it("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 6 vs Output Decimals: 18)", async function () { 
+
 
       const tokenA06 = (await basicDeploy("ReserveTokenDecimals", {}, [
         6,
@@ -697,19 +692,18 @@ describe("Pilot", async function () {
         orderBook
       ));
   
-  
+      // Keeping Track of input/output
+      let totalInputReceived = ethers.BigNumber.from('0')
+      let totalOutput= ethers.BigNumber.from('0')
+
+
       // Recursively places orders for batches
       for(let i = 0 ; i < 10 ; i++){  
   
-        // DEPOSIT 
-        console.log(`------------------------- i : ${i}`)
-        // scale ratio as batch index increases
         let ratio = await prbScale(i,strategyRatio)  
-        console.log("ratio : " , ratio)
 
-        // Deposit max amount per batch 
-        const amountB = await scaleOutputMax(ratio.toString(),18)  
-        console.log("amountB : " , amountB )
+        let amountB = ethers.BigNumber.from(i+1).mul(1000).mul(ONE).sub(totalInputReceived)  
+        amountB = await scaleOutputMax(ratio,amountB)  
   
         const depositConfigStructAlice = {
           token: tokenB18.address,
@@ -732,8 +726,6 @@ describe("Pilot", async function () {
           signedContext : []
         }; 
         
-        const maximumIORatio = await scaleRatio(ratio,tokenADecimals,tokenBDecimals)
-    
         const takeOrdersConfigStruct = {
           output: tokenA06.address,
           input: tokenB18.address,
@@ -742,9 +734,9 @@ describe("Pilot", async function () {
           maximumIORatio: max_uint256,
           orders: [takeOrderConfigStruct],
         };
-    
+        
+        //Deposit with overflow added
         const amountA = ethers.BigNumber.from('1005000000')
-        console.log("amountA : " , amountA )
         
         await tokenA06.transfer(bob.address, amountA);
         await tokenA06.connect(bob).approve(orderBook.address, amountA); 
@@ -759,15 +751,25 @@ describe("Pilot", async function () {
           "TakeOrder",
           orderBook
         )); 
-        
-        console.log("input : " , input )
-        console.log("output : " , output )
 
+        assert(sender === bob.address, "wrong sender");
+        assert(input.eq(amountB), "wrong input"); 
+        
+        //Checking if output is within specified range. 
+        const errRange = ethers.BigNumber.from('10'+sixZeros)
+        assert(output.gte(amountA.sub(errRange)) && output.lte(amountA), "wrong output");
+    
+        compareStructs(config, takeOrderConfigStruct);
+        
+        totalOutput = totalOutput.add(output)
+        totalInputReceived = totalOutput.mul(ethers.BigNumber.from(1 + "0".repeat(tokenBDecimals - tokenADecimals)))
+    
         await timewarp(86400);
       } 
       
     });  
 
+    // Scaling ratio based on FixedPointMath `scaleRatio`
     xit("should ensure ratio is scaled exponentially based on input/output token decimals: (Input Decimals: 18 vs Output Decimals: 6)", async function () { 
 
       const tokenA18 = (await basicDeploy("ReserveTokenDecimals", {}, [
@@ -1053,7 +1055,7 @@ describe("Pilot", async function () {
       
     });  
  
- })
+  })
 
   
 
