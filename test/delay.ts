@@ -33,7 +33,10 @@ describe("Delay", async function () {
   let tokenB; 
 
   let orderBook
-  let expressionDeployer
+  let expressionDeployer 
+
+  const testNetwork = "mumbai"
+
 
   beforeEach(async () => {
    
@@ -44,9 +47,9 @@ describe("Delay", async function () {
     await tokenA.initialize();
     await tokenB.initialize(); 
 
-    orderBook = await getOrderBook(config.contracts.orderbook.address) 
+    orderBook = await getOrderBook(config.contracts[testNetwork].orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.contracts.expressionDeployer.address) 
+    expressionDeployer = await getExpressionDelopyer(config.contracts[testNetwork].expressionDeployer.address) 
 
 
   });

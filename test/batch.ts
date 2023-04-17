@@ -33,7 +33,9 @@ describe("Order Batches", async function () {
   let tokenB; 
 
   let orderBook
-  let expressionDeployer
+  let expressionDeployer 
+
+  const testNetwork = "mumbai"
 
   beforeEach(async () => {
    
@@ -45,9 +47,9 @@ describe("Order Batches", async function () {
     await tokenA.initialize();
     await tokenB.initialize(); 
 
-    orderBook = await getOrderBook(config.contracts.orderbook.address) 
+    orderBook = await getOrderBook(config.contracts[testNetwork].orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.contracts.expressionDeployer.address) 
+    expressionDeployer = await getExpressionDelopyer(config.contracts[testNetwork].expressionDeployer.address) 
 
   });
 
@@ -643,8 +645,7 @@ describe("Order Batches", async function () {
         orderBook
       ));    
 
-      console.log("input : " , input)
-      console.log("output : " , output)
+  
 
       assert(sender === bob.address, "wrong sender");
       if(i == 2){

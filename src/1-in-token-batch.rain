@@ -17,8 +17,7 @@ batch-index batch-remaining: call<2 2>(0),
 /* initial * (1.02)^batch-index */
 io-ratio: decimal18-mul({{ ratio }} decimal18-pow-int(102e16 batch-index)),
 
-amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio,
-:debug<0>();
+amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
 
 /*
  * Handle IO
