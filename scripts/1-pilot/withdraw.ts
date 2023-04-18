@@ -1,8 +1,6 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { depositAmount } from "../Deposit/deposit";
-import { withdrawNHTAmount } from "../Withdraw/withdraw";
 import { getCommons } from "../utils";
 import { withdrawNHTTokensOB, withdrawUSDTTokensOB } from "../utils/1-pilot.utils";
 
