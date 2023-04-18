@@ -18,16 +18,16 @@
         "transaction": "0x46326e77b3ab54166315ae44e4dc46af62a612709b41e2983a2dc06828fefc82"
       },
       "zeroexorderbookimplmentation": {
-        "address": "0xf06fa7be6caad7f3572f0286ca527ec7d6c29cd1",
-        "transaction": "0x4017c0acc6d57f9fed21fa72ee9e59bf0ab30b3208f92778a8df00c4869aec84"
+        "address": "0x6d47be053634b19a4dfb03ee5c53ce62a17585dc",
+        "transaction": "0x702ce153f22a99de43db72eebbbb96b52ed07fa81235b6f703c02c4bd0c5e46e"
       },
       "clonefactory": {
         "address": "0x781b69d6dca61d36cca5bb9fa1bb33e62fd3a819",
         "transaction": "0x5b3b542672e6cdf39494f116d4f0473d5e911cb5c259825a4c8acd95b604980e"
       },
       "zeroexorderbookinstance": {
-        "address": "0x72e86be9ae8f81d53d414ecb64f1bea3f86ffbfb",
-        "transaction": "0xbe0d3275653139c633cca48e96794093edf67b877579e1aaeb5aec24979fa26d"
+        "address": "0xcee1622624b7167e41196be97b21558344a47221",
+        "transaction": "0x054057c4e89542575881e5a7147fcd7eb0ff67e98267a6b31847c7996d57c657"
       },
       "usdt": {
         "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
@@ -40,32 +40,32 @@
     },
     "polygon": {
       "interpreter": {
-        "address": "0xaf9b92099852f83757fb063d1802fa2b24e91d46",
-        "transaction": "0x47d38c6a82ac40ecc2df545a119cb583ca627497056ddf9ab93fe5514a48c0f4"
+        "address": "0xc318bd7dbdac1ce35aa4aa1443b41c53246c60e2",
+        "transaction": "0xde3b11be0372dc8072e3192394444ee152c9d24b467f91cb22064686370541eb"
       },
       "store": {
-        "address": "0x13cdd62f032125fea331cf8b79eade8830cd5dab",
-        "transaction": "0xe9f16c65a87874598548a8879fc6568a503452b26c1da247b56c713830631462"
+        "address": "0x23ce89cd30082cb899005e8779f639ecb4cfc467",
+        "transaction": "0x116d53acc683544b3ea97a93841aab8c3b548488e2e32ae5e6bf7a35be396249"
       },
       "expressionDeployer": {
-        "address": "0x68181074a3929f51be86078e584e1ddc2cb3007c",
-        "transaction": "0x58c08d8389ddf4abd4a24099c2355ce14a82e0770a07a06a7fce68e4eadfe6dd"
+        "address": "0x410429dc602fbc4c58aeef345a8bb0e7d18d1cdb",
+        "transaction": "0x94cd4b8f0df831238683098855ee308fcdbd54fcf63db7080bc341233c8b0b74"
       },
       "orderbook": {
-        "address": "0x42cc063a0730a99ff2fc25218c606eb4969ca2eb",
-        "transaction": "0x9beb218927b72940515ae0b228f3d8a0feb77278ba52d24868e7a60a42510539"
+        "address": "0x04a2903d24516d2556bbe6f0e06baa378aac9995",
+        "transaction": "0xf9fbe99dc1554b6ffbb2ec4d878382cad8bf850c0259f1eb51934c4cb1950ad8"
       },
       "zeroexorderbookimplmentation": {
-        "address": "0x8ca0918ede8bad0a55d451176bfb8ca45b650841",
-        "transaction": "0xe26a135619e8189fd020fb6c9964b6d1aa0373b3547df4fe8c47495aa790ce1f"
+        "address": "0x6e3b584123812132cf678a02a97e6bdf56f51728",
+        "transaction": "0x9bf93142b71ee866396c95f0944afc2daf39a7cb08fef7d0c803aba64702f1d2"
       },
       "clonefactory": {
-        "address": "0xf73d944e5d2c5a61d5821df1b275e0eaf016ff39",
-        "transaction": "0x3448688d180ccfec7cbf07befc89e43a08b72c53e8449f3ee0c692d3eb468a1f"
+        "address": "0x1daaaf8b3f2eda641a6a4cb2ab840adbbf822ca7",
+        "transaction": "0x1fdeb26f89604be493c82dde60b1402eb5d7882f1aa6678561a41b46e0cd6b66"
       },
       "zeroexorderbookinstance": {
-        "address": "0x867fdf225b666a2f16bb4c08404c597c909399a5",
-        "transaction": "0x9aa09bcb7b3ab2d434db005df09281a1fcdeab79f4db9c11e6890e7cc9ef42aa"
+        "address": "0x57c8a54c37635f6feea837786860b9a02f0e66da",
+        "transaction": "0xc76e505e97463ccd1cbbfda263474bfb8512bc38099e8a3a7bad31c0d5d73a25"
       },
       "usdt": {
         "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
@@ -94,16 +94,16 @@
         "transaction": "0x5a346dd7513dc47324cc73d83c2f2afbbd57ce748711dff585d296f82522aeac"
       },
       "clonefactory": {
-        "address": "0x8ecd48e70954dec0f45e4551f039a0d24038c536",
-        "transaction": "0x6119de64f64cddf7cf77463f7f35ae04134fdc831e2e0766a55d6a13b380536e"
+        "address": "0x4bb0fbb4866c12bee0d01ee2fd47591138f8adbb",
+        "transaction": "0x954870158bf50c76539445e38c04cfa279d257ec5097345274ed734f9dcc51e4"
       },
-      "usdt":{
+      "usdt": {
         "address": "0x73ff9166fc5b3e3fc381803b0f3f97308832a9f8",
         "decimals": 18
       },
-      "nht":{
-          "address": "0xbaa8b434323472679301b5821668e87fb94dab4a",
-          "decimals": 18
+      "nht": {
+        "address": "0xbaa8b434323472679301b5821668e87fb94dab4a",
+        "decimals": 18
       }
     }
   },

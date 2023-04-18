@@ -3,20 +3,20 @@
     "owner": "0xA25f22b0Ab021A9cA1513C892e6FaacC50e92907",
     "handleIO": true,
     "evaluable": {
-      "interpreter": "0x24035B15e908551a2E1b4f435384d9485766D296",
-      "store": "0xd28543743f017045C9448EC6D82f5568a0F26918",
-      "expression": "0x42fb3Dd5F8b5aE6F269970254ca7c1B0131c2E38"
+      "interpreter": "0xc318bd7dBdAC1cE35aa4aA1443B41C53246c60e2",
+      "store": "0x23CE89CD30082Cb899005e8779f639ecb4cFc467",
+      "expression": "0x1f99fE36CD4C846799Db855bc58443b769077C9f"
     },
     "validInputs": [
       {
-        "token": "0x05cE0B29D94Cb8b156638D06336228b935212652",
-        "decimals": 18,
+        "token": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        "decimals": 6,
         "vaultId": "0x6e844f3117659a033e3666d07f76a335ba8f104cbaa9d969443c8c54ae1b0fe3"
       }
     ],
     "validOutputs": [
       {
-        "token": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+        "token": "0x84342e932797FC62814189f01F0Fb05F52519708",
         "decimals": 18,
         "vaultId": "0x6e844f3117659a033e3666d07f76a335ba8f104cbaa9d969443c8c54ae1b0fe3"
       }

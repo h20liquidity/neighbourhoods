@@ -15,7 +15,7 @@ dotenv.config();
 export const deployArbImplementation = async (fromNetwork,toNetwork) => {    
 
 
-    const txHash  = contractConfig[fromNetwork].zeroexorderbookimplmentation.transaction
+    const txHash  = contractConfig.contracts[fromNetwork].zeroexorderbookimplmentation.transaction
 
     //Get Provider for testnet from where the data is to be fetched 
     const mumbaiProvider = getProvider(fromNetwork)  
