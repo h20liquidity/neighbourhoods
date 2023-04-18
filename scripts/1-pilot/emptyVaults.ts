@@ -1,17 +1,14 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { depositAmount } from "../Deposit/deposit";
-import { withdrawNHTAmount, withdrawUSDTAmount } from "../Withdraw/withdraw";
+import { emptyNHTAmount, emptyUSDTAmount } from "../Withdraw/withdraw";
 import { ethers } from "ethers";
 import contractConfig from "../../config/config.json"
 import orderBookDetails0 from "../../config/Orderbook/0-OrderBook.json"  
-import orderBookDetails1 from "../../config/Orderbook/1-OrderBook.json"  
 
 import orderDetails from "../DeployStrategy/orderDetails.json"
 
-import { getCommons, getProvider } from "../utils";
-import { depositNHTTokensOB } from "../utils/1-pilot.utils";
+import {  getProvider } from "../utils";
 
 dotenv.config();
 
@@ -90,7 +87,7 @@ async function main() {
       )
       nhtBalance = ethers.utils.formatUnits(nhtBalance.toString(),orderDetails[0].validOutputs[0].decimals) 
       console.log("NHT Balance : " , nhtBalance )
-      await withdrawNHTAmount(fromNetwork,nhtBalance)  
+      await emptyNHTAmount(fromNetwork,nhtBalance,orderBook)  
 
 
       //Withdraw Input Tokens 
@@ -101,7 +98,7 @@ async function main() {
       )  
       usdtBalance = ethers.utils.formatUnits(usdtBalance.toString(),orderDetails[0].validInputs[0].decimals)
       console.log("USDT Balance : " , usdtBalance )
-      await withdrawUSDTAmount(fromNetwork,usdtBalance)  
+      await emptyUSDTAmount(fromNetwork,usdtBalance,orderBook)  
 
   }
 
