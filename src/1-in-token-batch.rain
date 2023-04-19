@@ -1,0 +1,59 @@
+/* Calculate IO */
+
+/* refuse any counterparties other than named */
+allowed-counterparty: {{ counterparty }},
+: ensure(eq(allowed-counterparty context<1 2>())),
+
+/* 24 hour delay on new batches = 86400 seconds */
+batch-start-info-k: context<1 0>(),
+batch-start-info: get(batch-start-info-k),
+batch-start-time: decode-256<32 32>(batch-start-info),
+: ensure(gt(now() int-add(batch-start-time 86400))),
+
+/* get info about current batch */
+batch-index batch-remaining: call<2 2>(0),
+
+/* 2% exponential growth */
+/* initial * (1.02)^batch-index */
+io-ratio: decimal18-mul({{ ratio }} decimal18-pow-int(102e16 batch-index)),
+
+amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
+
+/*
+ * Handle IO
+ * Actual order size available here after cross referencing counterparty order
+ */
+batch-start-info-k: context<1 0>(),
+total-received-k: hash(context<1 0>()),
+
+/* new batch info due to trade */
+in-token-amount: context<3 4>(),
+in-token-decimals: context<3 1>(),
+new-total-received new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(in-token-decimals in-token-amount)),
+
+/* stored batch info */
+batch-start-info: get(batch-start-info-k),
+batch-start-index: decode-256<0 32>(batch-start-info),
+batch-start-time: decode-256<32 32>(batch-start-info),
+
+/* if we're in a new batch record current time as batch start time */
+:set(
+  batch-start-info-k
+  if(
+    gt(new-batch-index batch-start-index)
+    encode-256<32 32>(now() encode-256<0 32>(new-batch-index 0))
+    batch-start-info)),
+:set(total-received-k new-total-received);
+
+/* Calculate batch */
+new-received:,
+total-received-k: hash(context<1 0>()),
+amount-per-batch: 1000e18,
+new-total-amount-received: int-add(get(total-received-k) new-received),
+/* use the flooring from integer division to simply batch the order */
+new-batch-index: int-div(new-total-amount-received amount-per-batch),
+new-batch-remaining: int-sub(
+  int-mul(
+    int-add(new-batch-index 1)
+    amount-per-batch)
+  new-total-amount-received);

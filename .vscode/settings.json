@@ -1,8 +1,6 @@
 {
   "rainlang.opmeta": {
-    "deployerAddress": "0x0d41310d0eb1a0e1827d55c98f603263219f8a5d",
-    "source": {
-      "chainId": 524289
-    }
+    "deployerAddress": "0x32ba42606ca2a2b91f28ebb0472a683b346e7cc7",
+    "source": "mumbai"
   }
 }

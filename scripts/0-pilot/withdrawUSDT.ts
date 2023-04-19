@@ -1,8 +1,8 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { depositAmount } from "./Deposit/deposit";
-import { withdrawNHTAmount } from "./Withdraw/withdraw";
+import { depositAmount } from "../Deposit/deposit";
+import { withdrawNHTAmount, withdrawUSDTAmount } from "../Withdraw/withdraw";
 
 
 dotenv.config();
@@ -22,14 +22,14 @@ async function main() {
   ) {
     console.log(
       `
-      Withdraw NHT token from the vault.
+      Withdraw USDT token from the vault.
       options:
 
         --from, -f <network name>
           Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"].
 
-        --amount, -a <Amount in NHT>
-          Amount in NHT to deposit
+        --amount, -a <Amount in USDT>
+          Amount in USDT to deposit
       `
     );
   }else{ 
@@ -67,7 +67,7 @@ async function main() {
         amount = _tmp[1]
       }  
 
-        await withdrawNHTAmount(fromNetwork,amount)
+        await withdrawUSDTAmount(fromNetwork,amount)
   }
 
   

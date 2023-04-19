@@ -1,7 +1,10 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { deployPilotStrategy } from "./DeployStrategy/deployStrategy";
+import { deployPilotStrategyWithVault } from "../DeployStrategy/deployStrategy";
+import { BigNumber, ethers } from "ethers";  
+import { randomUint256 } from "../utils";
+import orderDetails from "../DeployStrategy/orderDetails.json"
 
 
 dotenv.config();
@@ -65,7 +68,10 @@ async function main() {
       ratio = _tmp[1]
     }  
 
-     await deployPilotStrategy(toNetwork,ratio)
+    
+    const vaultId = ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
+
+     await deployPilotStrategyWithVault(toNetwork,ratio,vaultId)
 
   }
 

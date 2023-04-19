@@ -7,7 +7,7 @@ import { deployContractToNetwork, getCommons, getProvider, getTransactionData, g
 import { delay, verify } from "../verify"; 
 import {writeFileSync} from "fs";
 
-import contractConfig from "../config/contracts.config.json" 
+import contractConfig from "../../config/config.json" 
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ dotenv.config();
 export const deployArbImplementation = async (fromNetwork,toNetwork) => {    
 
 
-    const txHash  = contractConfig[fromNetwork].zeroexorderbookimplmentation.transaction
+    const txHash  = contractConfig.contracts[fromNetwork].zeroexorderbookimplmentation.transaction
 
     //Get Provider for testnet from where the data is to be fetched 
     const mumbaiProvider = getProvider(fromNetwork)  
@@ -40,7 +40,7 @@ export const deployArbImplementation = async (fromNetwork,toNetwork) => {
 
     console.log(`ZeroExImplementaion deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)   
 
-    let updateContractConfig = contractConfig 
+    let updateContractConfig = contractConfig["contracts"]  
 
     updateContractConfig[toNetwork] ? (
       updateContractConfig[toNetwork]["zeroexorderbookimplmentation"] = {
@@ -56,9 +56,10 @@ export const deployArbImplementation = async (fromNetwork,toNetwork) => {
       }    
     )   
 
-    let data = JSON.stringify(updateContractConfig,null,2) 
+    contractConfig["contracts"] = updateContractConfig
+    let data = JSON.stringify(contractConfig,null,2)  
 
-    writeFileSync('./scripts/config/contracts.config.json', data)  
+    writeFileSync('./config/config.json', data)  
 
     console.log("Submitting contract for verification...")
 

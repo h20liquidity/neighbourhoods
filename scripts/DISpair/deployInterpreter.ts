@@ -5,7 +5,7 @@ import { argv } from "process";
 import * as dotenv from "dotenv";
 import { deployContractToNetwork, getCommons, getProvider, getTransactionData } from "../utils";
 dotenv.config();
-import contractConfig from "../config/contracts.config.json" 
+import contractConfig from "../../config/config.json" 
 import {writeFileSync} from "fs";
 import { delay, verify } from "../verify";
 
@@ -14,7 +14,7 @@ import { delay, verify } from "../verify";
 export const  deployInterpreter = async (fromNetwork:string, toNetwork:string) => {    
 
    
-    const txHash = contractConfig[fromNetwork].interpreter.transaction
+    const txHash = contractConfig.contracts[fromNetwork].interpreter.transaction
 
     //Get Provider for testnet from where the data is to be fetched 
     const mumbaiProvider = getProvider(fromNetwork)  
@@ -37,7 +37,7 @@ export const  deployInterpreter = async (fromNetwork:string, toNetwork:string) =
     console.log(`Interpreter deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)  
 
 
-    let updateContractConfig = contractConfig
+    let updateContractConfig = contractConfig["contracts"]
    
     updateContractConfig[toNetwork] ? (
       updateContractConfig[toNetwork]["interpreter"] = {
@@ -52,10 +52,10 @@ export const  deployInterpreter = async (fromNetwork:string, toNetwork:string) =
          }
       }       
     )
+    contractConfig["contracts"] = updateContractConfig
+    let data = JSON.stringify(contractConfig,null,2)  
 
-    let data = JSON.stringify(updateContractConfig,null,2)  
-
-    writeFileSync('./scripts/config/contracts.config.json', data)  
+    writeFileSync('./config/config.json', data)  
 
     
 
