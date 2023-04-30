@@ -1,12 +1,17 @@
+/* op meta */
 @0xc4a4ab154dec61b0036b5882af23240a1ad518ce6c3212110585fca3647cd304
+
+/* ob meta */
+@0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c
+
 /* Calculate IO */
 
 /* refuse any counterparties other than named */
 allowed-counterparty: {{ counterparty }},
-: ensure(eq(allowed-counterparty context<1 2>())),
+: ensure(eq(allowed-counterparty counterparty-address())),
 
 /* 24 hour delay on new batches = 86400 seconds */
-batch-start-info-k: context<1 0>(),
+batch-start-info-k: {{ sell-order-hash }},
 batch-start-info: get(batch-start-info-k),
 batch-start-time: decode-256<32 32>(batch-start-info),
 : ensure(gt(now() int-add(batch-start-time 86400))),
@@ -24,13 +29,11 @@ amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
-batch-start-info-k: context<1 0>(),
-total-received-k: hash(context<1 0>()),
+batch-start-info-k: {{ sell-order-hash }},
+total-received-k: hash({{ sell-order-hash }}),
 
 /* new batch info due to trade */
-in-token-amount: context<3 4>(),
-in-token-decimals: context<3 1>(),
-new-total-received new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(in-token-decimals in-token-amount)),
+new-total-received new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(vault-input-token-decimals() vault-input-balance-increase())),
 
 /* stored batch info */
 batch-start-info: get(batch-start-info-k),
@@ -48,7 +51,7 @@ batch-start-time: decode-256<32 32>(batch-start-info),
 
 /* Calculate batch */
 new-received:,
-total-received-k: hash(context<1 0>()),
+total-received-k: hash({{ sell-order-hash }}),
 amount-per-batch: 1000e18,
 new-total-amount-received: int-add(get(total-received-k) new-received),
 /* use the flooring from integer division to simply batch the order */
