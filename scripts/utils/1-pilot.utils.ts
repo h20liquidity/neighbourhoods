@@ -114,7 +114,7 @@ export const deployStrategyWithVault = async(network:string,priKey: string, comm
     //Building Expression
     const strategyExpression = path.resolve(
         __dirname,
-        "../../src/1-in-token-batch.rain"
+        "../../src/2-price-update.rain"
       ); 
   
     const strategyString = await fetchFile(strategyExpression);  
