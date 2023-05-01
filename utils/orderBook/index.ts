@@ -9,13 +9,18 @@ import { compareStructs } from "../test";
 
 export const scaleOutputMax = async (orderRatio, opMax) => { 
   return fixedPointDiv(opMax,orderRatio) 
-}
+} 
+
+export const baseIOMultiplier_1 = ethers.BigNumber.from("1020000000000000000")   
+
+export const baseIOMultiplier_2 = ethers.BigNumber.from("1010000000000000000")  
+
 
 // Hacky Util
 export const prbScale = async (index: number, orderRatio: string) => {  
     let numRatio = new Number(orderRatio)
     let baseRatio = ethers.BigNumber.from(numRatio.toString()) 
-    let base = ethers.BigNumber.from("1020000000000000000")   
+    let base = baseIOMultiplier_2
     let ioMultiplier
     if(index == 0){
       ioMultiplier = ONE
@@ -62,7 +67,7 @@ export const takeOrder = async (
     const ratio = await prbScale(index,orderRatio)  
 
     // Deposit max amount per batch
-    const amountB = await scaleOutputMax(ratio,ONE.mul(1000)) ;
+    const amountB = await scaleOutputMax(ratio,ONE.mul(100)) ;
 
     const depositConfigStructAlice = {
       token: tokenB.address,

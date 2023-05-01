@@ -73,10 +73,10 @@ describe("Delay", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
     
     // Order_A
-    const strategyRatio = "25e13"
+    const strategyRatio = "29e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
@@ -118,7 +118,7 @@ describe("Delay", async function () {
      // BATCH 0
      const ratio0 = await prbScale(0,strategyRatio)  
 
-     const amountB = await scaleOutputMax(ratio0,ONE.mul(1000)) ; 
+     const amountB = await scaleOutputMax(ratio0,ONE.mul(100)) ; 
      
      // DEPOSIT
      // Deposit token equal to the size of the batch 
@@ -156,7 +156,7 @@ describe("Delay", async function () {
        orders: [takeOrderConfigStruct0],
      };
  
-     const amountA0 = ethers.BigNumber.from('1000' + eighteenZeros)
+     const amountA0 = ethers.BigNumber.from('100' + eighteenZeros)
  
      await tokenA.transfer(bob.address, amountA0);
      await tokenA.connect(bob).approve(orderBook.address, amountA0); 
@@ -181,7 +181,7 @@ describe("Delay", async function () {
       // BATCH 1
      const ratio1 = await prbScale(1,strategyRatio)  
 
-     const amountB1 = await scaleOutputMax(ratio1,ONE.mul(1000)) ; 
+     const amountB1 = await scaleOutputMax(ratio1,ONE.mul(100)) ; 
      
      // DEPOSIT
      // Deposit token equal to the size of the batch 
@@ -219,12 +219,12 @@ describe("Delay", async function () {
       orders: [takeOrderConfigStruct1],
     };
 
-    const amountA1 = ethers.BigNumber.from('1000' + eighteenZeros)
+    const amountA1 = ethers.BigNumber.from('100' + eighteenZeros)
 
     await tokenA.transfer(bob.address, amountA1);
     await tokenA.connect(bob).approve(orderBook.address, amountA1);  
 
-    await timewarp(43200);
+    await timewarp(1800);
     
     //Should fail as delay is not observed
     await assertError(
@@ -236,7 +236,7 @@ describe("Delay", async function () {
       "Delay"
     )  
 
-    await timewarp(41400);
+    await timewarp(900);
     
     //Should fail as delay is not observed
     await assertError(
@@ -249,7 +249,7 @@ describe("Delay", async function () {
     ) 
     
     // Introducing Delay
-    await timewarp(1800); 
+    await timewarp(900); 
     
     // Order should succeed after deplay is complete
     const txTakeOrders1 = await orderBook
