@@ -13,8 +13,13 @@ batch-start-time: decode-256<32 32>(batch-start-info),
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
 
-/* 2% exponential growth */
-/* initial * (1.02)^batch-index */
+/*
+ * Exponential growth
+ * A * (1 + r)^x
+ * A = initial ratio
+ * r = % increase per batch
+ * x = batch index
+ */
 io-ratio: decimal18-mul({{ ratio }} decimal18-pow-int(101e16 batch-index)),
 
 amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
