@@ -48,8 +48,7 @@ batch-start-time: decode-256<32 32>(batch-start-info),
     gt(new-batch-index batch-start-index)
     encode-256<32 32>(now() encode-256<0 32>(new-batch-index 0))
     batch-start-info)),
-:set(total-received-k new-total-received),
-:debug<0>();
+:set(total-received-k new-total-received);
 
 /* Calculate batch */
 new-received:,
