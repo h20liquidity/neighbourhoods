@@ -29,7 +29,7 @@
     "hardhat": "^2.13.0",
     "hardhat-contract-sizer": "=2.6.1",
     "mustache": "^4.2.0",
-    "rainlang": "rainprotocol/rainlang#58a5deee3e7d28058c0a7be8d6e8e51f9021326e",
+    "@rainprotocol/rainlang": "^2.2.1",
     "solc": "^0.8.17",
     "string-math": "^1.2.2",
     "ts-node": "^10.9.1",
