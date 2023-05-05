@@ -197,9 +197,7 @@ describe("Decimals", async function () {
           txTakeOrders,
           "TakeOrder",
           orderBook
-        ));   
-
-        console.log('output : ', output.toString() )
+        ));
     
         assert(sender === bob.address, "wrong sender");
         assert(input.eq(amountB), "wrong input");
@@ -478,8 +476,6 @@ describe("Decimals", async function () {
           "TakeOrder",
           orderBook
         ));   
-
-        console.log('output : ' , output )
     
         assert(sender === bob.address, "wrong sender");
         assert(input.eq(amountB), "wrong input");
@@ -853,16 +849,13 @@ describe("Decimals", async function () {
   
       // Recursively places orders for batches
       for(let i = 0 ; i < 10 ; i++){   
-        
-        console.log("---------------- i : " , i)
 
         // scale ratio as batch index increases
         let ratio = await prbScale(i,strategyRatio) 
   
         // DEPOSIT
         // Deposit max amount per batch 
-        const amountB = await scaleOutputMax(ratio.toString(),6)  
-        console.log("amountB : " , amountB )
+        const amountB = await scaleOutputMax(ratio.toString(),6)
   
         const depositConfigStructAlice = {
           token: tokenB06.address,

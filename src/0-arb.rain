@@ -1,3 +1,6 @@
 /* refuse any counterparties other than bot */
+/*op meta*/
+@0x47ed85f917e187757bff09371cedcf5c0eb277c27e4673feb2d3cc040c66c993 
+
 allowed-counterparty: {{ counterparty }},
 : ensure(eq(allowed-counterparty context<0 0>()));
