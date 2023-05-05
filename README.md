@@ -4,6 +4,39 @@ Goal
 - Deploy new strategy to track input tokens received with changed ratio and tranche limit .
 
 Once you have ennvironment setup, follow the steps : 
+#### Empty the older vaults
+Before we deploy the new strategy, we must first withdraw all tokens from the older vaults. 
+
+This step is crucial and must be ***performed before any other script***
+
+To withdraw from older vaults **run** the following command in shell from the **root of the project**.
+
+
+```sh
+ts-node scripts/1-pilot/emptyVaults.ts --from polygon --contract 0xfb29eadbe9700f6a0ba41b4b5232c8ebbb6233a1
+```
+
+Where arguments for the script are:
+
+- `--from, -f <network name>` : Network name of originating network. Any of ["mumbai","sepolia","polygon"]. This will be network where previously contract was deployed.
+- `--contract, -c <contract address>` : Address of the contract in which tokens were deposited.
+
+#### Deploying Contracts
+
+The script clones the contract deployed on one network to another.
+
+To deploy contracts **run** the following command in shell from the **root of the project**.
+Replace <your-public-key> with the public address for the `DEPLOYMENT_KEY` you added to the `.env` file.
+```sh
+ts-node scripts/1-pilot/deployContracts.ts --from mumbai --to polygon --counterparty <your-public-key>
+```
+Where arguments for the script are:
+
+- `--from, -f <network name>` : Network name of originating network. Any of ["mumbai","sepolia","polygon"]. Usally this will be a test network.
+- `--to, -t <network name>` : Network name of target network where new contract is to be deployed.Any of ["mumbai","sepolia","polygon"]. Usally this will be a main network for a chain.
+- `--counterparty, -c <address>` : Conterparty address (public key) used for the strategy.
+
+Wait for all the contracts to be deployed and verified.
 
 #### Deploying Strategy.
 
