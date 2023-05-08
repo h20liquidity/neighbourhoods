@@ -4,7 +4,6 @@ import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
 import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
 import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
-import * as mustache from 'mustache'; 
 import * as path from "path";  
 import orderBookDetails from "../../config/Orderbook/1-OrderBook.json" 
 import {writeFileSync} from "fs"; 
@@ -92,11 +91,10 @@ export const decodeAddOrderEventsArgsPilot1 = async(transaction,orderBook) => {
   
 } 
 
-export const deployStrategyWithVault = async(network:string,priKey: string, common: Common,ratio:string,vaultId) => {   
+export const deployStrategyWithVault = async(network:string,priKey: string, common: Common,vaultId) => {   
 
     console.log("Deploying Strategy...") 
-  
-    if(!ratio) return null
+
       
     //Get Provider for testnet from where the data is to be fetched 
     const provider = getProvider(network)   
@@ -121,13 +119,9 @@ export const deployStrategyWithVault = async(network:string,priKey: string, comm
   
     const arbCounterParty = contractConfig.contracts[network].zeroexorderbookinstance.address 
     console.log("arbCounterParty: ",arbCounterParty)
+      
   
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: arbCounterParty,
-      ratio: ratio
-    });    
-  
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)  
+    const { sources, constants } = await standardEvaluableConfig(strategyString)  
   
     const EvaluableConfig_A = {
       deployer: contractConfig.contracts[network].expressionDeployer.address,

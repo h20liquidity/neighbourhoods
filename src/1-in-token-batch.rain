@@ -1,7 +1,13 @@
+/*op meta*/ 
+
+@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81 
+
+/*ob meta*/
+@0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
 /* Calculate IO */
 
 /* refuse any counterparties other than named */
-allowed-counterparty: {{ counterparty }},
+allowed-counterparty: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,
 : ensure(eq(allowed-counterparty context<1 2>())),
 
 /* 24 hour delay on new batches = 86400 seconds */
@@ -15,7 +21,7 @@ batch-index batch-remaining: call<2 2>(0),
 
 /* 2% exponential growth */
 /* initial * (1.02)^batch-index */
-io-ratio: decimal18-mul({{ ratio }} decimal18-pow-int(102e16 batch-index)),
+io-ratio: decimal18-mul(32e13 decimal18-pow-int(102e16 batch-index)),
 
 amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
 

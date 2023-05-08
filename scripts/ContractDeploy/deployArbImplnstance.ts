@@ -12,7 +12,7 @@ import contractConfig from "../../config/config.json"
 dotenv.config();
 
 
-export const deployZeroExInstance = async(toNetwork,counterparty) => {    
+export const deployZeroExInstance = async(toNetwork) => {    
 
     
     //Get Provider for the network where the contract is to be deployed to
@@ -23,7 +23,7 @@ export const deployZeroExInstance = async(toNetwork,counterparty) => {
     const common = getCommons(toNetwork) 
 
     //Deploy transaction
-    const {cloneEventData,contractTransaction} = await deployArbContractInstance(deployProvider,common,process.env.DEPLOYMENT_KEY,toNetwork,counterparty) 
+    const {cloneEventData,contractTransaction} = await deployArbContractInstance(deployProvider,common,process.env.DEPLOYMENT_KEY,toNetwork) 
 
     
     console.log(`Arb Instance deployed to ${toNetwork} at : ${cloneEventData.clone}`)    

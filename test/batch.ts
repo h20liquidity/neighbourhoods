@@ -15,7 +15,6 @@ import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
 import { assertError, fetchFile, resetFork, timewarp } from "../utils";
-import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -64,8 +63,7 @@ describe("Order Batches", async function () {
 
     const signers = await ethers.getSigners();
 
-    const [, alice, bob] = signers;   
-
+    const [, alice, bob] = signers;
 
     const aliceVaultA = ethers.BigNumber.from(randomUint256());
     const aliceVaultB = ethers.BigNumber.from(randomUint256());
@@ -88,12 +86,9 @@ describe("Order Batches", async function () {
     const strategyRatio_A = "29e13"
 
     
-    const stringExpression_A = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio_A
-    }); 
+    
 
-    const { sources, constants } = await standardEvaluableConfig(stringExpression_A)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -121,54 +116,13 @@ describe("Order Batches", async function () {
       orderBook
     )); 
 
-    // Order B 
-    // Placing order with diff ratio
-    const strategyRatio_B = "30e13" 
-
-    const stringExpression_B = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio_B
-    }); 
-
-    const { sources:sourceB, constants:constantsB } = await standardEvaluableConfig(stringExpression_B)
-
-    const EvaluableConfig_B = {
-      deployer: expressionDeployer.address,
-      sources: sourceB,
-      constants: constantsB,
-    }
-    const orderConfig_B= {
-      validInputs: [
-        { token: tokenA.address, decimals: 18, vaultId: aliceVaultB },
-      ],
-      validOutputs: [
-        { token: tokenB.address, decimals: 18, vaultId: aliceVaultB },
-      ],
-      evaluableConfig: EvaluableConfig_B,
-      meta: aliceOrder,
-    };
-
-    const txOrder_B = await orderBook.connect(alice).addOrder(orderConfig_B);
-
-    const {
-      order: Order_B
-    } = (await getEventArgs(
-      txOrder_B,
-      "AddOrder",
-      orderBook
-    ));  
-
     // Order C
     // Placing order with exact params as order A.
     // Even if the params are same order hash computed is different
     const strategyRatio_C = "29e13" 
+ 
 
-    const stringExpression_C = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio_C
-    }); 
-
-    const { sources:sourceC, constants:constantsC } = await standardEvaluableConfig(stringExpression_C)
+    const { sources:sourceC, constants:constantsC } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_C = {
       deployer: expressionDeployer.address,
@@ -222,21 +176,6 @@ describe("Order Batches", async function () {
           bob, 
           tokenA,
           tokenB, 
-          aliceVaultB,
-          Order_B,
-          orderBook,
-          i,
-          strategyRatio_B
-        )   
-
-        // placing delay
-        await timewarp(3600) 
-
-        await takeOrder(
-          alice, 
-          bob, 
-          tokenA,
-          tokenB, 
           aliceVaultC,
           Order_C,
           orderBook,
@@ -273,12 +212,7 @@ describe("Order Batches", async function () {
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -527,12 +461,7 @@ describe("Order Batches", async function () {
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,

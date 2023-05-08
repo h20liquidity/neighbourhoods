@@ -14,7 +14,6 @@ import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
   
 import {  fetchFile, resetFork, timewarp } from "../utils";
-import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -81,12 +80,7 @@ describe("Order Ratio", async function () {
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -209,14 +203,9 @@ describe("Order Ratio", async function () {
       "../src/2-price-update.rain"
     );
 
-    const strategyString = await fetchFile(strategyExpression); 
+    const strategyString = await fetchFile(strategyExpression);  
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,

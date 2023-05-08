@@ -19,7 +19,6 @@ import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
 import fs from "fs"  
 import { assertError, fetchFile, resetFork, timewarp } from "../utils";
-import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -102,13 +101,8 @@ describe("Decimals", async function () {
       );
 
     const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -243,13 +237,8 @@ describe("Decimals", async function () {
     );
 
     const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -383,13 +372,8 @@ describe("Decimals", async function () {
       );
 
       const strategyString = await fetchFile(strategyExpression); 
-
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address,
-        ratio: strategyRatio
-      }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -521,13 +505,8 @@ describe("Decimals", async function () {
     );
 
     const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -665,12 +644,7 @@ describe("Decimals", async function () {
 
       const strategyString = await fetchFile(strategyExpression); 
 
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address,
-        ratio: strategyRatio
-      }); 
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -811,13 +785,8 @@ describe("Decimals", async function () {
       );
 
       const strategyString = await fetchFile(strategyExpression); 
-
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address, 
-        ratio: strategyRatio
-      }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -954,13 +923,8 @@ describe("Decimals", async function () {
       );
 
       const strategyString = await fetchFile(strategyExpression); 
-
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address, 
-        ratio: strategyRatio
-      }); 
     
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
