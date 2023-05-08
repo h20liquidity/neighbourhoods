@@ -23,18 +23,24 @@ Where arguments for the script are:
 
 #### Deploying Contracts
 
-The script clones the contract deployed on one network to another.
+The script clones the contract deployed on one network to another. 
+
+Before we deploy the contracts make sure that correct counterparty address is set in the `src/0-arb.rain` under the `allowed-counterparty` 
+- The `allowed-counterparty` will be the public key of the bot wallet . 
+```sh
+/*refuse any counterparties other than named . This will be the public key of the bot wallet.*/
+allowed-counterparty: 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88,
+```
 
 To deploy contracts **run** the following command in shell from the **root of the project**.
-Replace <your-public-key> with the public address for the `DEPLOYMENT_KEY` you added to the `.env` file.
+
 ```sh
-ts-node scripts/1-pilot/deployContracts.ts --from mumbai --to polygon --counterparty <your-public-key>
+ts-node scripts/1-pilot/deployContracts.ts --from mumbai --to polygon
 ```
 Where arguments for the script are:
 
 - `--from, -f <network name>` : Network name of originating network. Any of ["mumbai","sepolia","polygon"]. Usally this will be a test network.
 - `--to, -t <network name>` : Network name of target network where new contract is to be deployed.Any of ["mumbai","sepolia","polygon"]. Usally this will be a main network for a chain.
-- `--counterparty, -c <address>` : Conterparty address (public key) used for the strategy.
 
 Wait for all the contracts to be deployed and verified.
 
@@ -42,18 +48,35 @@ Wait for all the contracts to be deployed and verified.
 
 Before deploying the strategy, double check that the Orderbook and ZeroEx contracts are deployed on the target network (Polygon mainnet), and the corresponding addresses are updated in `config/config.json`.
 
+Make sure that the correct counterparty address and ratio are set in the `src/2-price-update.rain`. 
+- The `allowed-counterparty` will be the `zeroexorderbookinstance` address from the `config/config.json` under `polygon` network
+- The ratio will be `29e13` or any value you may desire. 
+
+Eg : 
+```sh
+/* refuse any counterparties other than named . This will be the arb contract instance address. */
+allowed-counterparty: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC, 
+...
+/*
+ * Exponential growth
+ * A * (1 + r)^x
+ * A = initial ratio
+ * r = % increase per batch
+ * x = batch index
+ */
+io-ratio: decimal18-mul(29e13 decimal18-pow-int(101e16 batch-index)), 
+```
 Also make sure that all the necessary ERC20 token details on the target network required for the strategy are correct in `config/config.json` itself
 
 To deploy strategy **run** the following command in your shell from the **root of the project** :
 
 ```sh
-ts-node scripts/1-pilot/deployStrategy.ts --to polygon --ratio 29e13
+ts-node scripts/1-pilot/deployStrategy.ts --to polygon
 ```
 
 Where arguments for the script are:
 
 - `--to, -t <target-network-name>` : Target network to deploy the strategy to.
-- `--ratio -r <value>`  : Ratio value for the startegy represented as exponential notation. Note that ***exponent*** and ***power*** are both ***whole number*** values. Eg  : **25e13** , **1e18** etc.
 
 Wait for the transaction to be confirmed.
 
