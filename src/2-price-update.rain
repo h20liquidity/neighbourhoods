@@ -1,27 +1,31 @@
-/*op meta*/ 
-
-@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81 
+/*op meta*/
+@0x47ed85f917e187757bff09371cedcf5c0eb277c27e4673feb2d3cc040c66c993
 
 /*ob meta*/
-@0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
+@0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c
 /* Calculate IO */
 
-/* refuse any counterparties other than named */
+/* refuse any counterparties other than named . This will be the arb contract instance address. */
 allowed-counterparty: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,
-: ensure(eq(allowed-counterparty context<1 2>())),
+: ensure(eq(allowed-counterparty counterparty-address())),
 
-/* 24 hour delay on new batches = 86400 seconds */
-batch-start-info-k: context<1 0>(),
+/* 1 hour delay on new batches = 3600 seconds */
+batch-start-info-k: order-hash(),
 batch-start-info: get(batch-start-info-k),
 batch-start-time: decode-256<32 32>(batch-start-info),
-: ensure(gt(now() int-add(batch-start-time 86400))),
+: ensure(gt(now() int-add(batch-start-time 3600))),
 
 /* get info about current batch */
 batch-index batch-remaining: call<2 2>(0),
 
-/* 2% exponential growth */
-/* initial * (1.02)^batch-index */
-io-ratio: decimal18-mul(32e13 decimal18-pow-int(102e16 batch-index)),
+/*
+ * Exponential growth
+ * A * (1 + r)^x
+ * A = initial ratio
+ * r = % increase per batch
+ * x = batch index
+ */
+io-ratio: decimal18-mul(29e13 decimal18-pow-int(101e16 batch-index)),
 
 amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
 
@@ -29,12 +33,12 @@ amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
-batch-start-info-k: context<1 0>(),
-total-received-k: hash(context<1 0>()),
+batch-start-info-k: order-hash(),
+total-received-k: hash(order-hash()),
 
 /* new batch info due to trade */
-in-token-amount: context<3 4>(),
-in-token-decimals: context<3 1>(),
+in-token-amount: vault-input-balance-increase(),
+in-token-decimals: vault-input-token-decimals(),
 new-total-received new-batch-index _: call<2 3>(scale-18-dynamic<0 1>(in-token-decimals in-token-amount)),
 
 /* stored batch info */
@@ -53,8 +57,8 @@ batch-start-time: decode-256<32 32>(batch-start-info),
 
 /* Calculate batch */
 new-received:,
-total-received-k: hash(context<1 0>()),
-amount-per-batch: 1000e18,
+total-received-k: hash(order-hash()),
+amount-per-batch: 100e18,
 new-total-amount-received: int-add(get(total-received-k) new-received),
 /* use the flooring from integer division to simply batch the order */
 new-batch-index: int-div(new-total-amount-received amount-per-batch),

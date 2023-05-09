@@ -28,16 +28,12 @@ async function main() {
       options:
 
         --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"].  
-
-        --ratio -r <ratio value> 
-          Ratio for the startegy
+          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]. 
       `
     );
   }else{ 
 
     let toNetwork
-    let ratio
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
    
@@ -55,23 +51,10 @@ async function main() {
       toNetwork = _tmp[1]
     }   
 
-    if (
-      args.includes("--ratio") ||
-      args.includes("-r")
-    ) {
-      const _i =
-        args.indexOf("--ratio") > -1
-          ? args.indexOf("--ratio")
-          : args.indexOf("-r")
-      const _tmp = args.splice(_i, _i + 2); 
-      if (_tmp.length != 2) throw new Error("expected ratio");
-      ratio = _tmp[1]
-    }  
-
     
     const vaultId = ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
 
-     await deployPilotStrategyWithVault(toNetwork,ratio,vaultId)
+     await deployPilotStrategyWithVault(toNetwork,vaultId)
 
   }
 

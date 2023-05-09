@@ -14,7 +14,6 @@ import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
   
 import {  fetchFile, resetFork, timewarp } from "../utils";
-import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -73,20 +72,15 @@ describe("Order Ratio", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
 
     // Order_A
-    const strategyRatio = "25e13"
+    const strategyRatio = "29e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -120,9 +114,9 @@ describe("Order Ratio", async function () {
 
     // Bob takes order with direct wallet transfer
     for(let i = 0 ; i < 10 ; i++){  
-
       // DEPOSIT
-      const amountB = ethers.BigNumber.from("400000" + eighteenZeros); 
+      // Depositing exactly 1/10th of amount
+      const amountB = ethers.BigNumber.from("34482758620689655172413"); 
 
       // Batch Index Remains the same hence ratio remains the same 
       const ratio = await prbScale(0,strategyRatio)
@@ -157,8 +151,9 @@ describe("Order Ratio", async function () {
         maximumIORatio: ratio,
         orders: [takeOrderConfigStruct],
       };
-  
-      const amountA = amountB.mul(ratio).div(ONE); 
+      
+      // Taking orders for exactly 1/10th of amount
+      const amountA = ethers.BigNumber.from('10' + eighteenZeros); 
   
       await tokenA.transfer(bob.address, amountA);
       await tokenA.connect(bob).approve(orderBook.address, amountA); 
@@ -199,23 +194,18 @@ describe("Order Ratio", async function () {
 
     const aliceOrder = encodeMeta("Order_A");  
 
-    const strategyRatio = "25e13"
+    const strategyRatio = "29e13"
 
     // Order_A
 
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
-    const strategyString = await fetchFile(strategyExpression); 
+    const strategyString = await fetchFile(strategyExpression);  
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -255,7 +245,7 @@ describe("Order Ratio", async function () {
       const ratio = await prbScale(i,strategyRatio)  
 
       // Deposit max amount per batch 
-      const amountB = await scaleOutputMax(ratio,ONE.mul(1000)) 
+      const amountB = await scaleOutputMax(ratio,ONE.mul(100)) 
 
       const depositConfigStructAlice = {
         token: tokenB.address,
@@ -313,7 +303,7 @@ describe("Order Ratio", async function () {
       compareStructs(config, takeOrderConfigStruct); 
 
       // Delay is introduced between batches
-      await timewarp(86400)
+      await timewarp(3600)
     } 
     
   });  

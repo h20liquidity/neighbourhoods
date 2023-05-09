@@ -37,14 +37,11 @@ async function main() {
         --to, -t <network name>
           Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]
 
-        --counterparty, -c <address>
-          Counterparty address for strategy.
       `
     );
   }else{ 
     let fromNetwork 
     let toNetwork  
-    let counterparty 
 
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
@@ -77,19 +74,7 @@ async function main() {
       if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
       toNetwork = _tmp[1]
     }  
-    
-    if (
-      args.includes("--counterparty") ||
-      args.includes("-c")
-    ) {
-      const _i =
-        args.indexOf("--counterparty") > -1
-          ? args.indexOf("--counterparty")
-          : args.indexOf("-c")
-      const _tmp = args.splice(_i, _i + 2);
-      if (_tmp.length != 2) throw new Error("expected counterparty");
-      counterparty = _tmp[1]
-    }
+
 
     // await deployInterpreter(fromNetwork,toNetwork)  
 

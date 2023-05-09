@@ -14,8 +14,7 @@ import {
 } from "../utils/interpreter/interpreter";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path';
-import { assertError, fetchFile, resetFork } from "../utils";
-import * as mustache from 'mustache'; 
+import { assertError, compareStructs, fetchFile, resetFork } from "../utils";
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -23,7 +22,7 @@ import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
 import { encodeMeta } from "../scripts/utils";
-import { prbScale } from "../utils/orderBook";
+import { prbScale, scaleOutputMax } from "../utils/orderBook";
 dotenv.config();
 
 describe("Counterparty", async function () {
@@ -72,20 +71,15 @@ describe("Counterparty", async function () {
     const aliceOrder = encodeMeta("Order_A");   
 
     // Order_A 
-    const strategyRatio = "25e13"
+    const strategyRatio = "29e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
-    const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    });    
+    const strategyString = await fetchFile(strategyExpression);  
     
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -115,9 +109,11 @@ describe("Counterparty", async function () {
 
      // TAKE ORDER
 
-     // DEPOSIT
+     // DEPOSIT 
+
+     let ratio = await prbScale(0,strategyRatio) 
      // Deposit token equal to the size of the batch
-     const amountB = ethers.BigNumber.from("1000" + eighteenZeros);
+     const amountB = await scaleOutputMax(ratio,ONE.mul(100));
  
      const depositConfigStructAlice = {
        token: tokenB.address,
@@ -142,7 +138,7 @@ describe("Counterparty", async function () {
        signedContext: []
      }; 
  
-     let ratio = await prbScale(0,strategyRatio) 
+     
  
      const takeOrdersConfigStruct = {
        output: tokenA.address,
@@ -152,9 +148,11 @@ describe("Counterparty", async function () {
        maximumIORatio: ratio,
        orders: [takeOrderConfigStruct],
      };
- 
-     const amountA = amountB.mul(ratio).div(ONE); 
- 
+     
+
+     const amountA = ethers.BigNumber.from('100' + eighteenZeros); 
+     
+     // Carol Takes Order
      await tokenA.transfer(carol.address, amountA);
      await tokenA.connect(carol).approve(orderBook.address, amountA); 
 
@@ -165,7 +163,28 @@ describe("Counterparty", async function () {
         .takeOrders(takeOrdersConfigStruct),
       "",
       "Invalid Conterparty"
-    );
+    ); 
+
+    // Bob Takes Order 
+    await tokenA.transfer(bob.address, amountA);
+    await tokenA.connect(bob).approve(orderBook.address, amountA); 
+
+    const txTakeOrders = await orderBook
+        .connect(bob)
+        .takeOrders(takeOrdersConfigStruct)
+
+    const { sender: sender, config: config, input:input, output: output } = (await getEventArgs(
+        txTakeOrders,
+        "TakeOrder",
+        orderBook
+      ));  
+
+
+      assert(sender === bob.address, "wrong sender");
+      assert(input.eq(amountB), "wrong input");
+      assert(output.eq(amountA), "wrong output");
+
+      compareStructs(config, takeOrderConfigStruct);  
         
   }); 
 

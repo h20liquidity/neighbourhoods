@@ -4,7 +4,6 @@ import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
 import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
 import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
-import * as mustache from 'mustache'; 
 import * as path from "path";  
 import orderBookDetails from "../../config/Orderbook/0-OrderBook.json" 
 import {writeFileSync} from "fs"; 
@@ -417,11 +416,10 @@ export const decodeCloneEvent = async(transaction,cloneFactory) => {
  
 
 
-export const deployStrategy = async(network:string,priKey: string, common: Common,ratio:string) => {   
+export const deployStrategy = async(network:string,priKey: string, common: Common) => {   
 
   console.log("Deploying Strategy...") 
 
-  if(!ratio) return null
     
   //Get Provider for testnet from where the data is to be fetched 
   const provider = getProvider(network)   
@@ -448,12 +446,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   const arbCounterParty = contractConfig.contracts[network].zeroexorderbookinstance.address 
   console.log("arbCounterParty: ",arbCounterParty)
 
-  const stringExpression = mustache.render(strategyString, {
-    counterparty: arbCounterParty,
-    ratio: ratio
-  });    
-
-  const { sources, constants } = await standardEvaluableConfig(stringExpression)  
+  const { sources, constants } = await standardEvaluableConfig(strategyString)  
 
   const EvaluableConfig_A = {
     deployer: contractConfig.contracts[network].expressionDeployer.address,
@@ -873,7 +866,7 @@ export const withdrawUSDTTokens = async(network:string,priKey: string, common: C
 }
 
 
-export const deployArbContractInstance = async (provider: any, common: Common,  priKey: string, network: string, counterparty: string) => { 
+export const deployArbContractInstance = async (provider: any, common: Common,  priKey: string, network: string) => { 
 
   console.log("Deploying Arb Instance...")
 
@@ -886,13 +879,9 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     "../../src/0-arb.rain"
   );
 
-  const arbString = await fetchFile(arbExp); 
+  const arbString = await fetchFile(arbExp);  
 
-  const arbExpression = mustache.render(arbString, {
-    counterparty: counterparty,
-  }); 
-
-  const { sources, constants } = await standardEvaluableConfig(arbExpression)  
+  const { sources, constants } = await standardEvaluableConfig(arbString)  
 
   const { exchangeProxy } = getContractAddressesForChainOrThrow(provider._network.chainId);
   

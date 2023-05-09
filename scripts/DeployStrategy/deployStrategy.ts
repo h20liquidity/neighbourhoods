@@ -9,13 +9,13 @@ import { deployStrategyWithVault } from "../utils/1-pilot.utils";
 dotenv.config();
 
 
-export const deployPilotStrategy = async(toNetwork,ratio)=> {    
+export const deployPilotStrategy = async(toNetwork)=> {    
 
 
    // Get Chain details
    const common = getCommons(toNetwork) 
 
-   const strategyTransaction =  await deployStrategy(toNetwork,process.env.DEPLOYMENT_KEY,common ,ratio)  
+   const strategyTransaction =  await deployStrategy(toNetwork,process.env.DEPLOYMENT_KEY,common)  
 
    if(!strategyTransaction){
       console.log("Err...something went wrong")
@@ -27,13 +27,13 @@ export const deployPilotStrategy = async(toNetwork,ratio)=> {
 
 } 
 
-export const deployPilotStrategyWithVault = async(toNetwork,ratio,vaultId)=> {    
+export const deployPilotStrategyWithVault = async(toNetwork,vaultId)=> {    
 
 
    // Get Chain details
    const common = getCommons(toNetwork) 
 
-   const strategyTransaction =  await deployStrategyWithVault(toNetwork,process.env.DEPLOYMENT_KEY,common ,ratio,vaultId)  
+   const strategyTransaction =  await deployStrategyWithVault(toNetwork,process.env.DEPLOYMENT_KEY,common ,vaultId)  
 
    if(!strategyTransaction){
       console.log("Err...something went wrong")

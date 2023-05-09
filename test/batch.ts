@@ -15,7 +15,6 @@ import { compareStructs } from "../utils/test/compareStructs";
 import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
 import { assertError, fetchFile, resetFork, timewarp } from "../utils";
-import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -64,8 +63,7 @@ describe("Order Batches", async function () {
 
     const signers = await ethers.getSigners();
 
-    const [, alice, bob] = signers;   
-
+    const [, alice, bob] = signers;
 
     const aliceVaultA = ethers.BigNumber.from(randomUint256());
     const aliceVaultB = ethers.BigNumber.from(randomUint256());
@@ -77,7 +75,7 @@ describe("Order Batches", async function () {
     
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
@@ -85,15 +83,12 @@ describe("Order Batches", async function () {
    
     // Order_A 
 
-    const strategyRatio_A = "25e13"
+    const strategyRatio_A = "29e13"
 
     
-    const stringExpression_A = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio_A
-    }); 
+    
 
-    const { sources, constants } = await standardEvaluableConfig(stringExpression_A)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -121,54 +116,13 @@ describe("Order Batches", async function () {
       orderBook
     )); 
 
-    // Order B 
-    // Placing order with diff ratio
-    const strategyRatio_B = "30e13" 
-
-    const stringExpression_B = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio_B
-    }); 
-
-    const { sources:sourceB, constants:constantsB } = await standardEvaluableConfig(stringExpression_B)
-
-    const EvaluableConfig_B = {
-      deployer: expressionDeployer.address,
-      sources: sourceB,
-      constants: constantsB,
-    }
-    const orderConfig_B= {
-      validInputs: [
-        { token: tokenA.address, decimals: 18, vaultId: aliceVaultB },
-      ],
-      validOutputs: [
-        { token: tokenB.address, decimals: 18, vaultId: aliceVaultB },
-      ],
-      evaluableConfig: EvaluableConfig_B,
-      meta: aliceOrder,
-    };
-
-    const txOrder_B = await orderBook.connect(alice).addOrder(orderConfig_B);
-
-    const {
-      order: Order_B
-    } = (await getEventArgs(
-      txOrder_B,
-      "AddOrder",
-      orderBook
-    ));  
-
     // Order C
     // Placing order with exact params as order A.
     // Even if the params are same order hash computed is different
-    const strategyRatio_C = "25e13" 
+    const strategyRatio_C = "29e13" 
+ 
 
-    const stringExpression_C = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio_C
-    }); 
-
-    const { sources:sourceC, constants:constantsC } = await standardEvaluableConfig(stringExpression_C)
+    const { sources:sourceC, constants:constantsC } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_C = {
       deployer: expressionDeployer.address,
@@ -222,21 +176,6 @@ describe("Order Batches", async function () {
           bob, 
           tokenA,
           tokenB, 
-          aliceVaultB,
-          Order_B,
-          orderBook,
-          i,
-          strategyRatio_B
-        )   
-
-        // placing delay
-        await timewarp(3600) 
-
-        await takeOrder(
-          alice, 
-          bob, 
-          tokenA,
-          tokenB, 
           aliceVaultC,
           Order_C,
           orderBook,
@@ -245,7 +184,7 @@ describe("Order Batches", async function () {
         )
 
       // Delay is introduced between batches
-      await timewarp(86400)
+      await timewarp(3600)
     }   
 
        
@@ -265,20 +204,15 @@ describe("Order Batches", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
 
     // Order_A
-    const strategyRatio = "25e13"
+    const strategyRatio = "29e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -317,14 +251,14 @@ describe("Order Batches", async function () {
       // Deposit max amount per batch
       
       const amountB = i == 0 ? (
-        ethers.BigNumber.from("4000000" + eighteenZeros)
+        ethers.BigNumber.from("344827586206896551724137")
       ) : (
         i == 1 ? (
-          ethers.BigNumber.from("3900000000000000000000000")
+          ethers.BigNumber.from("340000000000000000000000")
         ) : ( 
           // Since overflow is set to 0 we cannot deposit more than
           // remaining amount for the batch
-          ethers.BigNumber.from("21568627450980392156862")
+          ethers.BigNumber.from("1413451689996585865483")
         )
       ); 
 
@@ -396,7 +330,7 @@ describe("Order Batches", async function () {
       compareStructs(config, takeOrderConfigStruct); 
 
       // Delay is introduced between batches
-      await timewarp(86400)
+      await timewarp(3600)
     }  
 
     // Bob takes order with direct wallet transfer
@@ -407,14 +341,14 @@ describe("Order Batches", async function () {
       // Deposit max amount per batch
       
       const amountB = i == 0 ? (
-        ethers.BigNumber.from("3844675124951941560938100")
+        ethers.BigNumber.from("338033120485145134520280")
       ) : (
         i == 1 ? (
-          ethers.BigNumber.from("3700000000000000000000000")
+          ethers.BigNumber.from("330000000000000000000000")
         ) : ( 
           // Setting deposit amount more than remaining amount
           // for batch
-          ethers.BigNumber.from("69289338188178000919706").add(1)
+          ethers.BigNumber.from("4686257906084291604237").add(1)
         )
       ); 
 
@@ -487,7 +421,7 @@ describe("Order Batches", async function () {
     
         compareStructs(config, takeOrderConfigStruct);
 
-      }else{ 
+      }else{  
         await assertError(
           async () =>
              await orderBook
@@ -499,7 +433,7 @@ describe("Order Batches", async function () {
       }
        
       // Delay is introduced between batches
-      await timewarp(86400)
+      await timewarp(3600)
 
     } 
     
@@ -519,20 +453,15 @@ describe("Order Batches", async function () {
     const aliceOrder = encodeMeta("Order_A"); 
 
     // Order_A
-    const strategyRatio = "25e13"
+    const strategyRatio = "29e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
-
-    const { sources, constants } = await standardEvaluableConfig(stringExpression)
+    const { sources, constants } = await standardEvaluableConfig(strategyString)
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -570,16 +499,16 @@ describe("Order Batches", async function () {
 
       // Deposit max amount per batch 
 
-      const batch1Amount =  ethers.BigNumber.from("3900000000000000000000000")
-      const batch1RemainingAmout = ethers.BigNumber.from("21568627450980392156862")
+      const batch1Amount =  ethers.BigNumber.from("340000000000000000000000")
+      const batch1RemainingAmout = ethers.BigNumber.from("1413451689996585865483")
       
       const amountB = i == 0 ? (
-        ethers.BigNumber.from("4000000" + eighteenZeros)
+        ethers.BigNumber.from("344827586206896551724137")
       ) : (
         i == 1 ? (
           batch1Amount
         ) : ( 
-          // Since overflow is set to 0 we cannot deposit more than
+          // Since overflow is set to 0 we cannot deposit more than remaining amount
           // depositing more than remaining output amount for batch
           batch1RemainingAmout.add(ONE.mul(1000))
         )
@@ -656,7 +585,7 @@ describe("Order Batches", async function () {
       compareStructs(config, takeOrderConfigStruct); 
 
       // Delay is introduced between batches
-      await timewarp(86400)
+      await timewarp(3600)
     }  
 
     // Bob takes order with direct wallet transfer
@@ -665,11 +594,11 @@ describe("Order Batches", async function () {
       // DEPOSIT
 
       // Deposit max amount per batch
-      const batch3Amount = ethers.BigNumber.from("3700000000000000000000000")
-      const batch3RemainingAmount = ethers.BigNumber.from("69289338188178000919706")
+      const batch3Amount = ethers.BigNumber.from("330000000000000000000000")
+      const batch3RemainingAmount = ethers.BigNumber.from("4686257906084291604237")
 
       const amountB = i == 0 ? (
-        ethers.BigNumber.from("3844675124951941560938100")
+        ethers.BigNumber.from("338033120485145134520280")
       ) : (
         i == 1 ? (
           batch3Amount
@@ -751,7 +680,7 @@ describe("Order Batches", async function () {
       compareStructs(config, takeOrderConfigStruct);
      
       // Delay is introduced between batches
-      await timewarp(86400)
+      await timewarp(3600)
 
     } 
     

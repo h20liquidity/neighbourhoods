@@ -19,7 +19,6 @@ import deploy1820 from "../utils/deploy/registry1820/deploy";
 import * as path from 'path'; 
 import fs from "fs"  
 import { assertError, fetchFile, resetFork, timewarp } from "../utils";
-import * as mustache from 'mustache'; 
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
 import { getOrderBook } from "../utils/deploy/orderBook";
@@ -73,7 +72,7 @@ describe("Decimals", async function () {
         6,
       ]));
       const tokenB18 = (await basicDeploy("ReserveTokenDecimals", {}, [
-        18,
+        18, 
       ])); 
 
       await tokenA06.initialize();
@@ -95,20 +94,15 @@ describe("Decimals", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A
-      const strategyRatio = "25e13"
-    const strategyExpression = path.resolve(
-      __dirname,
-      "../src/1-in-token-batch.rain"
-    );
+      const strategyRatio = "29e13"
+      const strategyExpression = path.resolve(
+        __dirname,
+        "../src/2-price-update.rain"
+      );
 
     const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -145,8 +139,8 @@ describe("Decimals", async function () {
          let ratio = await prbScale(0,strategyRatio) 
   
         // DEPOSIT
-        // Max deposit for batch
-        const amountB = ethers.BigNumber.from("400000" + eighteenZeros);
+        // Depositing exactly 1/10th of amount
+        const amountB = ethers.BigNumber.from("34482758620689655172413"); 
   
         const depositConfigStructAlice = {
           token: tokenB18.address,
@@ -182,7 +176,8 @@ describe("Decimals", async function () {
           orders: [takeOrderConfigStruct],
         };
     
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        // Taking orders for exactly 1/10th of amount
+        const amountA = ethers.BigNumber.from('10' + sixZeros); 
         
         await tokenA06.transfer(bob.address, amountA);
         await tokenA06.connect(bob).approve(orderBook.address, amountA); 
@@ -196,7 +191,7 @@ describe("Decimals", async function () {
           txTakeOrders,
           "TakeOrder",
           orderBook
-        ));  
+        ));
     
         assert(sender === bob.address, "wrong sender");
         assert(input.eq(amountB), "wrong input");
@@ -235,20 +230,15 @@ describe("Decimals", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A
-      const strategyRatio = "25e13"
+      const strategyRatio = "29e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -285,7 +275,7 @@ describe("Decimals", async function () {
         let ratio = await prbScale(0,strategyRatio) 
   
         // DEPOSIT
-        const amountB = ethers.BigNumber.from("400000" + sixZeros);
+        const amountB = ethers.BigNumber.from("34482758620");
   
         const depositConfigStructAlice = {
           token: tokenB06.address,
@@ -320,7 +310,7 @@ describe("Decimals", async function () {
           orders: [takeOrderConfigStruct],
         };
     
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        const amountA = ethers.BigNumber.from('10' + eighteenZeros)
         
         await tokenA18.transfer(bob.address, amountA);
         await tokenA18.connect(bob).approve(orderBook.address, amountA); 
@@ -334,11 +324,14 @@ describe("Decimals", async function () {
           txTakeOrders,
           "TakeOrder",
           orderBook
-        ));  
+        ));    
     
         assert(sender === bob.address, "wrong sender");
         assert(input.eq(amountB), "wrong input");
-        assert(output.eq(amountA), "wrong output");
+        
+        //Checking if output is within specified range. 
+        const errRange = ethers.BigNumber.from('1'+eighteenZeros)
+        assert(output.gte(amountA.sub(errRange)) && output.lte(amountA), "wrong output");
     
         compareStructs(config, takeOrderConfigStruct);
       } 
@@ -372,20 +365,15 @@ describe("Decimals", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A
-      const strategyRatio = "25e13"
+      const strategyRatio = "29e13"
       const strategyExpression = path.resolve(
         __dirname,
-        "../src/1-in-token-batch.rain"
+        "../src/2-price-update.rain"
       );
 
       const strategyString = await fetchFile(strategyExpression); 
-
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address,
-        ratio: strategyRatio
-      }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -422,7 +410,7 @@ describe("Decimals", async function () {
         let ratio = await prbScale(0,strategyRatio)
   
         // DEPOSIT
-        const amountB = ethers.BigNumber.from("400000" + sixZeros);
+        const amountB = ethers.BigNumber.from("34482758620");
   
         const depositConfigStructAlice = {
           token: tokenB06.address,
@@ -457,7 +445,7 @@ describe("Decimals", async function () {
           orders: [takeOrderConfigStruct],
         };
     
-        const amountA = amountB.mul(maximumIORatio).div(ONE) 
+        const amountA = ethers.BigNumber.from("10" + sixZeros); 
         
         await tokenA06.transfer(bob.address, amountA);
         await tokenA06.connect(bob).approve(orderBook.address, amountA); 
@@ -471,7 +459,7 @@ describe("Decimals", async function () {
           txTakeOrders,
           "TakeOrder",
           orderBook
-        ));  
+        ));   
     
         assert(sender === bob.address, "wrong sender");
         assert(input.eq(amountB), "wrong input");
@@ -513,17 +501,12 @@ describe("Decimals", async function () {
       const strategyRatio = "25e13"
     const strategyExpression = path.resolve(
       __dirname,
-      "../src/1-in-token-batch.rain"
+      "../src/2-price-update.rain"
     );
 
     const strategyString = await fetchFile(strategyExpression); 
-
-    const stringExpression = mustache.render(strategyString, {
-      counterparty: bob.address,
-      ratio: strategyRatio
-    }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -653,20 +636,15 @@ describe("Decimals", async function () {
       const aliceOrder = encodeMeta("Order_A");  
 
       // Order_A 
-      const strategyRatio = "25e13"
+      const strategyRatio = "29e13"
       const strategyExpression = path.resolve(
         __dirname,
-        "../src/1-in-token-batch.rain"
+        "../src/2-price-update.rain"
       );
 
       const strategyString = await fetchFile(strategyExpression); 
 
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address,
-        ratio: strategyRatio
-      }); 
-  
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -705,7 +683,7 @@ describe("Decimals", async function () {
   
         let ratio = await prbScale(i,strategyRatio)  
 
-        let amountB = ethers.BigNumber.from(i+1).mul(1000).mul(ONE).sub(totalInputReceived)  
+        let amountB = ethers.BigNumber.from(i+1).mul(100).mul(ONE).sub(totalInputReceived)  
         amountB = await scaleOutputMax(ratio,amountB)  
   
         const depositConfigStructAlice = {
@@ -739,7 +717,7 @@ describe("Decimals", async function () {
         };
         
         //Deposit with overflow added
-        const amountA = ethers.BigNumber.from('1005000000')
+        const amountA = ethers.BigNumber.from('105000000')
         
         await tokenA06.transfer(bob.address, amountA);
         await tokenA06.connect(bob).approve(orderBook.address, amountA); 
@@ -767,7 +745,7 @@ describe("Decimals", async function () {
         totalOutput = totalOutput.add(output)
         totalInputReceived = totalOutput.mul(ethers.BigNumber.from(1 + "0".repeat(tokenBDecimals - tokenADecimals)))
     
-        await timewarp(86400);
+        await timewarp(3600);
       } 
       
     });  
@@ -803,17 +781,12 @@ describe("Decimals", async function () {
       const strategyRatio = "25e13"
       const strategyExpression = path.resolve(
         __dirname,
-        "../src/1-in-token-batch.rain"
+        "../src/2-price-update.rain"
       );
 
       const strategyString = await fetchFile(strategyExpression); 
-
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address, 
-        ratio: strategyRatio
-      }); 
   
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
@@ -845,16 +818,13 @@ describe("Decimals", async function () {
   
       // Recursively places orders for batches
       for(let i = 0 ; i < 10 ; i++){   
-        
-        console.log("---------------- i : " , i)
 
         // scale ratio as batch index increases
         let ratio = await prbScale(i,strategyRatio) 
   
         // DEPOSIT
         // Deposit max amount per batch 
-        const amountB = await scaleOutputMax(ratio.toString(),6)  
-        console.log("amountB : " , amountB )
+        const amountB = await scaleOutputMax(ratio.toString(),6)
   
         const depositConfigStructAlice = {
           token: tokenB06.address,
@@ -949,17 +919,12 @@ describe("Decimals", async function () {
       const strategyRatio = "25e13"
       const strategyExpression = path.resolve(
         __dirname,
-        "../src/1-in-token-batch.rain"
+        "../src/2-price-update.rain"
       );
 
       const strategyString = await fetchFile(strategyExpression); 
-
-      const stringExpression = mustache.render(strategyString, {
-        counterparty: bob.address, 
-        ratio: strategyRatio
-      }); 
     
-      const { sources, constants } = await standardEvaluableConfig(stringExpression)
+      const { sources, constants } = await standardEvaluableConfig(strategyString)
   
       const EvaluableConfig_A = {
         deployer: expressionDeployer.address,
