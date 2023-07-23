@@ -27,6 +27,8 @@ import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
 import { hexlify } from "ethers/lib/utils";
 import { getEventArgs } from "../../utils";
 import { encodeMeta, estimateFeeData, fetchFile, getProvider } from ".";
+import { ob_entrypoints } from "../../utils/deploy/orderBook";
+
 
 
 export const decodeAddOrderEventsArgsPilot1 = async(transaction,orderBook) => {  
@@ -121,7 +123,7 @@ export const deployStrategyWithVault = async(network:string,priKey: string, comm
     console.log("arbCounterParty: ",arbCounterParty)
       
   
-    const { sources, constants } = await standardEvaluableConfig(strategyString)  
+    const { sources, constants } = await standardEvaluableConfig(strategyString,ob_entrypoints)  
   
     const EvaluableConfig_A = {
       deployer: contractConfig.contracts[network].expressionDeployer.address,
@@ -250,15 +252,14 @@ export const approveDepositTokenOB = async(tokenContract, spender, amount, signe
 
 }
 
-export const depositNHTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => {  
+export const depositNHTTokensOB = async(network:string,priKey: string, common: Common,amount:string,vault:string) => {  
  
-    if(orderDetails[0].validOutputs){   
 
-      const outputTokenVault = orderDetails[0].validOutputs[0]  
+    
 
-      const depositToken = outputTokenVault.token
-      const depositAmount = ethers.utils.parseUnits(amount , outputTokenVault.decimals )
-      const vaultId = ethers.BigNumber.from(outputTokenVault.vaultId)
+      const depositToken = contractConfig.contracts[network].nht.address
+      const depositAmount = ethers.utils.parseUnits(amount , contractConfig.contracts[network].nht.decimals )
+      const vaultId = ethers.BigNumber.from(vault)
 
     
       //Get Provider for testnet from where the data is to be fetched 
@@ -343,24 +344,19 @@ export const depositNHTTokensOB = async(network:string,priKey: string, common: C
      
  
 
-    }else{
-      console.log("Order Details Not Found")
-    }
+    
 
     
 
 
 }  
 
-export const depositUSDTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => {  
+export const depositUSDTTokensOB = async(network:string,priKey: string, common: Common,amount:string,vault:string) => {  
  
-  if(orderDetails[0].validInputs){   
-
-    const inputTokenVault = orderDetails[0].validInputs[0]  
-
-    const depositToken = inputTokenVault.token
-    const depositAmount = ethers.utils.parseUnits(amount , inputTokenVault.decimals )
-    const vaultId = ethers.BigNumber.from(inputTokenVault.vaultId)
+   
+    const depositToken = contractConfig.contracts[network].usdt.address
+    const depositAmount = ethers.utils.parseUnits(amount , contractConfig.contracts[network].usdt.decimals)
+    const vaultId = ethers.BigNumber.from(vault)
 
   
     //Get Provider for testnet from where the data is to be fetched 
@@ -445,24 +441,19 @@ export const depositUSDTTokensOB = async(network:string,priKey: string, common: 
    
 
 
-  }else{
-    console.log("Order Details Not Found")
-  }
+  
 
   
 
 
 } 
 
-export const withdrawNHTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => { 
+export const withdrawNHTTokensOB = async(network:string,priKey: string, common: Common,amount:string,vault:string) => { 
 
-  if(orderDetails[0].validOutputs){  
-
-    const outputTokenVault = orderDetails[0].validOutputs[0]  
-
-      const withdrawToken = outputTokenVault.token
-      const withdrawAmount = ethers.utils.parseUnits(amount , outputTokenVault.decimals )
-      const vaultId = ethers.BigNumber.from(outputTokenVault.vaultId) 
+      const withdrawToken = contractConfig.contracts[network].nht.address
+      const withdrawTokenDecimal = contractConfig.contracts[network].nht.decimals
+      const withdrawAmount = ethers.utils.parseUnits(amount , contractConfig.contracts[network].nht.decimals )
+      const vaultId = ethers.BigNumber.from(vault) 
 
       //Get Provider for testnet from where the data is to be fetched 
       const provider = getProvider(network)  
@@ -481,7 +472,7 @@ export const withdrawNHTTokensOB = async(network:string,priKey: string, common: 
       )   
 
       if(withdrawAmount.gt(balance)){
-        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), outputTokenVault.decimals)} NHT`) 
+        console.log(`Cannot withdraw more than balance. Your current balance for the vault is ${ethers.utils.formatUnits(balance.toString(), withdrawTokenDecimal)} NHT`) 
         return null
       }
      
@@ -542,19 +533,16 @@ export const withdrawNHTTokensOB = async(network:string,priKey: string, common: 
 
 
 
-   }
+   
 
 } 
 
-export const withdrawUSDTTokensOB = async(network:string,priKey: string, common: Common,amount:string) => { 
+export const withdrawUSDTTokensOB = async(network:string,priKey: string, common: Common,amount:string, vault:string) => { 
 
-  if(orderDetails[0].validInputs){  
-
-    const inputTokenVault = orderDetails[0].validInputs[0]  
-
-      const withdrawToken = inputTokenVault.token
-      const withdrawAmount = ethers.utils.parseUnits(amount , inputTokenVault.decimals )
-      const vaultId = ethers.BigNumber.from(inputTokenVault.vaultId)  
+      const withdrawToken = contractConfig.contracts[network].usdt.address
+      const withdrawTokenDecimals = contractConfig.contracts[network].usdt.decimals
+      const withdrawAmount = ethers.utils.parseUnits(amount , withdrawTokenDecimals)
+      const vaultId = ethers.BigNumber.from(vault)  
 
       //Get Provider for testnet from where the data is to be fetched 
       const provider = getProvider(network)  
@@ -574,7 +562,7 @@ export const withdrawUSDTTokensOB = async(network:string,priKey: string, common:
 
 
       if(withdrawAmount.gt(balance)){
-        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), inputTokenVault.decimals)} USDT`) 
+        console.log(`Cannot withdraw more than balance. Your current balance for the vault is ${ethers.utils.formatUnits(balance.toString(), withdrawTokenDecimals)} USDT`) 
         return null
       }
      
@@ -635,7 +623,7 @@ export const withdrawUSDTTokensOB = async(network:string,priKey: string, common:
 
 
 
-   }
+   
 
 } 
 
@@ -649,6 +637,7 @@ export const emptyNHTTokens = async(network:string,priKey: string, common: Commo
       const withdrawAmount = ethers.utils.parseUnits(amount , outputTokenVault.decimals )
       const vaultId = ethers.BigNumber.from(outputTokenVault.vaultId) 
 
+      console.log("vau")
       //Get Provider for testnet from where the data is to be fetched 
       const provider = getProvider(network)  
       
@@ -818,4 +807,75 @@ export const emptyUSDTTokens = async(network:string,priKey: string, common: Comm
 
    }
 
+}
+
+export const removeOrder = async(network:string,priKey:string,common: Common,hash:string) => { 
+
+   //Get Provider for testnet from where the data is to be fetched 
+   const provider = getProvider(network)  
+    
+   const signer = new ethers.Wallet(process.env.DEPLOYMENT_KEY,provider)  
+   
+   const orderBookAddress = contractConfig.contracts[network].orderbook.address
+   const orderBook = new ethers.Contract(orderBookAddress,orderBookDetails.abi,signer)  
+
+   const remvTx = await provider.getTransactionReceipt(hash)  
+
+   // Filter By AddOrder Event
+   const logs = remvTx.logs.filter(e => e.topics[0].toLocaleLowerCase() === "0x73e46afa6205785bdaa1daaf8b6ccc71715ec06b3b4264f5a00fde98671c2fc6")
+
+    const order = ethers.utils.defaultAbiCoder.decode([ 
+        "address",
+        "address",
+        "tuple(address,bool,tuple(address,address,address),tuple(address,uint8,uint256)[],tuple(address,uint8,uint256)[]) order",
+        "uint256"
+    ],logs[0].data).order 
+
+  const removeData = await orderBook.populateTransaction.removeOrder(order);   
+
+  // Building Tx
+  const nonce = await provider.getTransactionCount(signer.address)   
+
+  // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+  // but after being mined affected relevant state.
+  // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+  const gasLimit = await provider.estimateGas({ 
+    to:removeData.to.toLowerCase() , 
+    from:removeData.from.toLowerCase() , 
+    data: removeData.data
+  }) 
+
+  const feeData = await estimateFeeData(provider)  
+  
+
+  // hard conded values to be calculated
+  const txData = {  
+    to: orderBook.address ,
+    from: signer.address, 
+    nonce: ethers.BigNumber.from(nonce).toHexString() ,
+    data : removeData.data ,
+    gasLimit : gasLimit.toHexString(), 
+    maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+    maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+    type: '0x02'
+  }   
+      
+  // Generate Transaction 
+  const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+
+  const privateKey = Buffer.from(
+    priKey,
+    'hex'
+  ) 
+  
+  // Sign Transaction 
+  const signedTx = tx.sign(privateKey)
+
+  // Send the transaction
+  const contractTransaction = await provider.sendTransaction(
+    "0x" + signedTx.serialize().toString("hex")
+  );     
+
+  return contractTransaction
+  
 }

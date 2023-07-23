@@ -1,6 +1,5 @@
 {
-  "rainlang.opmeta": {
-    "deployerAddress": "0x32ba42606ca2a2b91f28ebb0472a683b346e7cc7",
-    "source": "mumbai"
+  "rainlang.autoCompile": {
+    "onSave": "./src/mappings.json"
   }
 }

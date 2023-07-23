@@ -34,6 +34,9 @@ async function main() {
 
         --amount, -a <Amount in NHT>
           Amount in NHT to deposit
+
+        --vault, -v <hex string of vault to deposit>
+          Hexadecimal string representing the vault to deposit
       `
     );
   }else{ 
@@ -41,6 +44,7 @@ async function main() {
     let toNetwork
     let token
     let amount
+    let vault
 
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
@@ -88,7 +92,26 @@ async function main() {
         const _tmp = args.splice(_i, _i + 2);
         if (_tmp.length != 2) throw new Error("Expected Amount");
         amount = _tmp[1]
+      }   
+
+      if (
+        args.includes("--vault") ||
+        args.includes("-v")
+      ) {
+        const _i =
+          args.indexOf("--vault") > -1
+            ? args.indexOf("--vault")
+            : args.indexOf("-v")
+        const _tmp = args.splice(_i, _i + 2);
+        if (_tmp.length != 2) throw new Error("Expected Vault Id");
+        vault = _tmp[1]
       }  
+
+      if(!vault) throw Error("Vault Id not provided")
+      if(!toNetwork) throw Error("Target Network not provided")
+      if(!token) throw Error("Token not provided")
+      if(!amount) throw Error("Amount not provided")
+
 
       //Deposit NHT into new contract 
 
@@ -103,9 +126,9 @@ async function main() {
       }
 
       if(token == 'USDT'){
-        depositTransaction =  await depositUSDTTokensOB(toNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+        depositTransaction =  await depositUSDTTokensOB(toNetwork,process.env.DEPLOYMENT_KEY,common, amount , vault) 
       }else if(token == 'NHT'){
-        depositTransaction = await depositNHTTokensOB(toNetwork,process.env.DEPLOYMENT_KEY,common, amount )  
+        depositTransaction = await depositNHTTokensOB(toNetwork,process.env.DEPLOYMENT_KEY,common, amount ,vault )  
       }
       
       

@@ -1,10 +1,11 @@
 /*op meta*/
-@0x47ed85f917e187757bff09371cedcf5c0eb277c27e4673feb2d3cc040c66c993
+@0x37042217d6e1a50790fcea19503943302d7779a9b47d61dcadf07ffecc4c0812
 
 /*ob meta*/
 @0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c
 /* Calculate IO */
 
+#calculate-source
 /* refuse any counterparties other than named . This will be the arb contract instance address. */
 allowed-counterparty: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,
 : ensure(eq(allowed-counterparty counterparty-address())),
@@ -27,12 +28,13 @@ batch-index batch-remaining: call<2 2>(0),
  */
 io-ratio: decimal18-mul(29e13 decimal18-pow-int(101e16 batch-index)),
 
-amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio;
+amount ratio: decimal18-div(batch-remaining io-ratio) io-ratio
 
 /*
  * Handle IO
  * Actual order size available here after cross referencing counterparty order
  */
+#handle-source
 batch-start-info-k: order-hash(),
 total-received-k: hash(order-hash()),
 
@@ -53,9 +55,10 @@ batch-start-time: decode-256<32 32>(batch-start-info),
     gt(new-batch-index batch-start-index)
     encode-256<32 32>(now() encode-256<0 32>(new-batch-index 0))
     batch-start-info)),
-:set(total-received-k new-total-received);
+:set(total-received-k new-total-received)
 
 /* Calculate batch */
+#calculate-batch
 new-received:,
 total-received-k: hash(order-hash()),
 amount-per-batch: 100e18,
@@ -66,4 +69,4 @@ new-batch-remaining: int-sub(
   int-mul(
     int-add(new-batch-index 1)
     amount-per-batch)
-  new-total-amount-received);
+  new-total-amount-received)

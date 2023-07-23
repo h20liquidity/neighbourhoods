@@ -25,7 +25,6 @@ export const deployOrderBook = async (fromNetwork:string, toNetwork:string) => {
     // Get transaction data
     let txData = await getTransactionData(mumbaiProvider, txHash)  
 
-    console.log("txData succeded ")
     //replace DISpair instances
     txData = getTransactionDataForNetwork(txData,fromNetwork, toNetwork)  
 

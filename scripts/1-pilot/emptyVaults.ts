@@ -85,9 +85,15 @@ async function main() {
         contractConfig.contracts[fromNetwork].nht.address ,
         ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
       )
-      nhtBalance = ethers.utils.formatUnits(nhtBalance.toString(),orderDetails[0].validOutputs[0].decimals) 
-      console.log("NHT Balance : " , nhtBalance )
-      await emptyNHTAmount(fromNetwork,nhtBalance,orderBook)  
+      let nhtBalanceDisplacy = ethers.utils.formatUnits(nhtBalance.toString(),orderDetails[0].validOutputs[0].decimals)  
+      console.log("NHT Balance : " , nhtBalanceDisplacy )
+      if(ethers.BigNumber.from(nhtBalance.toString()).gt(0)){
+        await emptyNHTAmount(fromNetwork,nhtBalanceDisplacy,orderBook) 
+      }else{
+        console.log("No NHT tokens to withdraw.")
+      }
+      
+       
 
 
       //Withdraw Input Tokens 
@@ -96,9 +102,14 @@ async function main() {
         contractConfig.contracts[fromNetwork].usdt.address ,
         ethers.BigNumber.from(orderDetails[0].validInputs[0].vaultId)
       )  
-      usdtBalance = ethers.utils.formatUnits(usdtBalance.toString(),orderDetails[0].validInputs[0].decimals)
-      console.log("USDT Balance : " , usdtBalance )
-      await emptyUSDTAmount(fromNetwork,usdtBalance,orderBook)  
+      let usdtBalanceDisplay = ethers.utils.formatUnits(usdtBalance.toString(),orderDetails[0].validInputs[0].decimals)
+      console.log("USDT Balance : " , usdtBalanceDisplay ) 
+      if(ethers.BigNumber.from(usdtBalance.toString()).gt(0)){
+        await emptyUSDTAmount(fromNetwork,usdtBalanceDisplay,orderBook)
+      }else{
+        console.log("No USDT tokens to withdraw.")
+      }
+        
 
   }
 

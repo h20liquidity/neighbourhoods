@@ -41,7 +41,7 @@ export const deployPilotStrategyWithVault = async(toNetwork,vaultId)=> {
 
    const receipt = await strategyTransaction.wait()
   
-   console.log(`Startegy Deployed At : ${receipt.transactionHash}`)
+   console.log(`Startegy Deployed At : ${receipt.transactionHash}\nVault ID used for the startegy : ${vaultId}\nUse the above vault id to deposit and withdraw from the strategy`)
 
 }
 

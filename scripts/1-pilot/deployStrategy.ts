@@ -51,8 +51,11 @@ async function main() {
       toNetwork = _tmp[1]
     }   
 
-    
-    const vaultId = ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
+    // Not giving predetermined vaultId
+    // const vaultId = ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId) 
+
+    // Generating random vaultId 
+    const vaultId = randomUint256().toString()
 
      await deployPilotStrategyWithVault(toNetwork,vaultId)
 

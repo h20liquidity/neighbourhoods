@@ -40,7 +40,7 @@ async function main() {
     let fromNetwork
     let token
     let amount
-
+    let vault
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"] 
     const validTokens = ["USDT","NHT"] 
@@ -85,7 +85,25 @@ async function main() {
         if (_tmp.length != 2) throw new Error("Expected Amount");
         if(validTokens.indexOf(_tmp[1]) == -1 ) throw new Error(`Invalid token : ${_tmp[1]}`);
         token = _tmp[1]
-      } 
+      }  
+
+      if (
+        args.includes("--vault") ||
+        args.includes("-v")
+      ) {
+        const _i =
+          args.indexOf("--vault") > -1
+            ? args.indexOf("--vault")
+            : args.indexOf("-v")
+        const _tmp = args.splice(_i, _i + 2);
+        if (_tmp.length != 2) throw new Error("Expected Vault Id");
+        vault = _tmp[1]
+      }   
+
+      if(!vault) throw Error("Vault Id not provided")
+      if(!fromNetwork) throw Error("Network not provided")
+      if(!token) throw Error("Token not provided")
+      if(!amount) throw Error("Amount not provided")
 
     
       const common = getCommons(fromNetwork)  
@@ -98,9 +116,9 @@ async function main() {
       }
 
       if(token == 'USDT'){
-        withdrawTransaction =  await withdrawUSDTTokensOB(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+        withdrawTransaction =  await withdrawUSDTTokensOB(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount ,vault ) 
       }else if(token == 'NHT'){
-        withdrawTransaction =  await withdrawNHTTokensOB(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount ) 
+        withdrawTransaction =  await withdrawNHTTokensOB(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount , vault) 
       }
 
       const receipt = await withdrawTransaction.wait() 

@@ -20,4 +20,8 @@ export const getOrderBook = async (address: string) => {
 
     return orderBook
 
-}
+} 
+
+export const ob_entrypoints = ["calculate-source","handle-source","calculate-batch"]  
+export const arb_entrypoints = ["main"]  
+

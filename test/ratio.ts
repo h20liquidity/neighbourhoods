@@ -16,7 +16,7 @@ import * as path from 'path';
 import {  fetchFile, resetFork, timewarp } from "../utils";
 import { basicDeploy } from "../utils/deploy/basicDeploy"; 
 
-import { getOrderBook } from "../utils/deploy/orderBook";
+import { getOrderBook, ob_entrypoints } from "../utils/deploy/orderBook";
 import { getExpressionDelopyer } from "../utils/deploy/interpreter";
 import config from "../config/config.json"
 import * as dotenv from "dotenv";
@@ -80,7 +80,7 @@ describe("Order Ratio", async function () {
 
     const strategyString = await fetchFile(strategyExpression); 
 
-    const { sources, constants } = await standardEvaluableConfig(strategyString)
+    const { sources, constants } = await standardEvaluableConfig(strategyString,ob_entrypoints) 
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,
@@ -205,7 +205,7 @@ describe("Order Ratio", async function () {
 
     const strategyString = await fetchFile(strategyExpression);  
 
-    const { sources, constants } = await standardEvaluableConfig(strategyString)
+    const { sources, constants } = await standardEvaluableConfig(strategyString,ob_entrypoints) 
 
     const EvaluableConfig_A = {
       deployer: expressionDeployer.address,

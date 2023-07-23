@@ -71,7 +71,7 @@ Also make sure that all the necessary ERC20 token details on the target network 
 To deploy strategy **run** the following command in your shell from the **root of the project** :
 
 ```sh
-ts-node scripts/1-pilot/deployStrategy.ts --to polygon
+ts-node scripts/1-pilot/deployStrategy.ts --to polygonts-node scripts/1-pilot/deployStrategy.ts --to polygon
 ```
 
 Where arguments for the script are:
