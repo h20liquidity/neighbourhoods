@@ -40,7 +40,7 @@ export const getEtherscanKey = (network:string) => {
   }else if(network === "goerli"){
     key = ''
   }else if(network === "snowtrace"){
-    key = ''
+    key =  process.env.SNOWTRACE_KEY
   }else if(network === "sepolia"){
     key = process.env.ETHERSCAN_API_KEY
   }else if(network === "hardhat"){
@@ -60,7 +60,7 @@ export const getEtherscanBaseURL = (network:string) => {
   }else if(network === "goerli"){
     url = ''
   }else if(network === "snowtrace"){
-    url = ''
+    url = 'https://api-testnet.snowtrace.io/'
   }else if(network === "sepolia"){
     url = 'https://api-sepolia.etherscan.io/api'
   }else if(network === "polygon"){

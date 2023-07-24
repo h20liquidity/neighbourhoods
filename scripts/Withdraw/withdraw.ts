@@ -6,11 +6,11 @@
 import { emptyNHTTokens, emptyUSDTTokens } from "../utils/1-pilot.utils";
  
  
- export const emptyNHTAmount = async (fromNetwork:string , amount:string,orderBook) => {    
+ export const emptyNHTAmount = async (fromNetwork:string , amount:string,orderBook,vault:string) => {    
     // Get Chain details
     const common = getCommons(fromNetwork) 
  
-    const depositTransaction =  await emptyNHTTokens(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount,orderBook ) 
+    const depositTransaction =  await emptyNHTTokens(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount,orderBook,vault ) 
     
     if(depositTransaction){
         const receipt = await depositTransaction.wait()
@@ -19,11 +19,11 @@ import { emptyNHTTokens, emptyUSDTTokens } from "../utils/1-pilot.utils";
     }
  } 
 
- export const emptyUSDTAmount = async (fromNetwork:string , amount:string,orderBook) => { 
+ export const emptyUSDTAmount = async (fromNetwork:string , amount:string,orderBook,vault:string) => { 
     // Get Chain details
     const common = getCommons(fromNetwork) 
  
-    const depositTransaction =  await emptyUSDTTokens(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount,orderBook )  
+    const depositTransaction =  await emptyUSDTTokens(fromNetwork,process.env.DEPLOYMENT_KEY,common, amount,orderBook,vault )  
     
     
     if(depositTransaction){

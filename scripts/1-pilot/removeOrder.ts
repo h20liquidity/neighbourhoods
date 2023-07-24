@@ -55,12 +55,12 @@ async function main() {
           args.indexOf("--from") > -1
             ? args.indexOf("--from")
             : args.indexOf("-f")
-        const _tmp = args.splice(_i, _i + 2);
+        const _tmp = args.splice(_i,2);
         if (_tmp.length != 2) throw new Error("expected network to deploy from");
         if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
         fromNetwork = _tmp[1]
      }
-
+     if(!fromNetwork) throw new Error("From Network Not Provided")
      if (
         args.includes("--tx-hash") ||
         args.includes("-h")
@@ -69,12 +69,10 @@ async function main() {
           args.indexOf("--tx-hash") > -1
             ? args.indexOf("--tx-hash")
             : args.indexOf("-h")
-        const _tmp = args.splice(_i, _i + 2);
+        const _tmp = args.splice(_i,2);
         if (_tmp.length != 2) throw new Error("expected transaction hash");
         hash = _tmp[1]
      }
-
-     if(!fromNetwork) throw new Error("From Network Not Provided")
      if(!hash) throw new Error("Transaction Hash Not Provided")
 
      const common = getCommons(fromNetwork)

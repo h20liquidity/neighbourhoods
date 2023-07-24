@@ -32,10 +32,10 @@ async function main() {
         --token, -tk <token symbol>
           Symbol of the token to withdraw. Any of ["USDT","NHT"].
 
-        --amount, -a <Amount in NHT>
-          Amount in NHT to deposit
+        --amount, -a <Amount in NHT or USDT>
+          Amount in NHT or USDT to deposit
 
-        --vault, -v <hex string of vault to deposit>
+        --vault, -v <hex string representing vault to deposit>
           Hexadecimal string representing the vault to deposit
       `
     );
@@ -61,11 +61,12 @@ async function main() {
         args.indexOf("--to") > -1
           ? args.indexOf("--to")
           : args.indexOf("-t")
-      const _tmp = args.splice(_i, _i + 2);
+      const _tmp = args.splice(_i,2);
       if (_tmp.length != 2) throw new Error("expected network to deploy to");
       if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
       toNetwork = _tmp[1]
     }   
+    if(!toNetwork) throw Error("Target Network not provided. Must provide --to <network-name> argument")
 
     if (
       args.includes("--token") ||
@@ -76,10 +77,11 @@ async function main() {
           ? args.indexOf("--token")
           : args.indexOf("-tk")
       const _tmp = args.splice(_i, _i + 2);
-      if (_tmp.length != 2) throw new Error("Expected Amount");
+      if (_tmp.length != 2) throw new Error("Expected Token");
       if(validTokens.indexOf(_tmp[1]) == -1 ) throw new Error(`Invalid token : ${_tmp[1]}`);
       token = _tmp[1]
     } 
+    if(!token) throw Error("Token not provided. Must provide --token <token-name> argument") 
 
     if (
         args.includes("--amount") ||
@@ -89,10 +91,11 @@ async function main() {
           args.indexOf("--amount") > -1
             ? args.indexOf("--amount")
             : args.indexOf("-a")
-        const _tmp = args.splice(_i, _i + 2);
+        const _tmp = args.splice(_i,2);
         if (_tmp.length != 2) throw new Error("Expected Amount");
         amount = _tmp[1]
       }   
+      if(!amount) throw Error("Amount not provided. Must provide --amount <amount> argument") 
 
       if (
         args.includes("--vault") ||
@@ -102,15 +105,14 @@ async function main() {
           args.indexOf("--vault") > -1
             ? args.indexOf("--vault")
             : args.indexOf("-v")
-        const _tmp = args.splice(_i, _i + 2);
-        if (_tmp.length != 2) throw new Error("Expected Vault Id");
+        const _tmp = args.splice(_i,2);
+        if (_tmp.length != 2) throw new Error("Expected Vault Id. Must provide --to <network-name> argument");
         vault = _tmp[1]
       }  
-
-      if(!vault) throw Error("Vault Id not provided")
-      if(!toNetwork) throw Error("Target Network not provided")
-      if(!token) throw Error("Token not provided")
-      if(!amount) throw Error("Amount not provided")
+      if(!vault) throw Error("Vault Id not provided. Must provide --vault <hex string> argument")
+      
+      
+      
 
 
       //Deposit NHT into new contract 

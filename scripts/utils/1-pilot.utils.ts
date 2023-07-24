@@ -627,17 +627,15 @@ export const withdrawUSDTTokensOB = async(network:string,priKey: string, common:
 
 } 
 
-export const emptyNHTTokens = async(network:string,priKey: string, common: Common,amount:string,orderBook) => {  
+export const emptyNHTTokens = async(network:string,priKey: string, common: Common,amount:string,orderBook,vault:string) => {  
 
-  if(orderDetails[0].validOutputs){  
+  
 
-    const outputTokenVault = orderDetails[0].validOutputs[0]  
+      const withdrawToken = contractConfig.contracts[network].nht.address
+      const withdrawTokenDecimals = contractConfig.contracts[network].nht.decimals
+      const withdrawAmount = ethers.utils.parseUnits(amount , withdrawTokenDecimals)
+      const vaultId = ethers.BigNumber.from(vault) 
 
-      const withdrawToken = outputTokenVault.token
-      const withdrawAmount = ethers.utils.parseUnits(amount , outputTokenVault.decimals )
-      const vaultId = ethers.BigNumber.from(outputTokenVault.vaultId) 
-
-      console.log("vau")
       //Get Provider for testnet from where the data is to be fetched 
       const provider = getProvider(network)  
       
@@ -653,7 +651,7 @@ export const emptyNHTTokens = async(network:string,priKey: string, common: Commo
       )   
 
       if(withdrawAmount.gt(balance)){
-        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), outputTokenVault.decimals)} NHT`) 
+        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), withdrawTokenDecimals)} NHT`) 
         return null
       }
      
@@ -714,19 +712,18 @@ export const emptyNHTTokens = async(network:string,priKey: string, common: Commo
 
 
 
-   }
+   
 
 } 
 
-export const emptyUSDTTokens = async(network:string,priKey: string, common: Common,amount:string,orderBook) => { 
+export const emptyUSDTTokens = async(network:string,priKey: string, common: Common,amount:string,orderBook,vault:string) => { 
  
-  if(orderDetails[0].validInputs){  
+ 
 
-    const inputTokenVault = orderDetails[0].validInputs[0]  
-
-      const withdrawToken = inputTokenVault.token
-      const withdrawAmount = ethers.utils.parseUnits(amount , inputTokenVault.decimals )
-      const vaultId = ethers.BigNumber.from(inputTokenVault.vaultId)  
+      const withdrawToken = contractConfig.contracts[network].usdt.address
+      const withdrawTokenDecimals = contractConfig.contracts[network].usdt.decimals
+      const withdrawAmount = ethers.utils.parseUnits(amount , withdrawTokenDecimals )
+      const vaultId = ethers.BigNumber.from(vault)  
 
       //Get Provider for testnet from where the data is to be fetched 
       const provider = getProvider(network)  
@@ -744,7 +741,7 @@ export const emptyUSDTTokens = async(network:string,priKey: string, common: Comm
 
 
       if(withdrawAmount.gt(balance)){
-        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), inputTokenVault.decimals)} USDT`) 
+        console.log(`Cannot withdraw more than balance. Your current balance is ${ethers.utils.formatUnits(balance.toString(), withdrawTokenDecimals)} USDT`) 
         return null
       }
      
@@ -805,7 +802,7 @@ export const emptyUSDTTokens = async(network:string,priKey: string, common: Comm
 
 
 
-   }
+   
 
 }
 

@@ -33,6 +33,9 @@ async function main() {
 
         --amount, -a <Amount in NHT or USDT>
           Amount in NHT or USDT to withdraw
+        
+        --vault, -v <hex string of vault to deposit>
+          Hexadecimal string representing the vault to withdraw from
       `
     );
   }else{ 
@@ -53,13 +56,14 @@ async function main() {
         const _i =
           args.indexOf("--from") > -1
             ? args.indexOf("--from")
-            : args.indexOf("-f")
-        const _tmp = args.splice(_i, _i + 2);
+            : args.indexOf("-f") 
+        const _tmp = args.splice(_i, 2);
         if (_tmp.length != 2) throw new Error("expected network to deploy from");
         if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
         fromNetwork = _tmp[1]
       }   
 
+    if(!fromNetwork) throw Error("Network not provided")
     if (
         args.includes("--amount") ||
         args.includes("-a")
@@ -68,11 +72,12 @@ async function main() {
           args.indexOf("--amount") > -1
             ? args.indexOf("--amount")
             : args.indexOf("-a")
-        const _tmp = args.splice(_i, _i + 2);
+        
+        const _tmp = args.splice(_i, 2); 
         if (_tmp.length != 2) throw new Error("Expected Amount");
         amount = _tmp[1]
       }  
-
+      if(!amount) throw Error("Amount not provided")
     if (
         args.includes("--token") ||
         args.includes("-tk")
@@ -81,12 +86,12 @@ async function main() {
           args.indexOf("--token") > -1
             ? args.indexOf("--token")
             : args.indexOf("-tk")
-        const _tmp = args.splice(_i, _i + 2);
-        if (_tmp.length != 2) throw new Error("Expected Amount");
+        const _tmp = args.splice(_i, 2);
+        if (_tmp.length != 2) throw new Error("Expected Token");
         if(validTokens.indexOf(_tmp[1]) == -1 ) throw new Error(`Invalid token : ${_tmp[1]}`);
         token = _tmp[1]
       }  
-
+      if(!token) throw Error("Token not provided")
       if (
         args.includes("--vault") ||
         args.includes("-v")
@@ -94,16 +99,16 @@ async function main() {
         const _i =
           args.indexOf("--vault") > -1
             ? args.indexOf("--vault")
-            : args.indexOf("-v")
-        const _tmp = args.splice(_i, _i + 2);
+            : args.indexOf("-v") 
+        const _tmp = args.splice(_i, 2);
         if (_tmp.length != 2) throw new Error("Expected Vault Id");
         vault = _tmp[1]
       }   
 
       if(!vault) throw Error("Vault Id not provided")
-      if(!fromNetwork) throw Error("Network not provided")
-      if(!token) throw Error("Token not provided")
-      if(!amount) throw Error("Amount not provided")
+      
+      
+  
 
     
       const common = getCommons(fromNetwork)  
