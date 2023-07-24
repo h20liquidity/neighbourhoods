@@ -100,10 +100,10 @@ async function main() {
       const orderBook = new ethers.Contract(contractAdress,orderBookDetails0.abi,signer)   
 
       const nhtTokenAddress = contractConfig.contracts[fromNetwork].nht.address
-      const nhtTokenDecimals = contractConfig.contracts[fromNetwork].nht.address
+      const nhtTokenDecimals = contractConfig.contracts[fromNetwork].nht.decimals
 
       const usdtTokenAddress = contractConfig.contracts[fromNetwork].usdt.address
-      const usdtTokenDecimals = contractConfig.contracts[fromNetwork].usdt.address
+      const usdtTokenDecimals = contractConfig.contracts[fromNetwork].usdt.decimals
 
       //Withdraw Output Tokens 
       let nhtBalance = await orderBook.vaultBalance(
