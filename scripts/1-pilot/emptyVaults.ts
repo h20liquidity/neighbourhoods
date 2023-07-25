@@ -35,12 +35,16 @@ async function main() {
         
         --contract -c <contract address>
           OrderBook Contract
+        
+        --vault, -v <hex string>
+          Hexadecimal string representing the vault. 
       `
     );
   }else{ 
 
     let fromNetwork
-    let contractAdress    
+    let contractAdress   
+    let vault  
 
     //valid networks
     const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"] 
@@ -53,11 +57,12 @@ async function main() {
           args.indexOf("--from") > -1
             ? args.indexOf("--from")
             : args.indexOf("-f")
-        const _tmp = args.splice(_i, _i + 2);
+        const _tmp = args.splice(_i,2);
         if (_tmp.length != 2) throw new Error("expected network to deploy from");
         if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
         fromNetwork = _tmp[1]
      }
+    if(!fromNetwork) throw Error("Origin Network not provided. Must provide --from <network name> argument")  
      
      if (
         args.includes("--contract") ||
@@ -67,38 +72,71 @@ async function main() {
           args.indexOf("--contract") > -1
             ? args.indexOf("--contract")
             : args.indexOf("-c")
-        const _tmp = args.splice(_i, _i + 2);
+        const _tmp = args.splice(_i,2);
         if (_tmp.length != 2) throw new Error("expected contract address");
         contractAdress = _tmp[1]
       } 
+      if(!contractAdress) throw Error("Contract Address not provided. Must provide --contract <ob address> argument")   
+
+      if (
+        args.includes("--vault") ||
+        args.includes("-v")
+      ) {
+        const _i =
+          args.indexOf("--vault") > -1
+            ? args.indexOf("--vault")
+            : args.indexOf("-v")
+        const _tmp = args.splice(_i,2);
+        if (_tmp.length != 2) throw new Error("Expected Vault Id. Must provide --to <network-name> argument");
+        vault = _tmp[1]
+      }  
+      if(!vault) throw Error("Vault Id not provided. Must provide --vault <hex string> argument")
 
       //Get Provider for testnet from where the data is to be fetched 
       const provider = getProvider(fromNetwork)  
       
       const signer = new ethers.Wallet(process.env.DEPLOYMENT_KEY,provider)  
 
-      const orderBook = new ethers.Contract(contractAdress,orderBookDetails0.abi,signer)  
+      const orderBook = new ethers.Contract(contractAdress,orderBookDetails0.abi,signer)   
+
+      const nhtTokenAddress = contractConfig.contracts[fromNetwork].nht.address
+      const nhtTokenDecimals = contractConfig.contracts[fromNetwork].nht.decimals
+
+      const usdtTokenAddress = contractConfig.contracts[fromNetwork].usdt.address
+      const usdtTokenDecimals = contractConfig.contracts[fromNetwork].usdt.decimals
 
       //Withdraw Output Tokens 
       let nhtBalance = await orderBook.vaultBalance(
         signer.address ,
-        contractConfig.contracts[fromNetwork].nht.address ,
-        ethers.BigNumber.from(orderDetails[0].validOutputs[0].vaultId)
-      )
-      nhtBalance = ethers.utils.formatUnits(nhtBalance.toString(),orderDetails[0].validOutputs[0].decimals) 
-      console.log("NHT Balance : " , nhtBalance )
-      await emptyNHTAmount(fromNetwork,nhtBalance,orderBook)  
+        nhtTokenAddress ,
+        ethers.BigNumber.from(vault)
+      ) 
+      
+      let nhtBalanceDisplacy = ethers.utils.formatUnits(nhtBalance.toString(),nhtTokenDecimals)  
+      console.log("NHT Balance : " , nhtBalanceDisplacy )
+      if(ethers.BigNumber.from(nhtBalance.toString()).gt(0)){
+        await emptyNHTAmount(fromNetwork,nhtBalanceDisplacy,orderBook,vault) 
+      }else{
+        console.log("No NHT tokens to withdraw.")
+      }
+      
+       
 
 
       //Withdraw Input Tokens 
       let usdtBalance = await orderBook.vaultBalance(
         signer.address ,
-        contractConfig.contracts[fromNetwork].usdt.address ,
-        ethers.BigNumber.from(orderDetails[0].validInputs[0].vaultId)
+        usdtTokenAddress ,
+        ethers.BigNumber.from(vault)
       )  
-      usdtBalance = ethers.utils.formatUnits(usdtBalance.toString(),orderDetails[0].validInputs[0].decimals)
-      console.log("USDT Balance : " , usdtBalance )
-      await emptyUSDTAmount(fromNetwork,usdtBalance,orderBook)  
+      let usdtBalanceDisplay = ethers.utils.formatUnits(usdtBalance.toString(),usdtTokenDecimals)
+      console.log("USDT Balance : " , usdtBalanceDisplay ) 
+      if(ethers.BigNumber.from(usdtBalance.toString()).gt(0)){
+        await emptyUSDTAmount(fromNetwork,usdtBalanceDisplay,orderBook,vault)
+      }else{
+        console.log("No USDT tokens to withdraw.")
+      }
+        
 
   }
 

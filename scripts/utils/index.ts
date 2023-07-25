@@ -9,6 +9,7 @@ import orderBookDetails from "../../config/Orderbook/0-OrderBook.json"
 import {writeFileSync} from "fs"; 
 import orderDetails from "../DeployStrategy/orderDetails.json"
 import abi from 'erc-20-abi' 
+import { Alchemy, Network } from "alchemy-sdk";
 import hre from "hardhat"
 
 
@@ -26,6 +27,7 @@ import axios from "axios";
 import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
 import { hexlify } from "ethers/lib/utils";
 import { getEventArgs } from "../../utils";
+import { arb_entrypoints, ob_entrypoints } from "../../utils/deploy/orderBook";
 
 /*
 * Get etherscan key
@@ -38,7 +40,7 @@ export const getEtherscanKey = (network:string) => {
   }else if(network === "goerli"){
     key = ''
   }else if(network === "snowtrace"){
-    key = ''
+    key =  process.env.SNOWTRACE_KEY
   }else if(network === "sepolia"){
     key = process.env.ETHERSCAN_API_KEY
   }else if(network === "hardhat"){
@@ -58,7 +60,7 @@ export const getEtherscanBaseURL = (network:string) => {
   }else if(network === "goerli"){
     url = ''
   }else if(network === "snowtrace"){
-    url = ''
+    url = 'https://api-testnet.snowtrace.io/'
   }else if(network === "sepolia"){
     url = 'https://api-sepolia.etherscan.io/api'
   }else if(network === "polygon"){
@@ -198,18 +200,23 @@ export const estimateFeeData = async (
   maxFeePerGas: BigNumber;
   maxPriorityFeePerGas: BigNumber;
 }> => {
-  if (chainProvider._network.chainId === 137) {  
-    const gasDataForPolygon = await getGasDataForPolygon()
+  if (chainProvider._network.chainId === 137) {    
+     
+    let res = await axios.get(
+      "https://api.blocknative.com/gasprices/blockprices?chainid=137",
+      {headers: {
+          "Authorization" : " 49281639-8d0e-4d3c-a55a-71f18585deef"
+        }
+      }
+    ) 
+    let gasPrice = ethers.utils.parseUnits(`${res.data.blockPrices[0].estimatedPrices[0].price}`,9)
+    let maxPriorityFeePerGas = ethers.utils.parseUnits(`${res.data.blockPrices[0].estimatedPrices[0].maxPriorityFeePerGas}`,9)
+    let maxFeePerGas = ethers.utils.parseUnits(`${res.data.blockPrices[0].estimatedPrices[0].maxFeePerGas}`,9) 
+
     return {
-      gasPrice: BigNumber.from("21000"),
-      maxFeePerGas : ethers.utils.parseUnits(
-        Math.ceil(gasDataForPolygon.data.fast.maxFee).toString(),
-        "gwei"
-      ) , 
-      maxPriorityFeePerGas : ethers.utils.parseUnits(
-        Math.ceil(gasDataForPolygon.data.fast.maxPriorityFee).toString(),
-        "gwei"
-      ) 
+      gasPrice: gasPrice,
+      maxPriorityFeePerGas: maxPriorityFeePerGas,
+      maxFeePerGas: maxFeePerGas 
     }
 
   }else if (chainProvider._network.chainId === 31337) {
@@ -218,7 +225,7 @@ export const estimateFeeData = async (
       maxFeePerGas: BigNumber.from("1500000030"),
       maxPriorityFeePerGas: BigNumber.from("1500000000"),
     };
-  }else if(chainProvider._network.chainId === 43113 || chainProvider._network.chainId === 11155111 ){
+  }else if(chainProvider._network.chainId === 43113 || chainProvider._network.chainId === 11155111 || chainProvider._network.chainId === 80001 ){
     // Snowtrace Network
     const feeData = await chainProvider.getFeeData();   
     return {
@@ -446,7 +453,7 @@ export const deployStrategy = async(network:string,priKey: string, common: Commo
   const arbCounterParty = contractConfig.contracts[network].zeroexorderbookinstance.address 
   console.log("arbCounterParty: ",arbCounterParty)
 
-  const { sources, constants } = await standardEvaluableConfig(strategyString)  
+  const { sources, constants } = await standardEvaluableConfig(strategyString,ob_entrypoints)  
 
   const EvaluableConfig_A = {
     deployer: contractConfig.contracts[network].expressionDeployer.address,
@@ -881,24 +888,20 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
   const arbString = await fetchFile(arbExp);  
 
-  const { sources, constants } = await standardEvaluableConfig(arbString)  
-
-  const { exchangeProxy } = getContractAddressesForChainOrThrow(provider._network.chainId);
+  const { sources, constants } = await standardEvaluableConfig(arbString,arb_entrypoints)  
   
-
   const borrowerConfig = {
     orderBook : contractConfig.contracts[network].orderbook.address,
-    zeroExExchangeProxy: exchangeProxy,
     evaluableConfig: {
       deployer: contractConfig.contracts[network].expressionDeployer.address,
       sources,
       constants
-    }
-
+    },
+    implementationData : "0x00"
   }
   const encodedConfig = ethers.utils.defaultAbiCoder.encode(
     [
-      "tuple(address orderBook,address zeroExExchangeProxy,tuple(address deployer,bytes[] sources,uint256[] constants) evaluableConfig)",
+      "tuple(address orderBook,tuple(address deployer,bytes[] sources,uint256[] constants) evaluableConfig, bytes implementationData)",
     ],
     [borrowerConfig]
   ); 
@@ -909,7 +912,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     const cloneFactoryAddress = contractConfig.contracts[network].clonefactory.address  
 
     //Get Source code from contract
-    const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${cloneFactoryAddress}&apikey=${getEtherscanKey(network)}`;
+    const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${cloneFactoryAddress}&apikey=${getEtherscanKey(network)}`; 
     const source = await axios.get(url);    
 
     // Create Clone Factory Instance
@@ -919,7 +922,6 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     
     // Building Tx
     const nonce = await provider.getTransactionCount(signer.address)   
-
 
     // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
     // but after being mined affected relevant state.
@@ -931,7 +933,6 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     }) 
 
     const feeData = await estimateFeeData(provider)  
-    
 
     // hard conded values to be calculated
     const txData = {  

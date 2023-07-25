@@ -27,7 +27,7 @@ export const deployArbImplementation = async (fromNetwork,toNetwork) => {
     let txData = await getTransactionData(mumbaiProvider, txHash)  
 
     //replace proxy and ob instances
-    txData = getTransactionDataForZeroEx(txData,fromNetwork, toNetwork)  
+    txData = getTransactionDataForNetwork(txData,fromNetwork, toNetwork)  
 
     // Get Chain details
     const common = getCommons(toNetwork) 

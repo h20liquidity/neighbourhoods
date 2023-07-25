@@ -1,7 +1,8 @@
 /* refuse any counterparties other than bot */
 /*op meta*/
-@0x47ed85f917e187757bff09371cedcf5c0eb277c27e4673feb2d3cc040c66c993 
+@0x37042217d6e1a50790fcea19503943302d7779a9b47d61dcadf07ffecc4c0812 
 
+#main
 /*refuse any counterparties other than named . This will be the public key of the bot wallet.*/
 allowed-counterparty: 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88,
-: ensure(eq(allowed-counterparty context<0 0>()));
+: ensure(eq(allowed-counterparty context<0 0>()))

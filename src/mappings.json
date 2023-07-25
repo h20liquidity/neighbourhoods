@@ -1,0 +1,18 @@
+[
+    {
+      "dotrain": "./src/2-price-update.rain",
+      "json": "./rainlangCompile/2-price-update.json",
+      "expressions": [
+        "calculate-source",
+        "handle-source",
+        "calculate-batch"
+      ]
+    },
+    {
+      "dotrain": "./src/0-arb.rain",
+      "json": "./rainlangCompile/0-arb.json",
+      "expressions": [
+        "main"
+      ]
+    }
+  ]
