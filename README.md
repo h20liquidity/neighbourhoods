@@ -2,9 +2,13 @@
 
 Goal
 - Deploy strategy to track input tokens received with ratio and tranche limit, with new contracts. 
-### Setup Environment 
-- Create a .env file at the project root and add the following to the file 
+### Setup Environment
+- Update all the package dependencies with : 
+```sh
+npm install 
 ```
+- Create a .env file at the project root and add the following to the file 
+``` 
 # Unprefixed private Key of the account to deploy from. 
 DEPLOYMENT_KEY=  
 
