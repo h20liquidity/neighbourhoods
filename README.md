@@ -165,11 +165,11 @@ where :
 - `--tx-hash` : Transaction hash of the order. 
 Wait for the transaction to be confirmed. The order will be removed from the orderbook. 
 
-#### Deploying Twap Strategy.
-To deploy the twap strategy, run the following command from the project root 
+#### Deploying Strategy with NP.
+To deploy the strategy with Native Parser, run the following command from the project root 
 
 ```sh
-ts-node scripts/1-pilot/deployTwapStrategy.ts --to polygon --parser 0x44e5a1b975e826a0cb75128f872d4a2be94beaaa --orderbook 0x34200e026fbac0c902a0ff18e77a49265ca6ac99
+ts-node scripts/1-pilot/deployStrategyNP.ts --to polygon --parser 0x44e5a1b975e826a0cb75128f872d4a2be94beaaa --orderbook 0x34200e026fbac0c902a0ff18e77a49265ca6ac99
 ```
 
 Where arguments for the script are:

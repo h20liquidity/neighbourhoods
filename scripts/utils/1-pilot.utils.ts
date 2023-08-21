@@ -217,7 +217,7 @@ export const deployStrategyWithNP = async(network:string,priKey: string, common:
     //Building Expression
     const strategyExpression = path.resolve(
       __dirname,
-      "../../src/twap.rain"
+      "../../src/np-strat.rain"
     ); 
     const strategyString = await fetchFile(strategyExpression);
 
