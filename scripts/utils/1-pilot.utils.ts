@@ -209,7 +209,7 @@ export const deployStrategyWithNP = async(network:string,priKey: string, common:
     // const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
     // const source = await axios.get(url);    
   
-    // Get Orderbook Instance
+    // Get Orderbook Instance 
     const orderBook = new ethers.Contract(orderbook,orderBookDetails.abi,signer) 
 
     const parser = new ethers.Contract(parserAddress,Parser.abi,provider) 
@@ -253,7 +253,7 @@ export const deployStrategyWithNP = async(network:string,priKey: string, common:
     // but after being mined affected relevant state.
     // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
     const gasLimit = await provider.estimateGas({ 
-      to:contractConfig.contracts[network].orderbook.address ,
+      to:orderBook.address ,
       data: addOrderData.data
     }) 
     
@@ -262,7 +262,7 @@ export const deployStrategyWithNP = async(network:string,priKey: string, common:
 
     // hard conded values to be calculated
     const txData = {  
-      to: contractConfig.contracts[network].orderbook.address ,
+      to: orderBook.address ,
       from: signer.address, 
       nonce: ethers.BigNumber.from(nonce).toHexString() ,
       data : addOrderData.data ,

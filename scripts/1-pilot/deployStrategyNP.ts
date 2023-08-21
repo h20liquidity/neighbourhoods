@@ -84,7 +84,7 @@ async function main() {
         : args.indexOf("-o")
         const _tmp = args.splice(_i,2);
         if (_tmp.length != 2) throw new Error("expected orderbook address");
-        parser = _tmp[1]
+        orderbook = _tmp[1]
       }
   
   
