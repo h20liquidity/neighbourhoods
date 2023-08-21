@@ -3,22 +3,22 @@
     "owner": "0xf098172786a87FA7426eA811Ff25D31D599f766D",
     "handleIO": true,
     "evaluable": {
-      "interpreter": "0x827D7A0bCF15d8489C9437b9c72c34F1E4d0Ee34",
-      "store": "0x183c487eD7790e89A24ca7706B9262d349A1d9EB",
-      "expression": "0xe6f4188a941E4B81aC62B74Cf62035a37092184A"
+      "interpreter": "0xA3f54Eb582B45e43Af706b281Db320a18C3D0A1c",
+      "store": "0x7A688FAe25732de92Eb78A176a3E4914BCAae1ab",
+      "expression": "0x87a8A9b24b949A9567969eA2A4E4Ff029A8a9094"
     },
     "validInputs": [
       {
         "token": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
         "decimals": 6,
-        "vaultId": "0x6e844f3117659a033e3666d07f76a335ba8f104cbaa9d969443c8c54ae1b0fe3"
+        "vaultId": "0xd9dd4c8f5ac7dd9add98b98882350919b2815eec3994a94509d89cfbf0975703"
       }
     ],
     "validOutputs": [
       {
         "token": "0x84342e932797FC62814189f01F0Fb05F52519708",
         "decimals": 18,
-        "vaultId": "0x6e844f3117659a033e3666d07f76a335ba8f104cbaa9d969443c8c54ae1b0fe3"
+        "vaultId": "0xd9dd4c8f5ac7dd9add98b98882350919b2815eec3994a94509d89cfbf0975703"
       }
     ]
   }

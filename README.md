@@ -165,4 +165,34 @@ where :
 - `--tx-hash` : Transaction hash of the order. 
 Wait for the transaction to be confirmed. The order will be removed from the orderbook. 
 
+#### Deploying Twap Strategy.
+To deploy the twap strategy, run the following command from the project root 
+
+```sh
+ts-node scripts/1-pilot/deployTwapStrategy.ts --to polygon --parser 0x44e5a1b975e826a0cb75128f872d4a2be94beaaa --orderbook 0x34200e026fbac0c902a0ff18e77a49265ca6ac99
+```
+
+Where arguments for the script are:
+
+- `--to, -t <target-network-name>` : Target network to deploy the strategy to.
+- `--parser -p <parser-address>` : Address of expression deployer contract implementing IParserV1 interface.
+- `--orderbook -o <orderbook-address>` : Address of orderbook contract.
+
+Wait for the transaction to be confirmed. 
+
+The output of the command will look something like this : 
+```
+Deploying Strategy...
+Startegy Deployed At : 0xef3dc1e83ba028aabeca113bb72627334fb64567711c03e5dbcfaa7b180c8aea
+Vault ID used for the startegy : 0x9175171f28aa16609440288de87afaa283c5528fe18c339f58a67ebef74042fd
+Use the above vault id to deposit and withdraw from the strategy 
+```
+- You will notice that a vault id is generated for the strategy. **Every strategy has unique vault ids associated with them**, so that they can function separately of each other. The output vault id from : 
+```
+Vault ID used for the startegy : 0x9175171f28aa16609440288de87afaa283c5528fe18c339f58a67ebef74042fd` 
+``` 
+will be used to deposit to this strategy and withdraw from it. 
+
+- Next step will be to fund the vaults with the above deposit command. 
+
 
