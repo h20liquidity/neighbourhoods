@@ -48,7 +48,8 @@ bytes constant RAINSTRING =
     "usdt-per-second: 13889,"
     "total-time: int-sub(block-timestamp() order-init-time),"
     "max-usdt-amount: int-mul(total-time usdt-per-second),"
-    "current-usdt-amount: get(order-hash 1),"
+    "current-usdt-amount-key: hash(order-hash 1),"
+    "current-usdt-amount: get(current-usdt-amount-key),"
     "target-usdt-amount: int-sub(max-usdt-amount current-usdt-amount),"
 
     // Token in for uniswap is ob's token out, and vice versa.
@@ -60,5 +61,12 @@ bytes constant RAINSTRING =
     // We want to sell a little more nht amount than sushi sets as the minimum
     // to give some leeway for the arb bot.
     "actual-nht-amount: decimal18-mul(nht-amount 1001e15),"
-    "io-ratio: decimal18-div(target-usdt-amount actual-nht-amount)"
+    "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) actual-nht-amount)"
+";"
+    // Record the amount of usdt we bought.
+    "usdt-diff: context<3 4>(),"
+    "current-usdt-amount-key: hash(order-hash 1),"
+    ":set(current-usdt-amount-key int-add(get(current-usdt-amount-key) usdt-diff)),"
+    // Ensure that we bought at least $50 worth of usdt.
+    ":ensure(greater-than(usdt-diff 50e6)),"
 ";";
