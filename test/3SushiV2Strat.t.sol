@@ -69,11 +69,11 @@ contract Test3SushiV2Strat is OpTest {
         return (stack, kvs);
     }
 
-    function testStratHappyPath(uint256 orderHash) public {
-        uint256 reserveIn = 53138576564435538694955386;
+    function testStratSellNHTHappyPath(uint256 orderHash) public {
+        uint256 reserve0 = 53138576564435538694955386;
         // Using USDT as an example.
         // address tokenOut = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
-        uint256 reserveOut = 12270399039;
+        uint256 reserve1 = 12270399039;
 
         uint32 reserveTimestamp = 1624291200;
 
@@ -95,9 +95,9 @@ contract Test3SushiV2Strat is OpTest {
         vm.mockCall(
             expectedPair,
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
-            abi.encode(reserveIn, reserveOut, reserveTimestamp)
+            abi.encode(reserve0, reserve1, reserveTimestamp)
         );
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING, context);
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context);
 
         assertEq(kvs.length, 2);
 
@@ -122,7 +122,32 @@ contract Test3SushiV2Strat is OpTest {
         // assertEq(stack[4], 218071733215424131376675);
     }
 
-    function testStratDebug() external {
-        testStratHappyPath(0);
+    function testStratBuyNHTHappyPath(uint256 orderHash) public {
+        uint256 reserve0 = 53138576564435538694955386;
+        uint256 reserve1 = 12270399039;
+
+        uint32 reserveTimestamp = 1624291200;
+
+        uint256[][] memory context = new uint256[][](1);
+        {
+            uint256[] memory callingContext = new uint256[](3);
+            // order hash
+            callingContext[0] = orderHash;
+            // owner
+            callingContext[1] = uint256(uint160(address(this)));
+            // counterparty
+            callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+            context[0] = callingContext;
+        }
+
+        address expectedPair =
+            LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, POLYGON_NHT_TOKEN_ADDRESS, USDT_TOKEN_ADDRESS);
+        vm.mockCall(
+            expectedPair,
+            abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
+            abi.encode(reserve0, reserve1, reserveTimestamp)
+        );
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_BUY_NHT, context);
     }
+
 }
