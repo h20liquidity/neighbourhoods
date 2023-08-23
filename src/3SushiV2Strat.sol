@@ -59,7 +59,11 @@ bytes constant RAINSTRING_SELL_NHT =
     // end calculate order
     ";"
     // Record the amount of usdt we bought.
-    "usdt-diff: context<3 4>()," "order-hash: context<1 0>()," "current-usdt-amount-key: hash(order-hash 1),"
+    "usdt-diff: context<3 4>(),"
+    // order hash is same as calculate io
+    "order-hash: context<1 0>(),"
+    // current usdt amount key is same as calculate io
+    "current-usdt-amount-key: hash(order-hash 1),"
     ":set(current-usdt-amount-key int-add(get(current-usdt-amount-key) usdt-diff)),"
     // Ensure that we bought at least $50 worth of usdt.
     ":ensure<2>(greater-than(usdt-diff 50e6))"

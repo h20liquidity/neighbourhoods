@@ -5,50 +5,13 @@ import "rain.interpreter/test/util/abstract/OpTest.sol";
 
 import "src/3SushiV2Strat.sol";
 
-// bytes constant RAINSTRING =
-//     // String version of factory address.
-//     "polygon-sushi-v2-factory: 0xc35DADB65012eC5796536bD9864eD8773aBc74C4,"
-
-//     // String version of nht token address.
-//     "polygon-nht-token-address: 0x84342e932797FC62814189f01F0Fb05F52519708,"
-
-//     // String version of usdt token address.
-//     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
-
-//     // String version of approved counterparty.
-//     "approved-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036,"
-//     "actual-counterparty: context<1 2>(),"
-
-//     // Check that
-//     // - counterparty is approved.
-//     // - usdt token address is the token in to ob.
-//     // - nht token address is the token out from ob.
-//     ":ensure("
-//     " equal-to(approved-counterparty actual-counterparty)"
-//     " equal-to(context<3 0>() usdt-token-address)"
-//     " equal-to(context<4 0>() polygon-nht-token-address)"
-//     "),"
-
-//     // Order hash.
-//     "order-hash: context<1 0>(),"
-
-//     // Figure out when the order started.
-//     "order-init-time-key: hash(order-hash 0),"
-//     "order-init-time: any(get(order-init-time-key) block-timestamp()),"
-//     ":set(order-init-time-key order-init-time),"
-
-//     // We sell $50 worth of nht for usdt per hour.
-//     // 50e6 is $50 in usdt.
-//     // 50e6 / 3600 is $50 per hour.
-//     "usdt-per-second: 13889,"
-
-//     // We want the timestamp as well as the nht amount that sushi wants in.
-//     "last-price-timestamp nht-amount-in: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory 50e6"
-//     // " 0x84342e932797FC62814189f01F0Fb05F52519708" " 0xc2132D05D31c914a87C6611C10748AEb04B58e8F" ")"
-//     ";";
+uint256 constant CONTEXT_VAULT_INPUTS_COLUMN = 3;
+uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
+uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
+uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 contract Test3SushiV2Strat is OpTest {
-    function parseAndEvalWithContext(bytes memory rainString, uint256[][] memory context)
+    function parseAndEvalWithContext(bytes memory rainString, uint256[][] memory context, SourceIndex sourceIndex)
         internal
         returns (uint256[] memory, uint256[] memory)
     {
@@ -66,13 +29,13 @@ contract Test3SushiV2Strat is OpTest {
         (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval(
             storeDeployer,
             StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            LibContext.build(context, new SignedContextV1[](0))
+            LibEncodedDispatch.encode(expression, sourceIndex, type(uint16).max),
+            context
         );
         return (stack, kvs);
     }
 
-    function checkSellCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime) internal {
+    function checkSellCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
         uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
         assertEq(kvs.length, 2);
         kvs[0] = currentUsdtAmountKey;
@@ -95,29 +58,39 @@ contract Test3SushiV2Strat is OpTest {
         assertEq(stack[6], orderInitTime);
         // usdt per second.
         assertEq(stack[7], 13889);
-        // total time is 100.
-        assertEq(stack[8], 100);
+        // total time is duration.
+        assertEq(stack[8], duration);
         // max usdt amount.
-        assertEq(stack[9], 1388900);
+        assertEq(stack[9], stack[7] * stack[8]);
         // current usdt amount key.
         assertEq(stack[10], currentUsdtAmountKey);
         assertEq(stack[11], 0);
         // target usdt amount.
-        assertEq(stack[12], 1388900);
+        assertEq(stack[12], stack[9] - stack[11]);
         // last price timestamp.
         assertEq(stack[13], reserveTimestamp);
         // nht amount out from ob.
-        assertEq(stack[14], 6033595774628543173862);
+        assertEq(stack[14], 218073484927305044988919, "stack[14]");
         // order output max.
-        assertEq(stack[15], uint256(uint256(6033595774628543173862) * uint256(1001) / uint256(1000)));
+        assertEq(stack[15], uint256(uint256(stack[14]) * uint256(1001) / uint256(1000)), "stack[15]");
         // io ratio.
-        assertEq(stack[16], 229964442322606);
+        assertEq(stack[16], 229053291678722, "stack[16]");
+    }
+
+    function checkSellHandle(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash) internal {
+        uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
+        assertEq(kvs.length, 2);
+        assertEq(kvs[0], currentUsdtAmountKey);
+        assertEq(kvs[1], 50000400);
+        assertEq(stack.length, 3);
+        assertEq(stack[0], kvs[1]);
+        assertEq(stack[1], orderHash);
+        assertEq(stack[2], currentUsdtAmountKey);
     }
 
     function testStratSellNHTHappyPath(uint256 orderHash) public {
         uint256 reserve0 = 53138576564435538694955386;
         // Using USDT as an example.
-        // address tokenOut = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
         uint256 reserve1 = 12270399039;
 
         uint32 reserveTimestamp = 1692775490;
@@ -138,15 +111,16 @@ contract Test3SushiV2Strat is OpTest {
             context[1] = calculationsContext;
         }
         {
-            uint256[] memory inputsContext = new uint256[](2);
+            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
             inputsContext[0] = uint256(uint160(USDT_TOKEN_ADDRESS));
             context[2] = inputsContext;
         }
         {
-            uint256[] memory outputsContext = new uint256[](2);
+            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
             outputsContext[0] = uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS));
             context[3] = outputsContext;
         }
+        context = LibContext.build(context, new SignedContextV1[](0));
 
         address expectedPair =
             LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, POLYGON_NHT_TOKEN_ADDRESS, USDT_TOKEN_ADDRESS);
@@ -157,11 +131,23 @@ contract Test3SushiV2Strat is OpTest {
         );
 
         uint256 orderInitTime = 1692775491;
-        vm.warp(orderInitTime + 100);
+        // Give it an hour so we can clear the handle io check.
+        uint256 duration = 3600;
+        vm.warp(orderInitTime + duration);
 
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context);
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context, SourceIndex.wrap(0));
 
-        checkSellCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime);
+        checkSellCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
+
+        // usdt diff is the amount of usdt we bought (order output max * io ratio) scaled to 6 decimals.
+        context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
+        FixedPointDecimalScale.scaleN(UD60x18.unwrap(mul(UD60x18.wrap(stack[15]), UD60x18.wrap(stack[16]))), 6, 1);
+        // nht diff is the amount of nht we sold (order output max).
+        context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15];
+
+        // it hasn't been an hour so we should revert.
+        (stack, kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
+        checkSellHandle(stack, kvs, orderHash);
     }
 
     function testStratBuyNHTHappyPath(uint256 orderHash) public {
@@ -189,6 +175,6 @@ contract Test3SushiV2Strat is OpTest {
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
             abi.encode(reserve0, reserve1, reserveTimestamp)
         );
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_BUY_NHT, context);
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
     }
 }
