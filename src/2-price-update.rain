@@ -7,7 +7,7 @@
 
 #calculate-source
 /* refuse any counterparties other than named . This will be the arb contract instance address. */
-allowed-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036,
+allowed-counterparty: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,
 : ensure(eq(allowed-counterparty counterparty-address())),
 
 /* 1 hour delay on new batches = 3600 seconds */
