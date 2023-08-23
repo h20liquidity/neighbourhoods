@@ -50,11 +50,11 @@ bytes constant RAINSTRING_SELL_NHT =
     // We want the timestamp as well as the nht amount that sushi wants in.
     "last-price-timestamp nht-amount: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
     // Don't allow the price to change this block before this trade.
-    // ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
+    ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
     // We want to sell a little more nht amount than sushi sets as the minimum
     // to give some leeway for the arb bot. Set the min max-output as 1 to avoid
     // divide by zero.
-    "order-output-max: decimal18-max(1 decimal18-mul(nht-amount 1001e15)),"
+    "order-output-max: decimal18-mul(nht-amount 1001e15),"
     "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) order-output-max)"
     // end calculate order
     ";"

@@ -113,27 +113,17 @@ contract Test3SushiV2Strat is OpTest {
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
             abi.encode(reserve0, reserve1, reserveTimestamp)
         );
-        vm.warp(reserveTimestamp + 100);
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context);
 
         uint256 orderInitTime = 1692775491;
-        // uint256 orderInitTimeKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(0))));
+        vm.warp(orderInitTime + 100);
+
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context);
+
         uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
 
         assertEq(kvs.length, 2);
         kvs[0] = currentUsdtAmountKey;
         kvs[1] = 0;
-        // if (kvs[0] == orderInitTimeKey) {
-        //     assertEq(kvs[1], block.timestamp);
-        //     assertEq(kvs[2], currentUsdtAmountKey);
-        //     assertEq(kvs[3], 0);
-        // } else if (kvs[2] == orderInitTimeKey) {
-        //     assertEq(kvs[3], block.timestamp);
-        //     assertEq(kvs[0], currentUsdtAmountKey);
-        //     assertEq(kvs[1], 0);
-        // } else {
-        //     revert("missing order init time key");
-        // }
 
         assertEq(stack.length, 17);
         // addresses.
@@ -146,31 +136,30 @@ contract Test3SushiV2Strat is OpTest {
         // // actual counterparty.
         assertEq(stack[4], uint256(uint160(APPROVED_COUNTERPARTY)));
 
-        // // order init time.
-        assertEq(stack[5], orderInitTime);
+        // order hash.
+        assertEq(stack[5], orderHash);
+        // order init time.
+        assertEq(stack[6], orderInitTime);
 
-        // // usdt per second.
-        // assertEq(stack[6], 13889);
-        // // total time is zero as this is init.
-        // assertEq(stack[7], 0);
-        // // max usdt amount is zero as this is init.
-        // assertEq(stack[8], 0);
-        // // current usdt amount key.
-        // assertEq(stack[9], currentUsdtAmountKey);
-        // assertEq(stack[10], 0);
-        // // target usdt amount.
-        // assertEq(stack[11], 0);
-        // // last price timestamp.
-        // assertEq(stack[12], reserveTimestamp);
-        // // nht amount out from ob.
-        // assertEq(stack[13], 0);
-        // // order output max.
-        // assertEq(stack[14], 1);
+        // usdt per second.
+        assertEq(stack[7], 13889);
+        // total time is 100.
+        assertEq(stack[8], 100);
+        // max usdt amount.
+        assertEq(stack[9], 1388900);
+        // current usdt amount key.
+        assertEq(stack[10], currentUsdtAmountKey);
+        assertEq(stack[11], 0);
+        // target usdt amount.
+        assertEq(stack[12], 1388900);
+        // last price timestamp.
+        assertEq(stack[13], reserveTimestamp);
+        // nht amount out from ob.
+        assertEq(stack[14], 6033595774628543173862);
+        // order output max.
+        assertEq(stack[15], uint256(uint256(6033595774628543173862) * uint256(1001) / uint256(1000)));
         // // io ratio.
-        // assertEq(stack[15], 0);
-
-        // assertEq(stack[3], reserveTimestamp);
-        // assertEq(stack[4], 218071733215424131376675);
+        assertEq(stack[16], 229964442322606);
     }
 
     function testStratBuyNHTHappyPath(uint256 orderHash) public {
