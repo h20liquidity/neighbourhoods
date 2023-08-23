@@ -4,5 +4,5 @@
 
 #main
 /*refuse any counterparties other than named . This will be the public key of the bot wallet.*/
-allowed-counterparty: 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88,
+allowed-counterparty: 0xf098172786a87FA7426eA811Ff25D31D599f766D,
 : ensure(eq(allowed-counterparty context<0 0>()))

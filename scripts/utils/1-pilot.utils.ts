@@ -1,4 +1,4 @@
-import { BigNumber, constants, ethers } from "ethers";  
+import { BigNumber, ethers } from "ethers";  
 
 import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
 import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
@@ -6,7 +6,7 @@ import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
 import * as path from "path";  
 import orderBookDetails from "../../config/Orderbook/1-OrderBook.json" ;
-import Parser from "../../config/Parser/IParserV1.json" 
+
 
 import {writeFileSync} from "fs"; 
 import orderDetails from "../DeployStrategy/orderDetails.json"
@@ -193,106 +193,6 @@ export const deployStrategyWithVault = async(network:string,priKey: string, comm
       return contractTransaction
 
 }   
-
-export const deployStrategyWithNP = async(network:string,priKey: string, common: Common,vaultId,parserAddress: string,orderbook:string) => { 
-
-    console.log("Deploying Strategy with Native Parser...") 
-
-      
-    //Get Provider for testnet from where the data is to be fetched 
-    const provider = getProvider(network)   
-    
-  
-    const signer  = new ethers.Wallet(priKey,provider) 
-   
-    //Get Source code from contract
-    // const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${contractConfig[network].orderbook.address}&apikey=${getEtherscanKey(network)}`;
-    // const source = await axios.get(url);    
-  
-    // Get Orderbook Instance 
-    const orderBook = new ethers.Contract(orderbook,orderBookDetails.abi,signer) 
-
-    const parser = new ethers.Contract(parserAddress,Parser.abi,provider) 
-
-    //Building Expression
-    const strategyExpression = path.resolve(
-      __dirname,
-      "../../src/np-strat.rain"
-    ); 
-    const strategyString = await fetchFile(strategyExpression);
-
-    let [sources , constants] = await parser.parse(
-      ethers.utils.toUtf8Bytes(
-        strategyString.trim()
-      )
-    )
-    
-    const EvaluableConfig_A = {
-      deployer: parserAddress,
-      sources,
-      constants,
-    }
-    const orderConfig_A = {
-      validInputs: [
-        { token: contractConfig.contracts[network].usdt.address, decimals: contractConfig.contracts[network].usdt.decimals, vaultId: vaultId },
-      ],
-      validOutputs: [
-        { token: contractConfig.contracts[network].nht.address, decimals: contractConfig.contracts[network].nht.decimals, vaultId: vaultId},
-      ],
-      evaluableConfig: EvaluableConfig_A,
-      meta: encodeMeta(""),
-    };  
-  
-  
-    const addOrderData = await orderBook.populateTransaction.addOrder(orderConfig_A);
-
-    // Building Tx
-    const nonce = await provider.getTransactionCount(signer.address)   
-
-    // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
-    // but after being mined affected relevant state.
-    // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
-    const gasLimit = await provider.estimateGas({ 
-      to:orderBook.address ,
-      data: addOrderData.data
-    }) 
-    
-    const feeData = await estimateFeeData(provider)  
-    
-
-    // hard conded values to be calculated
-    const txData = {  
-      to: orderBook.address ,
-      from: signer.address, 
-      nonce: ethers.BigNumber.from(nonce).toHexString() ,
-      data : addOrderData.data ,
-      gasLimit : gasLimit.toHexString(), 
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
-      maxFeePerGas: feeData.maxFeePerGas.toHexString(),
-      type: '0x02'
-    }   
-        
-    // Generate Transaction 
-    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
-  
-    const privateKey = Buffer.from(
-      priKey,
-      'hex'
-    ) 
-    
-    // Sign Transaction 
-    const signedTx = tx.sign(privateKey)
-  
-    // Send the transaction
-    const contractTransaction = await provider.sendTransaction(
-      "0x" + signedTx.serialize().toString("hex")
-    );     
-
-    return contractTransaction
-
-  
-
-}
 
 export const approveDepositTokenOB = async(tokenContract, spender, amount, signer, provider, common , priKey) => {  
   
