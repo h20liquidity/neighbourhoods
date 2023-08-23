@@ -49,7 +49,7 @@ contract Test3SushiV2Strat is OpTest {
 
         // approved counterparty.
         assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
-        // // actual counterparty.
+        // actual counterparty.
         assertEq(stack[4], uint256(uint160(APPROVED_COUNTERPARTY)));
 
         // order hash.
@@ -130,7 +130,7 @@ contract Test3SushiV2Strat is OpTest {
             abi.encode(reserve0, reserve1, reserveTimestamp)
         );
 
-        uint256 orderInitTime = 1692775491;
+        uint256 orderInitTime = uint256(reserveTimestamp) + 1;
         // Give it an hour so we can clear the handle io check.
         uint256 duration = 3600;
         vm.warp(orderInitTime + duration);
@@ -150,13 +150,68 @@ contract Test3SushiV2Strat is OpTest {
         checkSellHandle(stack, kvs, orderHash);
     }
 
+    function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
+        uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
+        assertEq(kvs.length, 2);
+        kvs[0] = currentUsdtAmountKey;
+        kvs[1] = 0;
+        assertEq(stack.length, 18);
+
+        // addresses.
+        assertEq(stack[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)));
+        assertEq(stack[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)));
+        assertEq(stack[2], uint256(uint160(USDT_TOKEN_ADDRESS)));
+
+        // approved counterparty.
+        assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
+        // actual counterparty.
+        assertEq(stack[4], uint256(uint160(APPROVED_COUNTERPARTY)));
+
+        // order hash.
+        assertEq(stack[5], orderHash);
+        // order init time.
+        assertEq(stack[6], orderInitTime, "stack[6]");
+        // usdt per second.
+        assertEq(stack[7], 13889);
+        // total time is duration.
+        assertEq(stack[8], duration);
+        // max usdt amount.
+        assertEq(stack[9], stack[7] * stack[8]);
+        // current usdt amount key.
+        assertEq(stack[10], currentUsdtAmountKey);
+        assertEq(stack[11], 0);
+        // target usdt amount.
+        assertEq(stack[12], stack[9] - stack[11]);
+        // last price timestamp.
+        assertEq(stack[13], reserveTimestamp);
+        // nht amount in to ob.
+        assertEq(stack[14], 215010194945733820281886, "stack[14]");
+        // nht input expected.
+        assertEq(stack[15], uint256(uint256(stack[14]) * uint256(999) / uint256(1000)), "stack[15]");
+        // order output max usdt.
+        assertEq(stack[16], 50000400e12, "stack[16]");
+        // io ratio.
+        assertEq(stack[17], stack[15] * 1e18 / stack[16], "stack[17]");
+    }
+
+    function checkBuyHandle(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash) internal {
+        uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
+        assertEq(kvs.length, 2);
+        assertEq(kvs[0], currentUsdtAmountKey);
+        assertEq(kvs[1], 50000400);
+        assertEq(stack.length, 3);
+        assertEq(stack[0], kvs[1]);
+        assertEq(stack[1], orderHash);
+        assertEq(stack[2], currentUsdtAmountKey);
+    }
+
     function testStratBuyNHTHappyPath(uint256 orderHash) public {
         uint256 reserve0 = 53138576564435538694955386;
         uint256 reserve1 = 12270399039;
 
-        uint32 reserveTimestamp = 1624291200;
+        uint32 reserveTimestamp = 1692775490;
 
-        uint256[][] memory context = new uint256[][](1);
+        uint256[][] memory context = new uint256[][](4);
         {
             uint256[] memory callingContext = new uint256[](3);
             // order hash
@@ -167,6 +222,21 @@ contract Test3SushiV2Strat is OpTest {
             callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
             context[0] = callingContext;
         }
+        {
+            uint256[] memory calculationsContext = new uint256[](0);
+            context[1] = calculationsContext;
+        }
+        {
+            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+            inputsContext[0] = uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS));
+            context[2] = inputsContext;
+        }
+        {
+            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+            outputsContext[0] = uint256(uint160(USDT_TOKEN_ADDRESS));
+            context[3] = outputsContext;
+        }
+        context = LibContext.build(context, new SignedContextV1[](0));
 
         address expectedPair =
             LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, POLYGON_NHT_TOKEN_ADDRESS, USDT_TOKEN_ADDRESS);
@@ -175,6 +245,23 @@ contract Test3SushiV2Strat is OpTest {
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
             abi.encode(reserve0, reserve1, reserveTimestamp)
         );
+        uint256 orderInitTime = uint256(reserveTimestamp) + 1;
+        // Give it an hour so we can clear the handle io check.
+        uint256 duration = 3600;
+        vm.warp(orderInitTime + duration);
         (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
+
+        checkBuyCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
+
+        // usdt diff is the order output max scaled to 6 decimals.
+        context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
+            FixedPointDecimalScale.scaleN(stack[16], 6, 1);
+        // FixedPointDecimalScale.scaleN(UD60x18.unwrap(mul(UD60x18.wrap(stack[15]), UD60x18.wrap(stack[16]))), 6, 1);
+        // nht diff is the amount of nht we sold (order output max * io ratio).
+        context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15] * stack[16] / 1e18;
+
+        // it hasn't been an hour so we should revert.
+        (stack, kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
+        checkBuyHandle(stack, kvs, orderHash);
     }
 }
