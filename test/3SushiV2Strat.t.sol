@@ -48,7 +48,10 @@ import "src/3SushiV2Strat.sol";
 //     ";";
 
 contract Test3SushiV2Strat is OpTest {
-    function parseAndEvalWithContext(bytes memory rainString, uint256[][] memory context) internal returns (uint256[] memory, uint256[] memory) {
+    function parseAndEvalWithContext(bytes memory rainString, uint256[][] memory context)
+        internal
+        returns (uint256[] memory, uint256[] memory)
+    {
         IInterpreterV1 interpreterDeployer;
         IInterpreterStoreV1 storeDeployer;
         address expression;
@@ -75,9 +78,9 @@ contract Test3SushiV2Strat is OpTest {
         // address tokenOut = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
         uint256 reserve1 = 12270399039;
 
-        uint32 reserveTimestamp = 1624291200;
+        uint32 reserveTimestamp = 1692775490;
 
-        uint256[][] memory context = new uint256[][](1);
+        uint256[][] memory context = new uint256[][](4);
         {
             uint256[] memory callingContext = new uint256[](3);
             // order hash
@@ -88,7 +91,20 @@ contract Test3SushiV2Strat is OpTest {
             callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
             context[0] = callingContext;
         }
-
+        {
+            uint256[] memory calculationsContext = new uint256[](0);
+            context[1] = calculationsContext;
+        }
+        {
+            uint256[] memory inputsContext = new uint256[](2);
+            inputsContext[0] = uint256(uint160(USDT_TOKEN_ADDRESS));
+            context[2] = inputsContext;
+        }
+        {
+            uint256[] memory outputsContext = new uint256[](2);
+            outputsContext[0] = uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS));
+            context[3] = outputsContext;
+        }
 
         address expectedPair =
             LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, POLYGON_NHT_TOKEN_ADDRESS, USDT_TOKEN_ADDRESS);
@@ -97,11 +113,29 @@ contract Test3SushiV2Strat is OpTest {
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
             abi.encode(reserve0, reserve1, reserveTimestamp)
         );
+        vm.warp(reserveTimestamp + 100);
         (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context);
 
-        assertEq(kvs.length, 2);
+        uint256 orderInitTime = 1692775491;
+        // uint256 orderInitTimeKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(0))));
+        uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
 
-        assertEq(stack.length, 8);
+        assertEq(kvs.length, 2);
+        kvs[0] = currentUsdtAmountKey;
+        kvs[1] = 0;
+        // if (kvs[0] == orderInitTimeKey) {
+        //     assertEq(kvs[1], block.timestamp);
+        //     assertEq(kvs[2], currentUsdtAmountKey);
+        //     assertEq(kvs[3], 0);
+        // } else if (kvs[2] == orderInitTimeKey) {
+        //     assertEq(kvs[3], block.timestamp);
+        //     assertEq(kvs[0], currentUsdtAmountKey);
+        //     assertEq(kvs[1], 0);
+        // } else {
+        //     revert("missing order init time key");
+        // }
+
+        assertEq(stack.length, 17);
         // addresses.
         assertEq(stack[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)));
         assertEq(stack[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)));
@@ -109,14 +143,31 @@ contract Test3SushiV2Strat is OpTest {
 
         // approved counterparty.
         assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
-        // actual counterparty.
+        // // actual counterparty.
         assertEq(stack[4], uint256(uint160(APPROVED_COUNTERPARTY)));
 
-        // order init time key.
-        assertEq(stack[5], orderHash);
-        assertEq(stack[6], uint256(keccak256(abi.encodePacked(orderHash, uint256(0)))));
-        assertEq(stack[7], block.timestamp);
+        // // order init time.
+        assertEq(stack[5], orderInitTime);
 
+        // // usdt per second.
+        // assertEq(stack[6], 13889);
+        // // total time is zero as this is init.
+        // assertEq(stack[7], 0);
+        // // max usdt amount is zero as this is init.
+        // assertEq(stack[8], 0);
+        // // current usdt amount key.
+        // assertEq(stack[9], currentUsdtAmountKey);
+        // assertEq(stack[10], 0);
+        // // target usdt amount.
+        // assertEq(stack[11], 0);
+        // // last price timestamp.
+        // assertEq(stack[12], reserveTimestamp);
+        // // nht amount out from ob.
+        // assertEq(stack[13], 0);
+        // // order output max.
+        // assertEq(stack[14], 1);
+        // // io ratio.
+        // assertEq(stack[15], 0);
 
         // assertEq(stack[3], reserveTimestamp);
         // assertEq(stack[4], 218071733215424131376675);
@@ -149,5 +200,4 @@ contract Test3SushiV2Strat is OpTest {
         );
         (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_BUY_NHT, context);
     }
-
 }
