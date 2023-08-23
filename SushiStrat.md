@@ -55,6 +55,7 @@ Before deploying the strategy, double check that the Orderbook and ZeroEx contra
 
 Make sure that the correct **approved-counterparty** addresses are set in `src/3-sushi-v2-sell-strat.ts` and `src/3-sushi-v2-buy-strat.ts`. 
 - The `approved-counterparty` will be the `zeroexorderbookinstance` address from the `scripts-np/np-config.json` under `polygon` network
+- Also make sure that `order-init-time` represents current unix timestamp. You can get it from https://www.epochconverter.com/
 
 For Eg : 
 ```sh
@@ -63,6 +64,9 @@ export const RAINSTRING_BUY_NHT =
 .
 // String version of approved counterparty.
 "approved-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036," +
+.
+// Figure out when the order started.
+"order-init-time: 1692775491," +
 .
 .
 ```
@@ -73,6 +77,9 @@ export const RAINSTRING_SELL_NHT =
 .
 // String version of approved counterparty.
 "approved-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036," +
+.
+// Figure out when the order started.
+"order-init-time: 1692775491,"+
 .
 .
 ```
