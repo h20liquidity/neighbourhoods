@@ -20,6 +20,7 @@ uint256 constant USDT_PER_SECOND = 13889;
 uint256 constant MIN_USDT_AMOUNT = 50e6;
 
 uint256 constant SELL_MULTIPLIER = 101e16;
+uint256 constant BUY_MULTIPLIER = 99e16;
 
 // Selling NHT for USDT => NHT is output and USDT is input.
 bytes constant RAINSTRING_SELL_NHT =

@@ -12,11 +12,26 @@ uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
 uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
+string constant FORK_RPC = "https://polygon.llamarpc.com";
+
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 bytes constant EXPECTED_SELL_BYTECODE = hex"02000000c430120011010000000100000101000002010000030200020100000001020000040c02000000000002020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000608000000230200000000000700000008220200000100000600000005030200000000000a250100000000000b000000092302000000000002000000010000000c0000000027040001080000000000000d120200000b010001010000070000000e150200000000000f0000000c17010006140200000f050003020004030200000101000006000000010302000000000000000000022501000019020000000000022602000001000008000000000e0200000b010002";
 
+bytes constant EXPECTED_BUY_BYTECODE = hex"02000000c831130012010000000100000101000002010000030200020100000002020000040c02000000000001020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000608000000230200000000000700000008220200000100000600000005030200000000000a250100000000000b000000092302000000000001000000020000000c0000000028040001080000000000000d120200000b010001010000070000000e150200000000000c17010006000000100000000f140200000f050003020004040200000101000006000000010302000000000000000000022501000019020000000000022602000001000008000000000e0200000b010000";
+
+RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER = RainterpreterExpressionDeployerNP(0x386d79440e3fe32BdFb0120034Fb21971151E90f);
+address constant POLYGON_INTERPRETER = 0x31fE050009Dc0cAb68fFe3a65A0A466F60bE6c5D;
+address constant POLYGON_STORE = 0xc71541cc0684A3ccC86EdA6aFc4a456140130fbD;
+IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x1320DBB57a65c9CbF785E10770F8f3d51ff92132);
+
 contract Test3SushiV2Strat is OpTest {
+
+    function selectPolygonFork() internal {
+        uint256 fork = vm.createFork(FORK_RPC);
+        vm.selectFork(fork);
+    }
+
     function parseAndEvalWithContext(bytes memory expectedBytecode, bytes memory rainString, uint256[][] memory context, SourceIndex sourceIndex)
         internal
         returns (uint256[] memory, uint256[] memory)
@@ -42,17 +57,30 @@ contract Test3SushiV2Strat is OpTest {
         return (stack, kvs);
     }
 
+    function checkBuyConstants(uint256[] memory constants) internal {
+        assertEq(constants.length, 9);
+        assertEq(constants[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)), "constants[0]");
+        assertEq(constants[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)), "constants[1]");
+        assertEq(constants[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)), "constants[2]");
+        assertEq(constants[3], uint256(uint160(APPROVED_COUNTERPARTY)), "constants[3]");
+        assertEq(constants[4], ORDER_INIT_TIME, "constants[4]");
+        assertEq(constants[5], USDT_PER_SECOND, "constants[5]");
+        assertEq(constants[6], 1, "constants[6]");
+        assertEq(constants[7], BUY_MULTIPLIER, "constants[7]");
+        assertEq(constants[8], MIN_USDT_AMOUNT, "constants[8]");
+    }
+
     function checkSellConstants(uint256[] memory constants) internal {
         assertEq(constants.length, 9);
-        assertEq(constants[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)));
-        assertEq(constants[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)));
-        assertEq(constants[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)));
-        assertEq(constants[3], uint256(uint160(APPROVED_COUNTERPARTY)));
-        assertEq(constants[4], ORDER_INIT_TIME);
-        assertEq(constants[5], USDT_PER_SECOND);
-        assertEq(constants[6], 1);
-        assertEq(constants[7], SELL_MULTIPLIER);
-        assertEq(constants[8], MIN_USDT_AMOUNT);
+        assertEq(constants[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)), "constants[0]");
+        assertEq(constants[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)), "constants[1]");
+        assertEq(constants[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)), "constants[2]");
+        assertEq(constants[3], uint256(uint160(APPROVED_COUNTERPARTY)), "constants[3]");
+        assertEq(constants[4], ORDER_INIT_TIME, "constants[4]");
+        assertEq(constants[5], USDT_PER_SECOND, "constants[5]");
+        assertEq(constants[6], 1, "constants[6]");
+        assertEq(constants[7], SELL_MULTIPLIER, "constants[7]");
+        assertEq(constants[8], MIN_USDT_AMOUNT, "constants[8]");
     }
 
     function checkSellCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
@@ -161,9 +189,12 @@ contract Test3SushiV2Strat is OpTest {
         checkSellCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
 
         // usdt diff is the amount of usdt we bought (order output max * io ratio) scaled to 6 decimals.
+        // usdt is the input here as we're selling nht.
         context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
         FixedPointDecimalScale.scaleN(UD60x18.unwrap(mul(UD60x18.wrap(stack[15]), UD60x18.wrap(stack[16]))), 6, 1);
+
         // nht diff is the amount of nht we sold (order output max).
+        // nht is the output here as we're selling nht.
         context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15];
 
         // it hasn't been an hour so we should revert.
@@ -171,20 +202,17 @@ contract Test3SushiV2Strat is OpTest {
         checkSellHandle(stack, kvs, orderHash);
     }
 
+    function testDeployer() external {
+        selectPolygonFork();
+
+        assertEq(address(POLYGON_DEPLOYER.iInterpreter()), POLYGON_INTERPRETER);
+        assertEq(address(POLYGON_DEPLOYER.iStore()), POLYGON_STORE);
+    }
+
     function testStratSellNHTHappyFork() external {
-        uint256 fork = vm.createFork("https://polygon.llamarpc.com");
-        vm.selectFork(fork);
+        selectPolygonFork();
 
-        RainterpreterExpressionDeployerNP deployer = RainterpreterExpressionDeployerNP(0x386d79440e3fe32BdFb0120034Fb21971151E90f);
-        address i9r = 0x31fE050009Dc0cAb68fFe3a65A0A466F60bE6c5D;
-        address store = 0xc71541cc0684A3ccC86EdA6aFc4a456140130fbD;
-
-        assertEq(address(deployer.iInterpreter()), address(i9r));
-        assertEq(address(deployer.iStore()), address(store));
-
-        IOrderBookV3 orderbook = IOrderBookV3(0x1320DBB57a65c9CbF785E10770F8f3d51ff92132);
-
-        (bytes memory bytecode, uint256[] memory constants) = deployer.parse(RAINSTRING_SELL_NHT);
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_SELL_NHT);
         assertEq(bytecode, EXPECTED_SELL_BYTECODE);
         checkSellConstants(constants);
 
@@ -208,44 +236,44 @@ contract Test3SushiV2Strat is OpTest {
             assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(orderOwner), 1000000e6);
         }
 
-        IO[] memory inputs = new IO[](1);
-        inputs[0] = IO(POLYGON_USDT_TOKEN_ADDRESS, 6, VAULT_ID);
-
-        IO[] memory outputs = new IO[](1);
-        outputs[0] = IO(POLYGON_NHT_TOKEN_ADDRESS, 18, VAULT_ID);
-
-        EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2 (
-            deployer,
-            bytecode,
-            constants
-        );
-
-        OrderConfigV2 memory orderConfig = OrderConfigV2 (
-            inputs,
-            outputs,
-            evaluableConfig,
-            ""
-        );
-
         Order memory order;
         {
+            IO[] memory inputs = new IO[](1);
+            inputs[0] = IO(POLYGON_USDT_TOKEN_ADDRESS, 6, VAULT_ID);
+
+            IO[] memory outputs = new IO[](1);
+            outputs[0] = IO(POLYGON_NHT_TOKEN_ADDRESS, 18, VAULT_ID);
+
+            EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2 (
+                POLYGON_DEPLOYER,
+                bytecode,
+                constants
+            );
+
+            OrderConfigV2 memory orderConfig = OrderConfigV2 (
+                inputs,
+                outputs,
+                evaluableConfig,
+                ""
+            );
+
             vm.startPrank(orderOwner);
             vm.recordLogs();
-            (bool stateChanged) = orderbook.addOrder(orderConfig);
+            (bool stateChanged) = POLYGON_ORDERBOOK.addOrder(orderConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
             assertEq(entries.length, 3);
             // assertEq(entries[2].topics[0], AddOrder.selector);
             (,,order,) = abi.decode(entries[2].data, (address, address, Order, bytes32));
             assertEq(order.owner, orderOwner);
             assertEq(order.handleIO, true);
-            assertEq(address(order.evaluable.interpreter), address(i9r));
-            assertEq(address(order.evaluable.store), address(store));
+            assertEq(address(order.evaluable.interpreter), address(POLYGON_INTERPRETER));
+            assertEq(address(order.evaluable.store), address(POLYGON_STORE));
             assertEq(stateChanged, true);
 
-            IERC20(POLYGON_NHT_TOKEN_ADDRESS).approve(address(orderbook), 200000000e18);
-            orderbook.deposit(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, 200000000e18);
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(orderbook), 1000000e6);
-            orderbook.deposit(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, 1000000e6);
+            IERC20(POLYGON_NHT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), 200000000e18);
+            POLYGON_ORDERBOOK.deposit(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, 200000000e18);
+            IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), 1000000e6);
+            POLYGON_ORDERBOOK.deposit(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, 1000000e6);
             vm.stopPrank();
         }
 
@@ -267,11 +295,13 @@ contract Test3SushiV2Strat is OpTest {
                 type(uint256).max,
                 innerConfigs
             );
-            // uint256 amountToApprove = USDT_PER_SECOND * (block.timestamp - ORDER_INIT_TIME);
-            // console2.log(amountToApprove); 1262232320 1262546506
-            uint256 amountToApprove = 1000000e6;
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(orderbook), amountToApprove);
-            (uint256 totalInput, uint256 totalOutput) = orderbook.takeOrders(takeOrdersConfig);
+            uint256 amountToApprove = USDT_PER_SECOND * (block.timestamp - ORDER_INIT_TIME) * 101 / 100;
+            console2.log(amountToApprove);
+            // uint256 amountToApprove = 1000000e6;
+            IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), amountToApprove);
+            (uint256 totalInput, uint256 totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
+            // Check that the approval amount was exactly right.
+            // assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).allowance(APPROVED_COUNTERPARTY, address(orderbook)), 0);
             vm.stopPrank();
         }
     }
@@ -375,19 +405,29 @@ contract Test3SushiV2Strat is OpTest {
         // Give it an hour so we can clear the handle io check.
         uint256 duration = 3600;
         vm.warp(orderInitTime + duration);
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(EXPECTED_BUY_BYTECODE, RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
 
         checkBuyCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
 
         // usdt diff is the order output max scaled to 6 decimals.
-        context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
+        // usdt is the output here as we're buying nht.
+        context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
             FixedPointDecimalScale.scaleN(stack[16], 6, 1);
-        // FixedPointDecimalScale.scaleN(UD60x18.unwrap(mul(UD60x18.wrap(stack[15]), UD60x18.wrap(stack[16]))), 6, 1);
+
         // nht diff is the amount of nht we sold (order output max * io ratio).
-        context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15] * stack[16] / 1e18;
+        // nht is the input here as we're buying nht.
+        context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15] * stack[16] / 1e18;
 
         // it hasn't been an hour so we should revert.
-        (stack, kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
+        (stack, kvs) = parseAndEvalWithContext(EXPECTED_BUY_BYTECODE, RAINSTRING_BUY_NHT, context, SourceIndex.wrap(1));
         checkBuyHandle(stack, kvs, orderHash);
+    }
+
+    function testStratBuyNHTHappyFork() external {
+        selectPolygonFork();
+
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_BUY_NHT);
+        assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+        checkBuyConstants(constants);
     }
 }
