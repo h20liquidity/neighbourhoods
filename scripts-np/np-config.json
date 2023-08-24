@@ -1,0 +1,56 @@
+{
+  "contracts": {
+    "mumbai": {
+      "interpreter": {
+        "address": "0x18f984b2bdbe022eaf8173e862fb014f059803cf",
+        "transaction": "0x98793d9db49c7cc519594f5df4e10689dd847faa83a983cfd30a91260e3fd747"
+      },
+      "store": {
+        "address": "0xa6bbf282bb51a5191b935e4b29112d691c88bf59",
+        "transaction": "0xdb6e0cdba90c4a170a229eeefb0124cdbbc52b60ab3fbd58e78bfad0f39a8830"
+      },
+      "expressionDeployer": {
+        "address": "0x8203b49e4b90767a1f1d769a887e36592d6c6d5b",
+        "transaction": "0xce834fcff93b805f27a1f85ab3e9f21ad93293771a3c8f04df3b52b95b3c79ed"
+      },
+      "orderbook": {
+        "address": "0x75b9d6fd39f005b77c1a1e8a9c5170118c5ae3c3",
+        "transaction": "0x50f3ba230c573addf1a0f167f161eac5d6bf2d4e1e0f8d0a645c50cff264f0e6"
+      },
+      "zeroexorderbookimplmentation": {
+        "address": "0x44e5a1b975e826a0cb75128f872d4a2be94beaaa",
+        "transaction": "0x8c635204406ef39fde5a73fcac92ad844b0cd3175a00997a7fd251aed21d4a8c"
+      },
+      "clonefactory": {
+        "address": "0xbe8e2ca0ecde48ef58a347a7226b160da0bd710b",
+        "transaction": "0x991bba271d34823b2c2e1cad9073d7be5487e9433d33ee9c7029e971203b3506"
+      },
+      "zeroexorderbookinstance": {
+        "address": "0x28af8c02ec7e0130a64f139e3f3b5f24537a8a90",
+        "transaction": "0x9b00046fe0deb6a19664f7316cd4a3fe8601139668dd7a983b7c555b016c5a0b"
+      },
+      "usdt": {
+        "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
+        "decimals": 18
+      },
+      "nht": {
+        "address": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+        "decimals": 18
+      }
+    },
+    "polygon": {
+      "usdt": {
+        "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        "decimals": 6
+      },
+      "nht": {
+        "address": "0x84342e932797FC62814189f01F0Fb05F52519708",
+        "decimals": 18
+      }
+    }
+  },
+  "hardhat": {
+    "forkBaseUrl": "https://polygon-mumbai.g.alchemy.com/v2/",
+    "blockNumber": 39311648
+  }
+}

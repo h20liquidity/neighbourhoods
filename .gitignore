@@ -15,5 +15,7 @@ typechain-types
 cache
 artifacts
 
-# Rainlang Compile 
+# Rainlang Compile
 rainlangCompile
+
+out
