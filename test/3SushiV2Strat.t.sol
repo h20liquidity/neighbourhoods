@@ -190,9 +190,17 @@ contract Test3SushiV2Strat is OpTest {
         address orderOwner = address(0x1234);
 
         vm.prank(nhtHolder);
+        // 200 mill nht
         IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(orderOwner, 200000000e18);
 
         assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(orderOwner), 200000000e18);
+
+        address usdtHolder = 0x72A53cDBBcc1b9efa39c834A540550e23463AAcB;
+        vm.prank(usdtHolder);
+        // one million tether
+        IERC20(USDT_TOKEN_ADDRESS).transfer(orderOwner, 1000000e6);
+
+        assertEq(IERC20(USDT_TOKEN_ADDRESS).balanceOf(orderOwner), 1000000e6);
     }
 
     function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
