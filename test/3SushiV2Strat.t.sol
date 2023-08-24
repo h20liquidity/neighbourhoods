@@ -25,6 +25,15 @@ address constant POLYGON_INTERPRETER = 0x31fE050009Dc0cAb68fFe3a65A0A466F60bE6c5
 address constant POLYGON_STORE = 0xc71541cc0684A3ccC86EdA6aFc4a456140130fbD;
 IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x1320DBB57a65c9CbF785E10770F8f3d51ff92132);
 
+// This could easily break, just happened to be some wallet that held NHT when
+// I was writing this test.
+address constant POLYGON_NHT_HOLDER = 0xe0e0Bb15Ad2dC19e5Eaa133968e498B4D9bF24Da;
+// This could easily break, just happened to be some wallet that held USDT when
+// I was writing this test.
+address constant POLYGON_USDT_HOLDER = 0x72A53cDBBcc1b9efa39c834A540550e23463AAcB;
+
+address constant TEST_ORDER_OWNER = address(0x84723849238);
+
 contract Test3SushiV2Strat is OpTest {
 
     function selectPolygonFork() internal {
@@ -212,98 +221,16 @@ contract Test3SushiV2Strat is OpTest {
     function testStratSellNHTHappyFork() external {
         selectPolygonFork();
 
-        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_SELL_NHT);
-        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
-        checkSellConstants(constants);
+        giveTestAccountsTokens();
+        depositTokens();
 
-        address nhtHolder = 0xe0e0Bb15Ad2dC19e5Eaa133968e498B4D9bF24Da;
-        address orderOwner = address(0x1234);
+        Order memory sellOrder = placeSellOrder();
+        Order memory buyOrder = placeBuyOrder();
+        (buyOrder);
 
-        vm.prank(nhtHolder);
-        // 200 mill nht
-        IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(orderOwner, 200000000e18);
+        (uint256 totalInput, uint256 totalOutput) = takeOrder(sellOrder);
 
-        assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(orderOwner), 200000000e18);
-
-        {
-            address usdtHolder = 0x72A53cDBBcc1b9efa39c834A540550e23463AAcB;
-            vm.startPrank(usdtHolder);
-            // one million tether to each of owner order and counterparty.
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).transfer(orderOwner, 1000000e6);
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).transfer(APPROVED_COUNTERPARTY, 1000000e6);
-            vm.stopPrank();
-
-            assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(orderOwner), 1000000e6);
-        }
-
-        Order memory order;
-        {
-            IO[] memory inputs = new IO[](1);
-            inputs[0] = IO(POLYGON_USDT_TOKEN_ADDRESS, 6, VAULT_ID);
-
-            IO[] memory outputs = new IO[](1);
-            outputs[0] = IO(POLYGON_NHT_TOKEN_ADDRESS, 18, VAULT_ID);
-
-            EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2 (
-                POLYGON_DEPLOYER,
-                bytecode,
-                constants
-            );
-
-            OrderConfigV2 memory orderConfig = OrderConfigV2 (
-                inputs,
-                outputs,
-                evaluableConfig,
-                ""
-            );
-
-            vm.startPrank(orderOwner);
-            vm.recordLogs();
-            (bool stateChanged) = POLYGON_ORDERBOOK.addOrder(orderConfig);
-            Vm.Log[] memory entries = vm.getRecordedLogs();
-            assertEq(entries.length, 3);
-            // assertEq(entries[2].topics[0], AddOrder.selector);
-            (,,order,) = abi.decode(entries[2].data, (address, address, Order, bytes32));
-            assertEq(order.owner, orderOwner);
-            assertEq(order.handleIO, true);
-            assertEq(address(order.evaluable.interpreter), address(POLYGON_INTERPRETER));
-            assertEq(address(order.evaluable.store), address(POLYGON_STORE));
-            assertEq(stateChanged, true);
-
-            IERC20(POLYGON_NHT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), 200000000e18);
-            POLYGON_ORDERBOOK.deposit(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, 200000000e18);
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), 1000000e6);
-            POLYGON_ORDERBOOK.deposit(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, 1000000e6);
-            vm.stopPrank();
-        }
-
-        {
-            vm.startPrank(APPROVED_COUNTERPARTY);
-            TakeOrderConfig memory takeOrderConfig = TakeOrderConfig(
-                order,
-                0,
-                0,
-                new SignedContextV1[](0)
-            );
-            TakeOrderConfig[] memory innerConfigs = new TakeOrderConfig[](1);
-            innerConfigs[0] = takeOrderConfig;
-            TakeOrdersConfig memory takeOrdersConfig = TakeOrdersConfig(
-                POLYGON_USDT_TOKEN_ADDRESS,
-                POLYGON_NHT_TOKEN_ADDRESS,
-                0,
-                type(uint256).max,
-                type(uint256).max,
-                innerConfigs
-            );
-            uint256 amountToApprove = USDT_PER_SECOND * (block.timestamp - ORDER_INIT_TIME) * 101 / 100;
-            console2.log(amountToApprove);
-            // uint256 amountToApprove = 1000000e6;
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), amountToApprove);
-            (uint256 totalInput, uint256 totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
-            // Check that the approval amount was exactly right.
-            // assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).allowance(APPROVED_COUNTERPARTY, address(orderbook)), 0);
-            vm.stopPrank();
-        }
+        console2.log(totalInput, totalOutput);
     }
 
     function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
@@ -426,8 +353,134 @@ contract Test3SushiV2Strat is OpTest {
     function testStratBuyNHTHappyFork() external {
         selectPolygonFork();
 
+        giveTestAccountsTokens();
+        depositTokens();
+
+        Order memory sellOrder = placeSellOrder();
+        (sellOrder);
+        Order memory buyOrder = placeBuyOrder();
+
+        (uint256 totalInput, uint256 totalOutput) = takeOrder(buyOrder);
+
+        console2.log(totalInput, totalOutput);
+    }
+
+    function giveTestAccountsTokens() internal {
+        {
+            vm.startPrank(POLYGON_NHT_HOLDER);
+            // 100 mill nht to each of order owner and counterparty
+            uint256 amountNht = 100000000e18;
+            IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(TEST_ORDER_OWNER, amountNht);
+            assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER), amountNht);
+            IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(APPROVED_COUNTERPARTY, amountNht);
+            assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(APPROVED_COUNTERPARTY), amountNht);
+            vm.stopPrank();
+        }
+        {
+            vm.startPrank(POLYGON_USDT_HOLDER);
+            // one million tether to each of owner order and counterparty.
+            uint256 amountUsdt = 1000000e6;
+            IERC20(POLYGON_USDT_TOKEN_ADDRESS).transfer(TEST_ORDER_OWNER, amountUsdt);
+            assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER), amountUsdt);
+            IERC20(POLYGON_USDT_TOKEN_ADDRESS).transfer(APPROVED_COUNTERPARTY, amountUsdt);
+            assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
+            vm.stopPrank();
+        }
+    }
+
+    function depositTokens() internal {
+        vm.startPrank(TEST_ORDER_OWNER);
+
+        uint256 amountNht = IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER);
+        IERC20(POLYGON_NHT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), amountNht);
+        POLYGON_ORDERBOOK.deposit(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, amountNht);
+
+        uint256 amountUsdt = IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER);
+        IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), amountUsdt);
+        POLYGON_ORDERBOOK.deposit(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, amountUsdt);
+        vm.stopPrank();
+    }
+
+    function placeOrder(bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output) internal returns (Order memory order) {
+        IO[] memory inputs = new IO[](1);
+        inputs[0] = input;
+
+        IO[] memory outputs = new IO[](1);
+        outputs[0] = output;
+
+        EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2 (
+            POLYGON_DEPLOYER,
+            bytecode,
+            constants
+        );
+
+        OrderConfigV2 memory orderConfig = OrderConfigV2 (
+            inputs,
+            outputs,
+            evaluableConfig,
+            ""
+        );
+
+        vm.startPrank(TEST_ORDER_OWNER);
+        vm.recordLogs();
+        (bool stateChanged) = POLYGON_ORDERBOOK.addOrder(orderConfig);
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 3);
+        (,,order,) = abi.decode(entries[2].data, (address, address, Order, bytes32));
+        assertEq(order.owner, TEST_ORDER_OWNER);
+        assertEq(order.handleIO, true);
+        assertEq(address(order.evaluable.interpreter), address(POLYGON_INTERPRETER));
+        assertEq(address(order.evaluable.store), address(POLYGON_STORE));
+        assertEq(stateChanged, true);
+    }
+
+    function polygonNhtIo() internal pure returns (IO memory) {
+        return IO(POLYGON_NHT_TOKEN_ADDRESS, 18, VAULT_ID);
+    }
+
+    function polygonUsdtIo() internal pure returns (IO memory) {
+        return IO(POLYGON_USDT_TOKEN_ADDRESS, 6, VAULT_ID);
+    }
+
+    function placeBuyOrder() internal returns (Order memory) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_BUY_NHT);
         assertEq(bytecode, EXPECTED_BUY_BYTECODE);
         checkBuyConstants(constants);
+        return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
+    }
+
+    function placeSellOrder() internal returns (Order memory order) {
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_SELL_NHT);
+        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+        checkSellConstants(constants);
+        return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
+    }
+
+    function takeOrder(Order memory order) internal returns (uint256 totalInput, uint256 totalOutput) {
+        vm.startPrank(APPROVED_COUNTERPARTY);
+        uint256 inputIOIndex = 0;
+        uint256 outputIOIndex = 0;
+        TakeOrderConfig[] memory innerConfigs = new TakeOrderConfig[](1);
+        innerConfigs[0] = TakeOrderConfig(
+            order,
+            inputIOIndex,
+            outputIOIndex,
+            new SignedContextV1[](0)
+        );
+        address inputToken = order.validOutputs[outputIOIndex].token;
+        address outputToken = order.validInputs[inputIOIndex].token;
+        TakeOrdersConfig memory takeOrdersConfig = TakeOrdersConfig(
+            outputToken,
+            inputToken,
+            0,
+            type(uint256).max,
+            type(uint256).max,
+            innerConfigs
+        );
+        IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
+        (totalInput, totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
+        assertTrue(totalInput > 0, "totalInput nonzero");
+        assertTrue(totalOutput > 0, "totalOutput nonzero");
+        vm.stopPrank();
     }
 }
