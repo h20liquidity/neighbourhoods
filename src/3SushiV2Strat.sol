@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: CAL
+pragma solidity =0.8.19;
+
 /// @dev https://docs.sushi.com/docs/Products/Classic%20AMM/Deployment%20Addresses
 /// @dev https://polygonscan.com/address/0xc35DADB65012eC5796536bD9864eD8773aBc74C4
 address constant POLYGON_SUSHI_V2_FACTORY = 0xc35DADB65012eC5796536bD9864eD8773aBc74C4;
@@ -54,7 +57,7 @@ bytes constant RAINSTRING_SELL_NHT =
     // We want to sell a little more nht amount than sushi sets as the minimum
     // to give some leeway for the arb bot. Set the min max-output as 1 to avoid
     // divide by zero.
-    "order-output-max: decimal18-mul(nht-amount 1001e15),"
+    "order-output-max: decimal18-mul(nht-amount 101e16),"
     "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) order-output-max)"
     // end calculate order
     ";"
@@ -113,7 +116,7 @@ bytes constant RAINSTRING_BUY_NHT =
     ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
     // We want to buy a little less nht amount than sushi sets as the maximum
     // to give some leeway for the arb bot.
-    "actual-nht-amount: decimal18-mul(max-nht-amount 999e15),"
+    "actual-nht-amount: decimal18-mul(max-nht-amount 99e16),"
     "order-output-max: decimal18-scale18<6>(target-usdt-amount),"
     "io-ratio: decimal18-div(actual-nht-amount order-output-max)"
     //

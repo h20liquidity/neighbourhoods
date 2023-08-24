@@ -72,9 +72,10 @@ contract Test3SushiV2Strat is OpTest {
         // nht amount out from ob.
         assertEq(stack[14], 218073484927305044988919, "stack[14]");
         // order output max.
-        assertEq(stack[15], uint256(uint256(stack[14]) * uint256(1001) / uint256(1000)), "stack[15]");
+        assertEq(stack[15], uint256(uint256(stack[14]) * uint256(101) / uint256(100)), "stack[15]");
         // io ratio.
-        assertEq(stack[16], 229053291678722, "stack[16]");
+        uint256 expectedUsdtScaled = 50000400e12;
+        assertEq(stack[16], (expectedUsdtScaled * 1e18) / stack[15], "stack[16]");
     }
 
     function checkSellHandle(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash) internal {
@@ -150,6 +151,11 @@ contract Test3SushiV2Strat is OpTest {
         checkSellHandle(stack, kvs, orderHash);
     }
 
+    function testStratSellNHTHappyFork() external {
+        uint256 fork = vm.createFork("https://polygon.llamarpc.com");
+        vm.selectFork(fork);
+    }
+
     function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
         uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
         assertEq(kvs.length, 2);
@@ -187,7 +193,7 @@ contract Test3SushiV2Strat is OpTest {
         // nht amount in to ob.
         assertEq(stack[14], 215010194945733820281886, "stack[14]");
         // nht input expected.
-        assertEq(stack[15], uint256(uint256(stack[14]) * uint256(999) / uint256(1000)), "stack[15]");
+        assertEq(stack[15], uint256(uint256(stack[14]) * uint256(99) / uint256(100)), "stack[15]");
         // order output max usdt.
         assertEq(stack[16], 50000400e12, "stack[16]");
         // io ratio.
