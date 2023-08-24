@@ -4,6 +4,8 @@ pragma solidity =0.8.19;
 import "rain.interpreter/test/util/abstract/OpTest.sol";
 
 import "src/3SushiV2Strat.sol";
+import "src/IOrderBookV3.sol";
+import "src/IERC20.sol";
 
 uint256 constant CONTEXT_VAULT_INPUTS_COLUMN = 3;
 uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
@@ -171,12 +173,26 @@ contract Test3SushiV2Strat is OpTest {
         uint256 fork = vm.createFork("https://polygon.llamarpc.com");
         vm.selectFork(fork);
 
-        address deployerAddress = 0x175E9b4ddf02f325602Be43B5cB0ff10b06Cc1f6;
-        // address i9r = 0xDbE17E72231315e7889beAAE2373f42429eebd26;
+        RainterpreterExpressionDeployerNP deployer = RainterpreterExpressionDeployerNP(0x175E9b4ddf02f325602Be43B5cB0ff10b06Cc1f6);
+        address i9r = 0xDbE17E72231315e7889beAAE2373f42429eebd26;
+        address store = 0x6c6b4bb592c21C00576165bfE2b50016e026BF75;
 
-        (bytes memory bytecode, uint256[] memory constants) = IParserV1(deployerAddress).parse(RAINSTRING_SELL_NHT);
+        assertEq(address(deployer.iInterpreter()), address(i9r));
+        assertEq(address(deployer.iStore()), address(store));
+
+        IOrderBookV3 orderbook = IOrderBookV3(0x1320DBB57a65c9CbF785E10770F8f3d51ff92132);
+
+        (bytes memory bytecode, uint256[] memory constants) = deployer.parse(RAINSTRING_SELL_NHT);
         assertEq(bytecode, EXPECTED_SELL_BYTECODE);
         checkSellConstants(constants);
+
+        address nhtHolder = 0xe0e0Bb15Ad2dC19e5Eaa133968e498B4D9bF24Da;
+        address orderOwner = address(0x1234);
+
+        vm.prank(nhtHolder);
+        IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(orderOwner, 200000000e18);
+
+        assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(orderOwner), 200000000e18);
     }
 
     function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
