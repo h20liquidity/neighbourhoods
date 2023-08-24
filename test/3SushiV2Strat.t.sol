@@ -10,8 +10,10 @@ uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
 uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
+bytes constant EXPECTED_SELL_BYTECODE = hex"02000000c430120011010000000100000101000002010000030200020100000001020000040c02000000000002020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000608000000230200000000000700000008220200000100000600000005030200000000000a250100000000000b000000092302000000000002000000010000000c0000000027040001080000000000000d120200000b010001010000070000000e150200000000000f0000000c17010006140200000f050003020004030200000101000006000000010302000000000000000000022501000019020000000000022602000001000008000000000e0200000b010002";
+
 contract Test3SushiV2Strat is OpTest {
-    function parseAndEvalWithContext(bytes memory rainString, uint256[][] memory context, SourceIndex sourceIndex)
+    function parseAndEvalWithContext(bytes memory expectedBytecode, bytes memory rainString, uint256[][] memory context, SourceIndex sourceIndex)
         internal
         returns (uint256[] memory, uint256[] memory)
     {
@@ -20,6 +22,7 @@ contract Test3SushiV2Strat is OpTest {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainString);
+            assertEq(bytecode, expectedBytecode);
             uint256[] memory minOutputs = new uint256[](1);
             minOutputs[0] = 0;
             (interpreterDeployer, storeDeployer, expression) =
@@ -33,6 +36,19 @@ contract Test3SushiV2Strat is OpTest {
             context
         );
         return (stack, kvs);
+    }
+
+    function checkSellConstants(uint256[] memory constants) internal {
+        assertEq(constants.length, 9);
+        assertEq(constants[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)));
+        assertEq(constants[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)));
+        assertEq(constants[2], uint256(uint160(USDT_TOKEN_ADDRESS)));
+        assertEq(constants[3], uint256(uint160(APPROVED_COUNTERPARTY)));
+        assertEq(constants[4], ORDER_INIT_TIME);
+        assertEq(constants[5], USDT_PER_SECOND);
+        assertEq(constants[6], 1);
+        assertEq(constants[7], SELL_MULTIPLIER);
+        assertEq(constants[8], MIN_USDT_AMOUNT);
     }
 
     function checkSellCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
@@ -136,7 +152,7 @@ contract Test3SushiV2Strat is OpTest {
         uint256 duration = 3600;
         vm.warp(orderInitTime + duration);
 
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context, SourceIndex.wrap(0));
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(0));
 
         checkSellCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
 
@@ -147,13 +163,20 @@ contract Test3SushiV2Strat is OpTest {
         context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15];
 
         // it hasn't been an hour so we should revert.
-        (stack, kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
+        (stack, kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
         checkSellHandle(stack, kvs, orderHash);
     }
 
     function testStratSellNHTHappyFork() external {
         uint256 fork = vm.createFork("https://polygon.llamarpc.com");
         vm.selectFork(fork);
+
+        address deployerAddress = 0x175E9b4ddf02f325602Be43B5cB0ff10b06Cc1f6;
+        // address i9r = 0xDbE17E72231315e7889beAAE2373f42429eebd26;
+
+        (bytes memory bytecode, uint256[] memory constants) = IParserV1(deployerAddress).parse(RAINSTRING_SELL_NHT);
+        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+        checkSellConstants(constants);
     }
 
     function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
@@ -255,7 +278,7 @@ contract Test3SushiV2Strat is OpTest {
         // Give it an hour so we can clear the handle io check.
         uint256 duration = 3600;
         vm.warp(orderInitTime + duration);
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
+        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
 
         checkBuyCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
 
@@ -267,7 +290,7 @@ contract Test3SushiV2Strat is OpTest {
         context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15] * stack[16] / 1e18;
 
         // it hasn't been an hour so we should revert.
-        (stack, kvs) = parseAndEvalWithContext(RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
+        (stack, kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
         checkBuyHandle(stack, kvs, orderHash);
     }
 }
