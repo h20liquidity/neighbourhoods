@@ -1,0 +1,6 @@
+Test3SushiV2Strat:testDebugTxn() (gas: 410325)
+Test3SushiV2Strat:testDeployer() (gas: 7953)
+Test3SushiV2Strat:testStratBuyNHTHappyFork() (gas: 1890071)
+Test3SushiV2Strat:testStratBuyNHTHappyPath(uint256) (runs: 2048, μ: 1481944, ~: 1481956)
+Test3SushiV2Strat:testStratSellNHTHappyFork() (gas: 1890606)
+Test3SushiV2Strat:testStratSellNHTHappyPath(uint256) (runs: 2048, μ: 1461081, ~: 1461093)

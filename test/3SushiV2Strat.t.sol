@@ -16,14 +16,13 @@ string constant FORK_RPC = "https://polygon.llamarpc.com";
 
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
-bytes constant EXPECTED_SELL_BYTECODE = hex"02000000c430120011010000000100000101000002010000030200020100000001020000040c02000000000002020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000608000000230200000000000700000008220200000100000600000005030200000000000a250100000000000b000000092302000000000002000000010000000c0000000027040001080000000000000d120200000b010001010000070000000e150200000000000f0000000c17010006140200000f050003020004030200000101000006000000010302000000000000000000022501000019020000000000022602000001000008000000000e0200000b010002";
-
-bytes constant EXPECTED_BUY_BYTECODE = hex"02000000c831130012010000000100000101000002010000030200020100000002020000040c02000000000001020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000608000000230200000000000700000008220200000100000600000005030200000000000a250100000000000b000000092302000000000001000000020000000c0000000028040001080000000000000d120200000b010001010000070000000e150200000000000c17010006000000100000000f140200000f050003020004040200000101000006000000010302000000000000000000022501000019020000000000022602000001000008000000000e0200000b010000";
-
-RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER = RainterpreterExpressionDeployerNP(0x386d79440e3fe32BdFb0120034Fb21971151E90f);
+RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
+    RainterpreterExpressionDeployerNP(0x386d79440e3fe32BdFb0120034Fb21971151E90f);
 address constant POLYGON_INTERPRETER = 0x31fE050009Dc0cAb68fFe3a65A0A466F60bE6c5D;
 address constant POLYGON_STORE = 0xc71541cc0684A3ccC86EdA6aFc4a456140130fbD;
 IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x1320DBB57a65c9CbF785E10770F8f3d51ff92132);
+address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
+address constant OB_FLASH_BORROWER = 0x7dd413076234dB1eEf111C9B455125DCf581AC2C;
 
 // This could easily break, just happened to be some wallet that held NHT when
 // I was writing this test.
@@ -35,16 +34,29 @@ address constant POLYGON_USDT_HOLDER = 0x72A53cDBBcc1b9efa39c834A540550e23463AAc
 address constant TEST_ORDER_OWNER = address(0x84723849238);
 
 contract Test3SushiV2Strat is OpTest {
-
     function selectPolygonFork() internal {
         uint256 fork = vm.createFork(FORK_RPC);
         vm.selectFork(fork);
+        vm.rollFork(46732863);
     }
 
-    function parseAndEvalWithContext(bytes memory expectedBytecode, bytes memory rainString, uint256[][] memory context, SourceIndex sourceIndex)
-        internal
-        returns (uint256[] memory, uint256[] memory)
-    {
+    /// Failing due to swap happening in flash loan before strat clear.
+    function testDebugTxn() external {
+        selectPolygonFork();
+        vm.prank(CLEARER);
+        bytes memory inputData =
+            hex"764d1aa10000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e000000000000000000000000084342e932797fc62814189f01f0fb05f52519708000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f0000000000000000000000000000000000000000000000000000000005f5e1000000000000000000000000000000000000000000000000000000000005f5e100ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000260000000000000000000000000f098172786a87fa7426ea811ff25d31d599f766d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000eff119915bce34dae8f7efbf9704d1ab456a4ad3000000000000000000000000b90a69edcd13996b71bd15895de1e317e4148a390000000000000000000000006399959b6631cd06da0c7e8690df8ca26c9707f800000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000000100000000000000000000000084342e932797fc62814189f01f0fb05f5251970800000000000000000000000000000000000000000000000000000000000000122e1e0c9ff2cb2638fe785e3cb0f777451d701c31f9cc1511815ad1f5577848c40000000000000000000000000000000000000000000000000000000000000001000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f00000000000000000000000000000000000000000000000000000000000000062e1e0c9ff2cb2638fe785e3cb0f777451d701c31f9cc1511815ad1f5577848c4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000a6e511fe663827b9ca7e2d2542b20b37fc217a60000000000000000000000000a6e511fe663827b9ca7e2d2542b20b37fc217a6000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000001442646478b000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f0000000000000000000000000000000000000000000000000000000005f5e10000000000000000000000000084342e932797fc62814189f01f0fb05f5251970800000000000000000000000000000000000000000000000000000000000000000000000000000000000000007dd413076234db1eef111c9b455125dcf581ac2c00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000004202c2132d05d31c914a87c6611c10748aeb04b58e8f01ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce007dd413076234db1eef111c9b455125dcf581ac2c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        (bool success, bytes memory data) = OB_FLASH_BORROWER.call(inputData);
+        console2.logBool(success);
+        console2.logBytes(data);
+    }
+
+    function parseAndEvalWithContext(
+        bytes memory expectedBytecode,
+        bytes memory rainString,
+        uint256[][] memory context,
+        SourceIndex sourceIndex
+    ) internal returns (uint256[] memory, uint256[] memory) {
         IInterpreterV1 interpreterDeployer;
         IInterpreterStoreV1 storeDeployer;
         address expression;
@@ -92,7 +104,14 @@ contract Test3SushiV2Strat is OpTest {
         assertEq(constants[8], MIN_USDT_AMOUNT, "constants[8]");
     }
 
-    function checkSellCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
+    function checkSellCalculate(
+        uint256[] memory stack,
+        uint256[] memory kvs,
+        uint256 orderHash,
+        uint256 reserveTimestamp,
+        uint256 orderInitTime,
+        uint256 duration
+    ) internal {
         uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
         assertEq(kvs.length, 2);
         kvs[0] = currentUsdtAmountKey;
@@ -193,21 +212,23 @@ contract Test3SushiV2Strat is OpTest {
         uint256 duration = 3600;
         vm.warp(orderInitTime + duration);
 
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(0));
+        (uint256[] memory stack, uint256[] memory kvs) =
+            parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(0));
 
         checkSellCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
 
         // usdt diff is the amount of usdt we bought (order output max * io ratio) scaled to 6 decimals.
         // usdt is the input here as we're selling nht.
         context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
-        FixedPointDecimalScale.scaleN(UD60x18.unwrap(mul(UD60x18.wrap(stack[15]), UD60x18.wrap(stack[16]))), 6, 1);
+            FixedPointDecimalScale.scaleN(UD60x18.unwrap(mul(UD60x18.wrap(stack[15]), UD60x18.wrap(stack[16]))), 6, 1);
 
         // nht diff is the amount of nht we sold (order output max).
         // nht is the output here as we're selling nht.
         context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = stack[15];
 
         // it hasn't been an hour so we should revert.
-        (stack, kvs) = parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
+        (stack, kvs) =
+            parseAndEvalWithContext(EXPECTED_SELL_BYTECODE, RAINSTRING_SELL_NHT, context, SourceIndex.wrap(1));
         checkSellHandle(stack, kvs, orderHash);
     }
 
@@ -233,7 +254,14 @@ contract Test3SushiV2Strat is OpTest {
         console2.log(totalInput, totalOutput);
     }
 
-    function checkBuyCalculate(uint256[] memory stack, uint256[] memory kvs, uint256 orderHash, uint256 reserveTimestamp, uint256 orderInitTime, uint256 duration) internal {
+    function checkBuyCalculate(
+        uint256[] memory stack,
+        uint256[] memory kvs,
+        uint256 orderHash,
+        uint256 reserveTimestamp,
+        uint256 orderInitTime,
+        uint256 duration
+    ) internal {
         uint256 currentUsdtAmountKey = uint256(keccak256(abi.encodePacked(orderHash, uint256(1))));
         assertEq(kvs.length, 2);
         kvs[0] = currentUsdtAmountKey;
@@ -332,7 +360,8 @@ contract Test3SushiV2Strat is OpTest {
         // Give it an hour so we can clear the handle io check.
         uint256 duration = 3600;
         vm.warp(orderInitTime + duration);
-        (uint256[] memory stack, uint256[] memory kvs) = parseAndEvalWithContext(EXPECTED_BUY_BYTECODE, RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
+        (uint256[] memory stack, uint256[] memory kvs) =
+            parseAndEvalWithContext(EXPECTED_BUY_BYTECODE, RAINSTRING_BUY_NHT, context, SourceIndex.wrap(0));
 
         checkBuyCalculate(stack, kvs, orderHash, reserveTimestamp, orderInitTime, duration);
 
@@ -401,32 +430,26 @@ contract Test3SushiV2Strat is OpTest {
         vm.stopPrank();
     }
 
-    function placeOrder(bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output) internal returns (Order memory order) {
+    function placeOrder(bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output)
+        internal
+        returns (Order memory order)
+    {
         IO[] memory inputs = new IO[](1);
         inputs[0] = input;
 
         IO[] memory outputs = new IO[](1);
         outputs[0] = output;
 
-        EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2 (
-            POLYGON_DEPLOYER,
-            bytecode,
-            constants
-        );
+        EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2(POLYGON_DEPLOYER, bytecode, constants);
 
-        OrderConfigV2 memory orderConfig = OrderConfigV2 (
-            inputs,
-            outputs,
-            evaluableConfig,
-            ""
-        );
+        OrderConfigV2 memory orderConfig = OrderConfigV2(inputs, outputs, evaluableConfig, "");
 
         vm.startPrank(TEST_ORDER_OWNER);
         vm.recordLogs();
         (bool stateChanged) = POLYGON_ORDERBOOK.addOrder(orderConfig);
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries.length, 3);
-        (,,order,) = abi.decode(entries[2].data, (address, address, Order, bytes32));
+        (,, order,) = abi.decode(entries[2].data, (address, address, Order, bytes32));
         assertEq(order.owner, TEST_ORDER_OWNER);
         assertEq(order.handleIO, true);
         assertEq(address(order.evaluable.interpreter), address(POLYGON_INTERPRETER));
@@ -461,22 +484,11 @@ contract Test3SushiV2Strat is OpTest {
         uint256 inputIOIndex = 0;
         uint256 outputIOIndex = 0;
         TakeOrderConfig[] memory innerConfigs = new TakeOrderConfig[](1);
-        innerConfigs[0] = TakeOrderConfig(
-            order,
-            inputIOIndex,
-            outputIOIndex,
-            new SignedContextV1[](0)
-        );
+        innerConfigs[0] = TakeOrderConfig(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
         address inputToken = order.validOutputs[outputIOIndex].token;
         address outputToken = order.validInputs[inputIOIndex].token;
-        TakeOrdersConfig memory takeOrdersConfig = TakeOrdersConfig(
-            outputToken,
-            inputToken,
-            0,
-            type(uint256).max,
-            type(uint256).max,
-            innerConfigs
-        );
+        TakeOrdersConfig memory takeOrdersConfig =
+            TakeOrdersConfig(outputToken, inputToken, 0, type(uint256).max, type(uint256).max, innerConfigs);
         IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
         (totalInput, totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
         assertTrue(totalInput > 0, "totalInput nonzero");
