@@ -280,10 +280,167 @@ bytes constant RAINSTRING_BUY_NHT =
     //
     ";"
     // Record the amount of usdt we sold.
-    "usdt-diff: context<4 4>()," "order-hash: context<1 0>()," "current-usdt-amount-key: hash(order-hash 1),"
+    "usdt-diff: context<4 4>(),"
+    // order hash is same as calculate io
+    "order-hash: context<1 0>(),"
+    // current usdt amount key is same as calculate io
+    "current-usdt-amount-key: hash(order-hash 1),"
     ":set(current-usdt-amount-key int-add(get(current-usdt-amount-key) usdt-diff)),"
     // Ensure that we sold at least $50 worth of usdt.
-    ":ensure(greater-than(usdt-diff 50e6))" ";";
+    ":ensure<2>(greater-than(usdt-diff 50e6))"
+    // ;
+    ";";
 
 bytes constant EXPECTED_BUY_BYTECODE =
-    hex"02000000c831130012010000000100000101000002010000030200020100000002020000040c02000000000001020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000608000000230200000000000700000008220200000100000600000005030200000000000a250100000000000b000000092302000000000001000000020000000c0000000028040001080000000000000d120200000b010001010000070000000e150200000000000c17010006000000100000000f140200000f050003020004040200000101000006000000010302000000000000000000022501000019020000000000022602000001000008000000000e0200000b010000";
+    // 2 sources
+    hex"02"
+    // 0 offset
+    hex"0000"
+    // 200 offset (49 ops + 4 byte header)
+    hex"00c8"
+    // source 0
+    // 49 ops
+    hex"31"
+    // 19 stack allocation
+    hex"13"
+    // 0 inputs
+    hex"00"
+    // 18 outputs
+    hex"12"
+    // constant 0 (sushi factory)
+    hex"01000000"
+    // constant 1 (nht token address)
+    hex"01000001"
+    // constant 2 (usdt token address)
+    hex"01000002"
+    // constant 3 (approved counterparty)
+    hex"01000003"
+    // context 1 2 (actual counterparty)
+    hex"02000201"
+    // stack 2 (usdt token address)
+    hex"00000002"
+    // context 4 0 (output token address)
+    hex"02000004"
+    // equal to (2 inputs)
+    hex"0c020000"
+    // stack 1 (nht token address)
+    hex"00000001"
+    // context 3 0 (input token address)
+    hex"02000003"
+    // equal to (2 inputs)
+    hex"0c020000"
+    // stack 4 (actual counterparty)
+    hex"00000004"
+    // stack 3 (approved counterparty)
+    hex"00000003"
+    // equal to (2 inputs)
+    hex"0c020000"
+    // ensure (3 inputs, 0 error code)
+    hex"0b030000"
+    //context 1 0 (order hash)
+    hex"02000001"
+    // constant 4 (order init time)
+    hex"01000004"
+    // constant 5 (usdt per second)
+    hex"01000005"
+    // stack 6 (order init time)
+    hex"00000006"
+    // block timestamp
+    hex"08000000"
+    // int sub (2 inputs)
+    hex"23020000"
+    // stack 7 (usdt per second)
+    hex"00000007"
+    // stack 8 (total time)
+    hex"00000008"
+    // int mul (2 inputs)
+    hex"22020000"
+    // constant 6 (1)
+    hex"01000006"
+    // stack 5 (order hash)
+    hex"00000005"
+    // hash (2 inputs)
+    hex"03020000"
+    // stack 10 (current usdt amount key)
+    hex"0000000a"
+    // get (1 input)
+    hex"25010000"
+    // stack 11 (current usdt amount)
+    hex"0000000b"
+    // stack 9 (max usdt amount)
+    hex"00000009"
+    // int sub (2 inputs)
+    hex"23020000"
+    // stack 1 (nht token address)
+    hex"00000001"
+    // stack 2 (usdt token address)
+    hex"00000002"
+    // stack 12 (target usdt amount)
+    hex"0000000c"
+    // stack 0 (sushi factory)
+    hex"00000000"
+    // uniswap v2 amount out (4 inputs + with timestamp)
+    hex"28040001"
+    // block timestamp
+    hex"08000000"
+    // stack 13 (last price timestamp)
+    hex"0000000d"
+    // less than (2 inputs)
+    hex"12020000"
+    // ensure (1 input, 1 error code)
+    hex"0b010001"
+    // constant 7 (99e16)
+    hex"01000007"
+    // stack 14 (max nht amount)
+    hex"0000000e"
+    // decimal18 mul (2 inputs)
+    hex"15020000"
+    // stack 12 (target usdt amount)
+    hex"0000000c"
+    // decimal18 scale18 (1 input + scale 6 + round down + no saturate)
+    hex"17010006"
+    // stack 16 (order output max)
+    hex"00000010"
+    // stack 15 (actual nht amount)
+    hex"0000000f"
+    // decimal18 div (2 inputs)
+    hex"14020000"
+    // source 1
+    // 15 ops
+    hex"0f"
+    // 5 stack allocation
+    hex"05"
+    // 0 inputs
+    hex"00"
+    // 3 outputs
+    hex"03"
+    // context 4 4 (usdt diff)
+    hex"02000404"
+    // context 1 0 (order hash)
+    hex"02000001"
+    // constant 6 (1)
+    hex"01000006"
+    // stack 1 (order hash)
+    hex"00000001"
+    // hash (2 inputs)
+    hex"03020000"
+    // stack 0 (usdt diff)
+    hex"00000000"
+    // stack 2 (current usdt amount key)
+    hex"00000002"
+    // get (1 input)
+    hex"25010000"
+    // int add (2 inputs)
+    hex"19020000"
+    // stack 2 (current usdt amount key)
+    hex"00000002"
+    // set (2 inputs)
+    hex"26020000"
+    // constant 8 (50e6)
+    hex"01000008"
+    // stack 0 (usdt diff)
+    hex"00000000"
+    // greater than (2 inputs)
+    hex"0e020000"
+    // ensure (1 input, 0 error code)
+    hex"0b010002";
