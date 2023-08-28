@@ -3,7 +3,7 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-contract-sizer";
-import * as config_ from "./config/config.json"
+import * as config_ from "./scripts-v2/config.json"
 import * as dotenv from "dotenv";
 dotenv.config();
 

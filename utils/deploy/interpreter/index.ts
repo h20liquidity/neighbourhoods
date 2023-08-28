@@ -1,8 +1,5 @@
-import { artifacts } from "hardhat"; 
 import { ethers  } from "hardhat"; 
-import config from "../../../config/config.json" 
-import deployer from '../../../config/RainterpreterExpressionDeployer/RainterpreterExpressionDeployer.json'
-import axios from "axios"
+import deployer from '../../../scripts-v2/abis/RainterpreterExpressionDeployer.json'
 
 export const getExpressionDelopyer = async (address: string) => { 
 
