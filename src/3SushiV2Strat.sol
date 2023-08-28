@@ -37,9 +37,9 @@ address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
 
 RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
-    RainterpreterExpressionDeployerNP(0x566072Fbb144583BCF5c776075A754ed35F89389);
-address constant POLYGON_INTERPRETER = 0xBb8C61fcdCb4533F1029c59fa4D6c6Adb2038A20;
-address constant POLYGON_STORE = 0xA8F9C43E5A88ff72d0be42aBd4255Be0e0a41DC8;
+    RainterpreterExpressionDeployerNP(0x595b5f7FbfA23A4CC5Bd3d2b66B903B1df28199F);
+address constant POLYGON_INTERPRETER = 0x1536dcd0A05Ec1ED40053f3f21A6bbF69528d00A;
+address constant POLYGON_STORE = 0x9D082FC1B0B34C3f41Bd682476E285C38C9CbF45;
 IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x49266c03f3E223657feC33159511d346fe8B2429);
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
@@ -50,7 +50,7 @@ uint256 constant USDT_PER_SECOND = 13889;
 
 uint256 constant MIN_USDT_AMOUNT = 50e6;
 
-uint256 constant SELL_MULTIPLIER = 1001e15;
+uint256 constant SELL_MULTIPLIER = 1e18;
 uint256 constant BUY_MULTIPLIER = 999e15;
 
 // Selling NHT for USDT => NHT is output and USDT is input.
@@ -95,7 +95,7 @@ bytes constant RAINSTRING_SELL_NHT =
     ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
     // We want to sell a little more nht amount than sushi sets as the minimum
     // to give some leeway for the arb bot.
-    "order-output-max: decimal18-mul(nht-amount 1001e15),"
+    "order-output-max: decimal18-mul(nht-amount 1e18),"
     "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) order-output-max)"
     // end calculate order
     ";"
@@ -286,40 +286,123 @@ bytes constant RAINSTRING_BUY_NHT =
     "),"
     // Order hash.
     "order-hash: context<1 0>(),"
-    // Figure out when the order started.
-    "order-init-time: 1693216509,"
-    // We buy $50 worth of nht for usdt per hour.
-    // 50e6 is $50 in usdt.
-    // 50e6 / 3600 is $50 per hour.
-    "usdt-per-second: 13889,"
-    // total time is now - init.
-    "total-time: int-sub(block-timestamp() order-init-time)," "max-usdt-amount: int-mul(total-time usdt-per-second),"
-    // lookup the current usdt amount.
-    "current-usdt-amount-key: hash(order-hash 1)," "current-usdt-amount: get(current-usdt-amount-key),"
-    "target-usdt-amount: int-sub(max-usdt-amount current-usdt-amount),"
-    // Token out from uniswap is ob's token in, and vice versa.
-    // We want the timestamp as well as the nht amount that sushi wants in.
+    // Try to buy $50 worth of nht.
+    "target-usdt-amount: 50e6,"
+    // Ensure a 1 hour cooldown.
+    "last-time-key: hash(order-hash 1),"
+    // Get the last time.
+    "last-time: get(last-time-key),"
+    // Ensure it is more than 3600 seconds ago.
+    ":ensure<1>(less-than(int-add(last-time 3600) block-timestamp())),"
+    // Set the new cooldown to start now.
+    ":set(last-time-key block-timestamp()),"
     "last-price-timestamp max-nht-amount: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"
     // Don't allow the price to change this block before this trade.
-    ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
-    // We want to buy a little less nht amount than sushi sets as the maximum
-    // to give some leeway for the arb bot.
-    "actual-nht-amount: decimal18-mul(max-nht-amount 999e15),"
+    ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
     "order-output-max: decimal18-scale18<6>(target-usdt-amount),"
-    "io-ratio: decimal18-div(actual-nht-amount order-output-max)"
+    "io-ratio: decimal18-div(max-nht-amount order-output-max)"
     //
     ";"
-    // Record the amount of usdt we sold.
-    "usdt-diff: context<4 4>(),"
-    // order hash is same as calculate io
-    "order-hash: context<1 0>(),"
-    // current usdt amount key is same as calculate io
-    "current-usdt-amount-key: hash(order-hash 1),"
-    ":set(current-usdt-amount-key int-add(get(current-usdt-amount-key) usdt-diff)),"
     // Ensure that we sold at least $50 worth of usdt.
-    ":ensure<2>(greater-than(usdt-diff 50e6))"
+    ":ensure<3>(greater-than-or-equal-to(context<4 4>() 50e6))"
     // ;
     ";";
+
+bytes constant EXPECTED_BUY_BYTECODE2 =
+    // 2 sources
+    hex"02"
+    // 0 offset
+    hex"0000"
+    // 188 offset (46 ops + 4 byte header)
+    hex"00bc"
+    // source 0
+    // 46 ops
+    hex"2e"
+    // 15 stack allocation
+    hex"0f"
+    // 0 inputs
+    hex"00"
+    // 14 outputs
+    hex"0e"
+    // constant 0 (sushi factory)
+    hex"01000000"
+    // constant 1 (nht token address)
+    hex"01000001"
+    // constant 2 (usdt token address)
+    hex"01000002"
+    // constant 3 (approved counterparty)
+    hex"01000003"
+    // context 1 2 (actual counterparty)
+    hex"02000201"
+    // stack 2 (usdt token address)
+    hex"00000002"
+    // context 4 0 (output token address)
+    hex"02000004"
+    // equal to (2 inputs)
+    hex"0c020000"
+    // stack 1 (nht token address)
+    hex"00000001"
+    // context 3 0 (input token address)
+    hex"02000003"
+    // equal to (2 inputs)
+    hex"0c020000"
+    // stack 4 (actual counterparty)
+    hex"00000004"
+    // stack 3 (approved counterparty)
+    hex"00000003"
+    // equal to (2 inputs)
+    hex"0c020000"
+    // ensure (3 inputs, 0 error code)
+    hex"0b030000"
+    //context 1 0 (order hash)
+    hex"02000001"
+    // constant 4 (50e6 target usdt amount)
+    hex"01000004"
+    // constant 5 (1)
+    hex"01000005"
+    // stack 5 (order hash)
+    hex"00000005"
+    // hash (2 inputs)
+    hex"03020000"
+    // stack 7 (last time key)
+    hex"00000007"
+    // get (1 input)
+    hex"25010000"
+    // block timestamp
+    hex"08000000"
+    // constant 6 (3600)
+    hex"01000006"
+    // stack 8 (last time)
+    hex"00000008"
+    // int add (2 inputs)
+    hex"19020000"
+    // less than (2 inputs)
+    hex"12020000"
+    // ensure (1 input, 1 error code)
+    hex"0b010001"
+    hex"08000000"
+    hex"00000007"
+    hex"26020000"
+    hex"00000001"
+    hex"00000002"
+    hex"00000006"
+    hex"00000000"
+    hex"28040001"
+    hex"08000000"
+    hex"00000009"
+    hex"12020000"
+    hex"0b010002"
+    hex"0000000a"
+    hex"00000006"
+    hex"17010006"
+    hex"0000000c"
+    hex"0000000b"
+    hex"14020000"
+    hex"04020000"
+    hex"01000004"
+    hex"02000404"
+    hex"0f020000"
+    hex"0b010003";
 
 bytes constant EXPECTED_BUY_BYTECODE =
     // 2 sources
