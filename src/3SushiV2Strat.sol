@@ -44,14 +44,14 @@ IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x49266c03f3E223657feC331
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
 
-uint256 constant ORDER_INIT_TIME = 1692775491;
+uint256 constant ORDER_INIT_TIME = 1693216509;
 
 uint256 constant USDT_PER_SECOND = 13889;
 
 uint256 constant MIN_USDT_AMOUNT = 50e6;
 
-uint256 constant SELL_MULTIPLIER = 101e16;
-uint256 constant BUY_MULTIPLIER = 99e16;
+uint256 constant SELL_MULTIPLIER = 1001e15;
+uint256 constant BUY_MULTIPLIER = 999e15;
 
 // Selling NHT for USDT => NHT is output and USDT is input.
 bytes constant RAINSTRING_SELL_NHT =
@@ -78,7 +78,7 @@ bytes constant RAINSTRING_SELL_NHT =
     // Order hash.
     "order-hash: context<1 0>(),"
     // Figure out when the order started.
-    "order-init-time: 1692775491,"
+    "order-init-time: 1693216509,"
     // We sell $50 worth of nht for usdt per hour.
     // 50e6 is $50 in usdt.
     // 50e6 / 3600 is $50 per hour.
@@ -95,7 +95,7 @@ bytes constant RAINSTRING_SELL_NHT =
     ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
     // We want to sell a little more nht amount than sushi sets as the minimum
     // to give some leeway for the arb bot.
-    "order-output-max: decimal18-mul(nht-amount 101e16),"
+    "order-output-max: decimal18-mul(nht-amount 1001e15),"
     "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) order-output-max)"
     // end calculate order
     ";"
@@ -287,7 +287,7 @@ bytes constant RAINSTRING_BUY_NHT =
     // Order hash.
     "order-hash: context<1 0>(),"
     // Figure out when the order started.
-    "order-init-time: 1692775491,"
+    "order-init-time: 1693216509,"
     // We buy $50 worth of nht for usdt per hour.
     // 50e6 is $50 in usdt.
     // 50e6 / 3600 is $50 per hour.
@@ -304,7 +304,7 @@ bytes constant RAINSTRING_BUY_NHT =
     ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
     // We want to buy a little less nht amount than sushi sets as the maximum
     // to give some leeway for the arb bot.
-    "actual-nht-amount: decimal18-mul(max-nht-amount 99e16),"
+    "actual-nht-amount: decimal18-mul(max-nht-amount 999e15),"
     "order-output-max: decimal18-scale18<6>(target-usdt-amount),"
     "io-ratio: decimal18-div(actual-nht-amount order-output-max)"
     //
