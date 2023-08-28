@@ -1,0 +1,84 @@
+{
+  "contracts": {
+    "mumbai": {
+      "interpreter": {
+        "address": "0x18f984b2bdbe022eaf8173e862fb014f059803cf",
+        "transaction": "0x98793d9db49c7cc519594f5df4e10689dd847faa83a983cfd30a91260e3fd747"
+      },
+      "store": {
+        "address": "0xa6bbf282bb51a5191b935e4b29112d691c88bf59",
+        "transaction": "0xdb6e0cdba90c4a170a229eeefb0124cdbbc52b60ab3fbd58e78bfad0f39a8830"
+      },
+      "expressionDeployer": {
+        "address": "0x8203b49e4b90767a1f1d769a887e36592d6c6d5b",
+        "transaction": "0xce834fcff93b805f27a1f85ab3e9f21ad93293771a3c8f04df3b52b95b3c79ed"
+      },
+      "orderbook": {
+        "address": "0x3641ddc0660feadd2e75a14f92b6c48578ac9644",
+        "transaction": "0xf16a4a31730fd180593e65f1c22d82fde2f1d219122372b675f4e4e1e8a06a77"
+      },
+      "zeroexorderbookimplmentation": {
+        "address": "0x906e476dbfd6f3863f3738b8cb19c4545ccd3359",
+        "transaction": "0xd7081b8dc3732f35c5df3b2b6d224bb2f473fca2b3b75f21324358640f3ff350"
+      },
+      "clonefactory": {
+        "address": "0xbe8e2ca0ecde48ef58a347a7226b160da0bd710b",
+        "transaction": "0x991bba271d34823b2c2e1cad9073d7be5487e9433d33ee9c7029e971203b3506"
+      },
+      "zeroexorderbookinstance": {
+        "address": "0x07c99ee8e0f976d5e18e24209ecdbc284577ce00",
+        "transaction": "0x4b2c09d633acd264f4d27241fadb117faf19472e7c0b03035e15d62e62eb3d2d"
+      },
+      "usdt": {
+        "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
+        "decimals": 18
+      },
+      "nht": {
+        "address": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+        "decimals": 18
+      }
+    },
+    "polygon": {
+      "usdt": {
+        "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        "decimals": 6
+      },
+      "nht": {
+        "address": "0x84342e932797FC62814189f01F0Fb05F52519708",
+        "decimals": 18
+      },
+      "interpreter": {
+        "address": "0xbb8c61fcdcb4533f1029c59fa4d6c6adb2038a20",
+        "transaction": "0x7a4a2ddb6c50d1f1a12cf4f0e02e5b544cc23c4ae9fcddea4b995099bf458354"
+      },
+      "store": {
+        "address": "0xa8f9c43e5a88ff72d0be42abd4255be0e0a41dc8",
+        "transaction": "0x8cbe95a02c5254e37dd57150540c241a44396e7854a1a814a1e0b9ecaaae4a42"
+      },
+      "expressionDeployer": {
+        "address": "0x566072fbb144583bcf5c776075a754ed35f89389",
+        "transaction": "0xd1f6cd97fd76ba0bf2cc65a2498ff7a07e134958a4d7079586f5e48fa21dd3e9"
+      },
+      "orderbook": {
+        "address": "0x49266c03f3e223657fec33159511d346fe8b2429",
+        "transaction": "0x33167f553dcff410329fbf9c7f2fe00b5c7389f46c1a2c217a9d1c91286c9598"
+      },
+      "clonefactory": {
+        "address": "0x5850dfae3804489be1f4b29e0914876e545835e4",
+        "transaction": "0xe4f53739bf5d5b25e95a84680d7d13c47695a9cf72f89f980d67e5447bb698d3"
+      },
+      "zeroexorderbookimplmentation": {
+        "address": "0x9292018adcc868658fb9486d0af1a22ead5ce710",
+        "transaction": "0x4f2cd3346da6221a9f24bdce094095b493c0f6fc4f5f49c3c44816932a77723e"
+      },
+      "zeroexorderbookinstance": {
+        "address": "0xd703abb4c18428c904c1c2a0d7b22310a20ef87d",
+        "transaction": "0xc0c1b5488b3807f4067b0245c4ec3a211548d138c4df5875e74f2b1c320ee556"
+      }
+    }
+  },
+  "hardhat": {
+    "forkBaseUrl": "https://polygon-mumbai.g.alchemy.com/v2/",
+    "blockNumber": 39311648
+  }
+}

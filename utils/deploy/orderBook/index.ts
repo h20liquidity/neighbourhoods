@@ -1,8 +1,6 @@
-import { artifacts } from "hardhat"; 
+ 
 import { ethers  } from "hardhat"; 
-import config from "../../../config/config.json" 
-import ob from "../../../config/Orderbook/1-OrderBook.json"
-import axios from "axios"
+import ob from "../../../scripts-v2/abis/1-OrderBook.json"
 
 export const getOrderBook = async (address: string) => { 
     const signers = await ethers.getSigners();

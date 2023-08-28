@@ -19,9 +19,9 @@ import { basicDeploy } from "../utils/deploy/basicDeploy";
 
 import { getOrderBook, ob_entrypoints } from "../utils/deploy/orderBook";
 import { getExpressionDelopyer } from "../utils/deploy/interpreter";
-import config from "../config/config.json"
+import config from "../scripts-v2/config.json"
 import * as dotenv from "dotenv";
-import { encodeMeta } from "../scripts/utils";
+import { encodeMeta } from "../scripts-v2/utils";
 import { prbScale,  takeOrder } from "../utils/orderBook";
 dotenv.config();
 
