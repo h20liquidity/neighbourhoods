@@ -364,6 +364,11 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
       arbString.trim()
     )
   ) 
+  
+  const abiEncodedRouter = ethers.utils.defaultAbiCoder.encode(
+    ["address"],
+    ["0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"] // Sushi Router Address
+  ) 
 
   const borrowerConfig = {
     orderBook : contractConfig.contracts[network].orderbook.address,
@@ -372,7 +377,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
       bytecode,
       constants
     },
-    implementationData : []
+    implementationData : abiEncodedRouter
   }
   const encodedConfig = ethers.utils.defaultAbiCoder.encode(
     [

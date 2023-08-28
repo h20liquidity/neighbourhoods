@@ -18,16 +18,16 @@
         "transaction": "0xf16a4a31730fd180593e65f1c22d82fde2f1d219122372b675f4e4e1e8a06a77"
       },
       "zeroexorderbookimplmentation": {
-        "address": "0x4a88a2d66909386f2147dd00d3ef0c457e80928e",
-        "transaction": "0x29a0e51677817c0cd5d79274d146f398265cbe9eeae5cae444e9b6c68f8e8c7a"
+        "address": "0x906e476dbfd6f3863f3738b8cb19c4545ccd3359",
+        "transaction": "0xd7081b8dc3732f35c5df3b2b6d224bb2f473fca2b3b75f21324358640f3ff350"
       },
       "clonefactory": {
         "address": "0xbe8e2ca0ecde48ef58a347a7226b160da0bd710b",
         "transaction": "0x991bba271d34823b2c2e1cad9073d7be5487e9433d33ee9c7029e971203b3506"
       },
       "zeroexorderbookinstance": {
-        "address": "0x28af8c02ec7e0130a64f139e3f3b5f24537a8a90",
-        "transaction": "0x9b00046fe0deb6a19664f7316cd4a3fe8601139668dd7a983b7c555b016c5a0b"
+        "address": "0x07c99ee8e0f976d5e18e24209ecdbc284577ce00",
+        "transaction": "0x4b2c09d633acd264f4d27241fadb117faf19472e7c0b03035e15d62e62eb3d2d"
       },
       "usdt": {
         "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
@@ -68,13 +68,13 @@
         "transaction": "0xe4f53739bf5d5b25e95a84680d7d13c47695a9cf72f89f980d67e5447bb698d3"
       },
       "zeroexorderbookimplmentation": {
-        "address": "0x902f0e2c194d4d4532a2a628c2b76daf94548ced",
-        "transaction": "0x43ff14f22a215c395a021c43fdb7482ce7b44c3c8e2fbca468f13414fc26c270"
+        "address": "0x9292018adcc868658fb9486d0af1a22ead5ce710",
+        "transaction": "0x4f2cd3346da6221a9f24bdce094095b493c0f6fc4f5f49c3c44816932a77723e"
       },
       "zeroexorderbookinstance": {
-        "address": "0x409717e08dca5fe40efdb05318fbf0e65762814d",
-        "transaction": "0xbef083110caaa6bce21b38892a57d4bb104a7aee0eb4c441f2460a9c184d15e6"
-      } 
+        "address": "0xd703abb4c18428c904c1c2a0d7b22310a20ef87d",
+        "transaction": "0xc0c1b5488b3807f4067b0245c4ec3a211548d138c4df5875e74f2b1c320ee556"
+      }
     }
   },
   "hardhat": {
