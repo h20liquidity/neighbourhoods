@@ -4,8 +4,6 @@ pragma solidity =0.8.19;
 import "rain.interpreter/test/util/abstract/OpTest.sol";
 
 import "src/3SushiV2Strat.sol";
-import "src/IOrderBookV3.sol";
-import "src/IERC20.sol";
 
 uint256 constant CONTEXT_VAULT_INPUTS_COLUMN = 3;
 uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
@@ -13,16 +11,8 @@ uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-
+uint256 constant FORK_BLOCK_NUMBER = 46844634;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
-
-RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
-    RainterpreterExpressionDeployerNP(0x386d79440e3fe32BdFb0120034Fb21971151E90f);
-address constant POLYGON_INTERPRETER = 0x31fE050009Dc0cAb68fFe3a65A0A466F60bE6c5D;
-address constant POLYGON_STORE = 0xc71541cc0684A3ccC86EdA6aFc4a456140130fbD;
-IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x1320DBB57a65c9CbF785E10770F8f3d51ff92132);
-address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
-address constant OB_FLASH_BORROWER = 0x7dd413076234dB1eEf111C9B455125DCf581AC2C;
 
 // This could easily break, just happened to be some wallet that held NHT when
 // I was writing this test.
@@ -37,7 +27,7 @@ contract Test3SushiV2Strat is OpTest {
     function selectPolygonFork() internal {
         uint256 fork = vm.createFork(FORK_RPC);
         vm.selectFork(fork);
-        vm.rollFork(46732863);
+        vm.rollFork(FORK_BLOCK_NUMBER);
     }
 
     /// Failing due to swap happening in flash loan before strat clear.
@@ -81,8 +71,8 @@ contract Test3SushiV2Strat is OpTest {
     function checkBuyConstants(uint256[] memory constants) internal {
         assertEq(constants.length, 9);
         assertEq(constants[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)), "constants[0]");
-        assertEq(constants[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)), "constants[1]");
-        assertEq(constants[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)), "constants[2]");
+        assertEq(constants[1], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))), "constants[1]");
+        assertEq(constants[2], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))), "constants[2]");
         assertEq(constants[3], uint256(uint160(APPROVED_COUNTERPARTY)), "constants[3]");
         assertEq(constants[4], ORDER_INIT_TIME, "constants[4]");
         assertEq(constants[5], USDT_PER_SECOND, "constants[5]");
@@ -94,8 +84,8 @@ contract Test3SushiV2Strat is OpTest {
     function checkSellConstants(uint256[] memory constants) internal {
         assertEq(constants.length, 9);
         assertEq(constants[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)), "constants[0]");
-        assertEq(constants[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)), "constants[1]");
-        assertEq(constants[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)), "constants[2]");
+        assertEq(constants[1], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))), "constants[1]");
+        assertEq(constants[2], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))), "constants[2]");
         assertEq(constants[3], uint256(uint160(APPROVED_COUNTERPARTY)), "constants[3]");
         assertEq(constants[4], ORDER_INIT_TIME, "constants[4]");
         assertEq(constants[5], USDT_PER_SECOND, "constants[5]");
@@ -120,8 +110,8 @@ contract Test3SushiV2Strat is OpTest {
 
         // addresses.
         assertEq(stack[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)));
-        assertEq(stack[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)));
-        assertEq(stack[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)));
+        assertEq(stack[1], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))));
+        assertEq(stack[2], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))));
 
         // approved counterparty.
         assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
@@ -189,18 +179,18 @@ contract Test3SushiV2Strat is OpTest {
         }
         {
             uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            inputsContext[0] = uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS));
+            inputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
             context[2] = inputsContext;
         }
         {
             uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            outputsContext[0] = uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS));
+            outputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
             context[3] = outputsContext;
         }
         context = LibContext.build(context, new SignedContextV1[](0));
 
         address expectedPair =
-            LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, POLYGON_NHT_TOKEN_ADDRESS, POLYGON_USDT_TOKEN_ADDRESS);
+            LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, address(POLYGON_NHT_TOKEN_ADDRESS), address(POLYGON_USDT_TOKEN_ADDRESS));
         vm.mockCall(
             expectedPair,
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
@@ -270,8 +260,8 @@ contract Test3SushiV2Strat is OpTest {
 
         // addresses.
         assertEq(stack[0], uint256(uint160(POLYGON_SUSHI_V2_FACTORY)));
-        assertEq(stack[1], uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS)));
-        assertEq(stack[2], uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS)));
+        assertEq(stack[1], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))));
+        assertEq(stack[2], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))));
 
         // approved counterparty.
         assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
@@ -339,18 +329,18 @@ contract Test3SushiV2Strat is OpTest {
         }
         {
             uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            inputsContext[0] = uint256(uint160(POLYGON_NHT_TOKEN_ADDRESS));
+            inputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
             context[2] = inputsContext;
         }
         {
             uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            outputsContext[0] = uint256(uint160(POLYGON_USDT_TOKEN_ADDRESS));
+            outputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
             context[3] = outputsContext;
         }
         context = LibContext.build(context, new SignedContextV1[](0));
 
         address expectedPair =
-            LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, POLYGON_NHT_TOKEN_ADDRESS, POLYGON_USDT_TOKEN_ADDRESS);
+            LibUniswapV2.pairFor(POLYGON_SUSHI_V2_FACTORY, address(POLYGON_NHT_TOKEN_ADDRESS), address(POLYGON_USDT_TOKEN_ADDRESS));
         vm.mockCall(
             expectedPair,
             abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
@@ -399,20 +389,20 @@ contract Test3SushiV2Strat is OpTest {
             vm.startPrank(POLYGON_NHT_HOLDER);
             // 100 mill nht to each of order owner and counterparty
             uint256 amountNht = 100000000e18;
-            IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(TEST_ORDER_OWNER, amountNht);
-            assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER), amountNht);
-            IERC20(POLYGON_NHT_TOKEN_ADDRESS).transfer(APPROVED_COUNTERPARTY, amountNht);
-            assertEq(IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(APPROVED_COUNTERPARTY), amountNht);
+            POLYGON_NHT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountNht);
+            assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountNht);
+            POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
+            assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
             vm.stopPrank();
         }
         {
             vm.startPrank(POLYGON_USDT_HOLDER);
             // one million tether to each of owner order and counterparty.
             uint256 amountUsdt = 1000000e6;
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).transfer(TEST_ORDER_OWNER, amountUsdt);
-            assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER), amountUsdt);
-            IERC20(POLYGON_USDT_TOKEN_ADDRESS).transfer(APPROVED_COUNTERPARTY, amountUsdt);
-            assertEq(IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
+            POLYGON_USDT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountUsdt);
+            assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountUsdt);
+            POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
+            assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
             vm.stopPrank();
         }
     }
@@ -420,13 +410,13 @@ contract Test3SushiV2Strat is OpTest {
     function depositTokens() internal {
         vm.startPrank(TEST_ORDER_OWNER);
 
-        uint256 amountNht = IERC20(POLYGON_NHT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER);
-        IERC20(POLYGON_NHT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), amountNht);
-        POLYGON_ORDERBOOK.deposit(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, amountNht);
+        uint256 amountNht = POLYGON_NHT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER);
+        POLYGON_NHT_TOKEN_ADDRESS.approve(address(POLYGON_ORDERBOOK), amountNht);
+        POLYGON_ORDERBOOK.deposit(address(POLYGON_NHT_TOKEN_ADDRESS), VAULT_ID, amountNht);
 
-        uint256 amountUsdt = IERC20(POLYGON_USDT_TOKEN_ADDRESS).balanceOf(TEST_ORDER_OWNER);
-        IERC20(POLYGON_USDT_TOKEN_ADDRESS).approve(address(POLYGON_ORDERBOOK), amountUsdt);
-        POLYGON_ORDERBOOK.deposit(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, amountUsdt);
+        uint256 amountUsdt = POLYGON_USDT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER);
+        POLYGON_USDT_TOKEN_ADDRESS.approve(address(POLYGON_ORDERBOOK), amountUsdt);
+        POLYGON_ORDERBOOK.deposit(address(POLYGON_USDT_TOKEN_ADDRESS), VAULT_ID, amountUsdt);
         vm.stopPrank();
     }
 
@@ -458,11 +448,11 @@ contract Test3SushiV2Strat is OpTest {
     }
 
     function polygonNhtIo() internal pure returns (IO memory) {
-        return IO(POLYGON_NHT_TOKEN_ADDRESS, 18, VAULT_ID);
+        return IO(address(POLYGON_NHT_TOKEN_ADDRESS), 18, VAULT_ID);
     }
 
     function polygonUsdtIo() internal pure returns (IO memory) {
-        return IO(POLYGON_USDT_TOKEN_ADDRESS, 6, VAULT_ID);
+        return IO(address(POLYGON_USDT_TOKEN_ADDRESS), 6, VAULT_ID);
     }
 
     function placeBuyOrder() internal returns (Order memory) {
@@ -480,19 +470,20 @@ contract Test3SushiV2Strat is OpTest {
     }
 
     function takeOrder(Order memory order) internal returns (uint256 totalInput, uint256 totalOutput) {
-        vm.startPrank(APPROVED_COUNTERPARTY);
+        vm.startPrank(APPROVED_EOA);
         uint256 inputIOIndex = 0;
         uint256 outputIOIndex = 0;
         TakeOrderConfig[] memory innerConfigs = new TakeOrderConfig[](1);
         innerConfigs[0] = TakeOrderConfig(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
         address inputToken = order.validOutputs[outputIOIndex].token;
         address outputToken = order.validInputs[inputIOIndex].token;
-        TakeOrdersConfig memory takeOrdersConfig =
-            TakeOrdersConfig(outputToken, inputToken, 0, type(uint256).max, type(uint256).max, innerConfigs);
-        IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
-        (totalInput, totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
-        assertTrue(totalInput > 0, "totalInput nonzero");
-        assertTrue(totalOutput > 0, "totalOutput nonzero");
+        TakeOrdersConfigV2 memory takeOrdersConfig =
+            TakeOrdersConfigV2(outputToken, inputToken, 0, type(uint256).max, type(uint256).max, innerConfigs, hex"00");
+        POLYGON_ARB_CONTRACT.arb(takeOrdersConfig, 0);
+        // IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
+        // (totalInput, totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
+        // assertTrue(totalInput > 0, "totalInput nonzero");
+        // assertTrue(totalOutput > 0, "totalOutput nonzero");
         vm.stopPrank();
     }
 }

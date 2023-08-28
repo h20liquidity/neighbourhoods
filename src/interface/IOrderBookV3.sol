@@ -1,55 +1,9 @@
 // SPDX-License-Identifier: CAL
 pragma solidity ^0.8.18;
 
+import "./IERC3156FlashLender.sol";
 import "rain.interpreter/src/lib/caller/LibEvaluable.sol";
 import "rain.interpreter/src/interface/IInterpreterCallerV2.sol";
-
-/// @dev The ERC3156 spec mandates this hash be returned by `onFlashLoan` if it
-/// succeeds.
-bytes32 constant ON_FLASH_LOAN_CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
-
-interface IERC3156FlashBorrower {
-    /**
-     * @dev Receive a flash loan.
-     * @param initiator The initiator of the loan.
-     * @param token The loan currency.
-     * @param amount The amount of tokens lent.
-     * @param fee The additional amount of tokens to repay.
-     * @param data Arbitrary data structure, intended to contain user-defined parameters.
-     * @return The keccak256 hash of "ERC3156FlashBorrower.onFlashLoan"
-     */
-    function onFlashLoan(address initiator, address token, uint256 amount, uint256 fee, bytes calldata data)
-        external
-        returns (bytes32);
-}
-
-interface IERC3156FlashLender {
-    /**
-     * @dev The amount of currency available to be lent.
-     * @param token The loan currency.
-     * @return The amount of `token` that can be borrowed.
-     */
-    function maxFlashLoan(address token) external view returns (uint256);
-
-    /**
-     * @dev The fee to be charged for a given loan.
-     * @param token The loan currency.
-     * @param amount The amount of tokens lent.
-     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
-     */
-    function flashFee(address token, uint256 amount) external view returns (uint256);
-
-    /**
-     * @dev Initiate a flash loan.
-     * @param receiver The receiver of the tokens in the loan, and the receiver of the callback.
-     * @param token The loan currency.
-     * @param amount The amount of tokens lent.
-     * @param data Arbitrary data structure, intended to contain user-defined parameters.
-     */
-    function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 amount, bytes calldata data)
-        external
-        returns (bool);
-}
 
 /// Configuration for a single input or output on an `Order`.
 /// @param token The token to either send from the owner as an output or receive
@@ -124,13 +78,18 @@ struct Order {
 /// hit. Takers are expected to prioritise orders that appear to be offering
 /// better deals i.e. lower IO ratios. This prioritisation and sorting MUST
 /// happen offchain, e.g. via. some simulator.
-struct TakeOrdersConfig {
+/// @param data If nonzero length, triggers `onTakeOrders` on the caller of
+/// `takeOrders` with this data. This allows the caller to perform arbitrary
+/// onchain actions between receiving their input tokens, before having to send
+/// their output tokens.
+struct TakeOrdersConfigV2 {
     address output;
     address input;
     uint256 minimumInput;
     uint256 maximumInput;
     uint256 maximumIORatio;
     TakeOrderConfig[] orders;
+    bytes data;
 }
 
 /// Config for an individual take order from the overall list of orders in a
@@ -582,7 +541,9 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// vaults processed.
     /// @return totalOutput Total tokens taken from `msg.sender` and distributed
     /// between vaults.
-    function takeOrders(TakeOrdersConfig calldata config) external returns (uint256 totalInput, uint256 totalOutput);
+    function takeOrders(TakeOrdersConfigV2 calldata config)
+        external
+        returns (uint256 totalInput, uint256 totalOutput);
 
     /// Allows `msg.sender` to match two live orders placed earlier by
     /// non-interactive parties and claim a bounty in the process. The clearer is
