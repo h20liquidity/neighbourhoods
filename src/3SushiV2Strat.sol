@@ -4,11 +4,22 @@ pragma solidity =0.8.19;
 import "src/interface/IERC20.sol";
 import "src/interface/IOrderBookV3.sol";
 import "src/interface/IOrderBookV3ArbOrderTaker.sol";
+import {IUniswapV2Pair} from "rain.interpreter/lib/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import {RainterpreterExpressionDeployerNP} from "rain.interpreter/src/concrete/RainterpreterExpressionDeployerNP.sol";
+
+// This could easily break, just happened to be some wallet that held NHT when
+// I was writing this test.
+address constant POLYGON_NHT_HOLDER = 0xe0e0Bb15Ad2dC19e5Eaa133968e498B4D9bF24Da;
+// This could easily break, just happened to be some wallet that held USDT when
+// I was writing this test.
+address constant POLYGON_USDT_HOLDER = 0x72A53cDBBcc1b9efa39c834A540550e23463AAcB;
 
 /// @dev https://docs.sushi.com/docs/Products/Classic%20AMM/Deployment%20Addresses
 /// @dev https://polygonscan.com/address/0xc35DADB65012eC5796536bD9864eD8773aBc74C4
 address constant POLYGON_SUSHI_V2_FACTORY = 0xc35DADB65012eC5796536bD9864eD8773aBc74C4;
+
+/// @dev https://docs.sushi.com/docs/Products/Classic%20AMM/Deployment%20Addresses
+address constant POLYGON_SUSHI_V2_ROUTER = 0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506;
 
 /// @dev https://polygonscan.com/address/0x84342e932797FC62814189f01F0Fb05F52519708
 IERC20 constant POLYGON_NHT_TOKEN_ADDRESS = IERC20(0x84342e932797FC62814189f01F0Fb05F52519708);
@@ -16,16 +27,19 @@ IERC20 constant POLYGON_NHT_TOKEN_ADDRESS = IERC20(0x84342e932797FC62814189f01F0
 /// @dev https://polygonscan.com/address/0xc2132D05D31c914a87C6611C10748AEb04B58e8F
 IERC20 constant POLYGON_USDT_TOKEN_ADDRESS = IERC20(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
 
-IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT = IOrderBookV3ArbOrderTaker(0x409717e08DcA5fE40efdB05318FBF0E65762814D);
+IUniswapV2Pair constant POLYGON_NHT_USDT_PAIR_ADDRESS = IUniswapV2Pair(0xe427B62B495C1dFe1Fe9F78bEbFcEB877ad05DCE);
+address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
+address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
-address constant APPROVED_EOA = 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036;
+IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT = IOrderBookV3ArbOrderTaker(0xD703Abb4C18428c904c1c2a0D7b22310A20ef87D);
+
+address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
 
-
 RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
-    RainterpreterExpressionDeployerNP(0x386d79440e3fe32BdFb0120034Fb21971151E90f);
-address constant POLYGON_INTERPRETER = 0x31fE050009Dc0cAb68fFe3a65A0A466F60bE6c5D;
-address constant POLYGON_STORE = 0xc71541cc0684A3ccC86EdA6aFc4a456140130fbD;
+    RainterpreterExpressionDeployerNP(0x566072Fbb144583BCF5c776075A754ed35F89389);
+address constant POLYGON_INTERPRETER = 0xBb8C61fcdCb4533F1029c59fa4D6c6Adb2038A20;
+address constant POLYGON_STORE = 0xA8F9C43E5A88ff72d0be42aBd4255Be0e0a41DC8;
 IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x49266c03f3E223657feC33159511d346fe8B2429);
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
@@ -48,7 +62,7 @@ bytes constant RAINSTRING_SELL_NHT =
     // String version of usdt token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // String version of approved counterparty.
-    "approved-counterparty: 0x409717e08DcA5fE40efdB05318FBF0E65762814D,"
+    "approved-counterparty: 0xD703Abb4C18428c904c1c2a0D7b22310A20ef87D,"
     // actual counterparty is from context.
     "actual-counterparty: context<1 2>(),"
     // Check that
@@ -257,7 +271,7 @@ bytes constant RAINSTRING_BUY_NHT =
     // String version of usdt token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // String version of approved counterparty.
-    "approved-counterparty: 0x409717e08DcA5fE40efdB05318FBF0E65762814D,"
+    "approved-counterparty: 0xD703Abb4C18428c904c1c2a0D7b22310A20ef87D,"
     // actual counterparty is from context
     "actual-counterparty: context<1 2>(),"
     // Check that

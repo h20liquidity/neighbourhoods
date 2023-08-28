@@ -11,15 +11,8 @@ uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 46844634;
+uint256 constant FORK_BLOCK_NUMBER = 46853729;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
-
-// This could easily break, just happened to be some wallet that held NHT when
-// I was writing this test.
-address constant POLYGON_NHT_HOLDER = 0xe0e0Bb15Ad2dC19e5Eaa133968e498B4D9bF24Da;
-// This could easily break, just happened to be some wallet that held USDT when
-// I was writing this test.
-address constant POLYGON_USDT_HOLDER = 0x72A53cDBBcc1b9efa39c834A540550e23463AAcB;
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
 
@@ -28,17 +21,6 @@ contract Test3SushiV2Strat is OpTest {
         uint256 fork = vm.createFork(FORK_RPC);
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
-    }
-
-    /// Failing due to swap happening in flash loan before strat clear.
-    function testDebugTxn() external {
-        selectPolygonFork();
-        vm.prank(CLEARER);
-        bytes memory inputData =
-            hex"764d1aa10000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e000000000000000000000000084342e932797fc62814189f01f0fb05f52519708000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f0000000000000000000000000000000000000000000000000000000005f5e1000000000000000000000000000000000000000000000000000000000005f5e100ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000260000000000000000000000000f098172786a87fa7426ea811ff25d31d599f766d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000eff119915bce34dae8f7efbf9704d1ab456a4ad3000000000000000000000000b90a69edcd13996b71bd15895de1e317e4148a390000000000000000000000006399959b6631cd06da0c7e8690df8ca26c9707f800000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000000100000000000000000000000084342e932797fc62814189f01f0fb05f5251970800000000000000000000000000000000000000000000000000000000000000122e1e0c9ff2cb2638fe785e3cb0f777451d701c31f9cc1511815ad1f5577848c40000000000000000000000000000000000000000000000000000000000000001000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f00000000000000000000000000000000000000000000000000000000000000062e1e0c9ff2cb2638fe785e3cb0f777451d701c31f9cc1511815ad1f5577848c4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000a6e511fe663827b9ca7e2d2542b20b37fc217a60000000000000000000000000a6e511fe663827b9ca7e2d2542b20b37fc217a6000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000001442646478b000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f0000000000000000000000000000000000000000000000000000000005f5e10000000000000000000000000084342e932797fc62814189f01f0fb05f5251970800000000000000000000000000000000000000000000000000000000000000000000000000000000000000007dd413076234db1eef111c9b455125dcf581ac2c00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000004202c2132d05d31c914a87c6611c10748aeb04b58e8f01ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce007dd413076234db1eef111c9b455125dcf581ac2c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-        (bool success, bytes memory data) = OB_FLASH_BORROWER.call(inputData);
-        console2.logBool(success);
-        console2.logBytes(data);
     }
 
     function parseAndEvalWithContext(
@@ -239,9 +221,7 @@ contract Test3SushiV2Strat is OpTest {
         Order memory buyOrder = placeBuyOrder();
         (buyOrder);
 
-        (uint256 totalInput, uint256 totalOutput) = takeOrder(sellOrder);
-
-        console2.log(totalInput, totalOutput);
+        takeOrder(sellOrder);
     }
 
     function checkBuyCalculate(
@@ -379,9 +359,7 @@ contract Test3SushiV2Strat is OpTest {
         (sellOrder);
         Order memory buyOrder = placeBuyOrder();
 
-        (uint256 totalInput, uint256 totalOutput) = takeOrder(buyOrder);
-
-        console2.log(totalInput, totalOutput);
+        takeOrder(buyOrder);
     }
 
     function giveTestAccountsTokens() internal {
@@ -391,8 +369,8 @@ contract Test3SushiV2Strat is OpTest {
             uint256 amountNht = 100000000e18;
             POLYGON_NHT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountNht);
             assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountNht);
-            POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
-            assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
+            // POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
+            // assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
             vm.stopPrank();
         }
         {
@@ -401,8 +379,8 @@ contract Test3SushiV2Strat is OpTest {
             uint256 amountUsdt = 1000000e6;
             POLYGON_USDT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountUsdt);
             assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountUsdt);
-            POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
-            assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
+            // POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
+            // assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
             vm.stopPrank();
         }
     }
@@ -469,7 +447,7 @@ contract Test3SushiV2Strat is OpTest {
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
-    function takeOrder(Order memory order) internal returns (uint256 totalInput, uint256 totalOutput) {
+    function takeOrder(Order memory order) internal {
         vm.startPrank(APPROVED_EOA);
         uint256 inputIOIndex = 0;
         uint256 outputIOIndex = 0;
@@ -477,8 +455,22 @@ contract Test3SushiV2Strat is OpTest {
         innerConfigs[0] = TakeOrderConfig(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
         address inputToken = order.validOutputs[outputIOIndex].token;
         address outputToken = order.validInputs[inputIOIndex].token;
+
+        // (uint112 reserve0, uint112 reserve1, uint32 time) = POLYGON_NHT_USDT_PAIR_ADDRESS.getReserves();
+
+        // bytes memory encodedSwap = abi.encodeCall(IUniswapV2Pair.swap, (0, 50e6, APPROVED_COUNTERPARTY, ""));
+
+        // function swapExactTokensForTokens(
+        //     uint amountIn,
+        //     uint amountOutMin,
+        //     address[] calldata path,
+        //     address to,
+        //     uint deadline
+        // ) external returns (uint[] memory amounts);
+        // bytes memory encodedSwap = abi.encodeCall(UniswapV2Router02.swapExactTokensForTokens, ());
+
         TakeOrdersConfigV2 memory takeOrdersConfig =
-            TakeOrdersConfigV2(outputToken, inputToken, 0, type(uint256).max, type(uint256).max, innerConfigs, hex"00");
+            TakeOrdersConfigV2(outputToken, inputToken, 0, type(uint256).max, type(uint256).max, innerConfigs, abi.encode(POLYGON_NHT_USDT_PAIR_ADDRESS, POLYGON_NHT_USDT_PAIR_ADDRESS, ""));
         POLYGON_ARB_CONTRACT.arb(takeOrdersConfig, 0);
         // IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
         // (totalInput, totalOutput) = POLYGON_ORDERBOOK.takeOrders(takeOrdersConfig);
