@@ -31,7 +31,7 @@ IUniswapV2Pair constant POLYGON_NHT_USDT_PAIR_ADDRESS = IUniswapV2Pair(0xe427B62
 address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
 address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
-IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT = IOrderBookV3ArbOrderTaker(0xD703Abb4C18428c904c1c2a0D7b22310A20ef87D);
+IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT = IOrderBookV3ArbOrderTaker(0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641);
 
 address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
@@ -40,7 +40,7 @@ RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
     RainterpreterExpressionDeployerNP(0x595b5f7FbfA23A4CC5Bd3d2b66B903B1df28199F);
 address constant POLYGON_INTERPRETER = 0x1536dcd0A05Ec1ED40053f3f21A6bbF69528d00A;
 address constant POLYGON_STORE = 0x9D082FC1B0B34C3f41Bd682476E285C38C9CbF45;
-IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x49266c03f3E223657feC33159511d346fe8B2429);
+IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x72331A00D8e93148fD2Ce9eF0eFa1fedECFf2f6B);
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
 
@@ -62,7 +62,7 @@ bytes constant RAINSTRING_SELL_NHT =
     // String version of usdt token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // String version of approved counterparty.
-    "approved-counterparty: 0xD703Abb4C18428c904c1c2a0D7b22310A20ef87D,"
+    "approved-counterparty: 0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641,"
     // actual counterparty is from context.
     "actual-counterparty: context<1 2>(),"
     // Check that
@@ -77,37 +77,26 @@ bytes constant RAINSTRING_SELL_NHT =
     "),"
     // Order hash.
     "order-hash: context<1 0>(),"
-    // Figure out when the order started.
-    "order-init-time: 1693216509,"
-    // We sell $50 worth of nht for usdt per hour.
-    // 50e6 is $50 in usdt.
-    // 50e6 / 3600 is $50 per hour.
-    "usdt-per-second: 13889,"
-    // total time is now - init.
-    "total-time: int-sub(block-timestamp() order-init-time)," "max-usdt-amount: int-mul(total-time usdt-per-second),"
-    // lookup the current usdt amount.
-    "current-usdt-amount-key: hash(order-hash 1)," "current-usdt-amount: get(current-usdt-amount-key),"
-    "target-usdt-amount: int-sub(max-usdt-amount current-usdt-amount),"
+    // Try to sell $50 worth of nht.
+    "target-usdt-amount: 50e6,"
+    // Ensure a 1 hour cooldown.
+    "last-time-key: hash(order-hash 1),"
+    // Get the last time.
+    "last-time: get(last-time-key),"
+    // Ensure it is more than 3600 seconds ago.
+    ":ensure<1>(less-than(int-add(last-time 3600) block-timestamp())),"
+    ":set(last-time-key block-timestamp()),"
     // Token in for uniswap is ob's token out, and vice versa.
     // We want the timestamp as well as the nht amount that sushi wants in.
     "last-price-timestamp nht-amount: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
     // Don't allow the price to change this block before this trade.
     ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
-    // We want to sell a little more nht amount than sushi sets as the minimum
-    // to give some leeway for the arb bot.
-    "order-output-max: decimal18-mul(nht-amount 1e18),"
+    "order-output-max: nht-amount,"
     "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) order-output-max)"
     // end calculate order
     ";"
-    // Record the amount of usdt we bought.
-    "usdt-diff: context<3 4>(),"
-    // order hash is same as calculate io
-    "order-hash: context<1 0>(),"
-    // current usdt amount key is same as calculate io
-    "current-usdt-amount-key: hash(order-hash 1),"
-    ":set(current-usdt-amount-key int-add(get(current-usdt-amount-key) usdt-diff)),"
     // Ensure that we bought at least $50 worth of usdt.
-    ":ensure<2>(greater-than(usdt-diff 50e6))"
+    ":ensure<2>(greater-than-or-equal-to(context<3 4>() 50e6))"
     // end handle io
     ";";
 
@@ -271,7 +260,7 @@ bytes constant RAINSTRING_BUY_NHT =
     // String version of usdt token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // String version of approved counterparty.
-    "approved-counterparty: 0xD703Abb4C18428c904c1c2a0D7b22310A20ef87D,"
+    "approved-counterparty: 0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641,"
     // actual counterparty is from context
     "actual-counterparty: context<1 2>(),"
     // Check that
@@ -296,6 +285,7 @@ bytes constant RAINSTRING_BUY_NHT =
     ":ensure<1>(less-than(int-add(last-time 3600) block-timestamp())),"
     // Set the new cooldown to start now.
     ":set(last-time-key block-timestamp()),"
+    // Token out for uni is in for ob, and vice versa.
     "last-price-timestamp max-nht-amount: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"
     // Don't allow the price to change this block before this trade.
     ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
