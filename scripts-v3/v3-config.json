@@ -14,8 +14,8 @@
         "transaction": "0xc95c38f21c087143275f864d11ec56e1544e4834c91314397d70914774b88b34"
       },
       "orderbook": {
-        "address": "0x52d18b197c4d9e488e25e2c42295031fda36fcde",
-        "transaction": "0x148910b50304f70469b2ffebe3f3b294cd7e9d482fd53f15ffd5c368f7bf608d"
+        "address": "0x3318babd5f88108b2568dd8a739930ef4406f535",
+        "transaction": "0x0f45274c053d443a85ee152783a114c4a9f9e9981f4a8f6f495df9df19b87138"
       },
       "zeroexorderbookimplmentation": {
         "address": "0x883bd4c3399f483a098bc51bb5d587b57a6d5f01",
@@ -60,20 +60,20 @@
         "transaction": "0xb3bd5a3f60b08da65d8600767eeaac6eeee5c0093865c96418045afbba1ff563"
       },
       "orderbook": {
-        "address": "0x49266c03f3e223657fec33159511d346fe8b2429",
-        "transaction": "0x33167f553dcff410329fbf9c7f2fe00b5c7389f46c1a2c217a9d1c91286c9598"
+        "address": "0x72331a00d8e93148fd2ce9ef0efa1fedecff2f6b",
+        "transaction": "0x6905b36735f27d80f76d7ee8eab4aa58ce75de613b3d347706030bfdc376cb9a"
       },
       "clonefactory": {
-        "address": "0x5850dfae3804489be1f4b29e0914876e545835e4",
-        "transaction": "0xe4f53739bf5d5b25e95a84680d7d13c47695a9cf72f89f980d67e5447bb698d3"
+        "address": "0x57d731cd17fae4415fdf59d5b48ec633647511b3",
+        "transaction": "0x2e9e506f71847fca6a0fe70d265c718333ba30b249e267b34e8711b88c92fcb6"
       },
       "zeroexorderbookimplmentation": {
-        "address": "0x9292018adcc868658fb9486d0af1a22ead5ce710",
-        "transaction": "0x4f2cd3346da6221a9f24bdce094095b493c0f6fc4f5f49c3c44816932a77723e"
+        "address": "0xbe22a6d97ebdc1b2300dccfbf5ec08e68b8b826e",
+        "transaction": "0x7e544cf3be0f319d01e40c90de6e3737089fb55cfaa5f273e6e5ea1aba204fcd"
       },
       "zeroexorderbookinstance": {
-        "address": "0xd703abb4c18428c904c1c2a0d7b22310a20ef87d",
-        "transaction": "0xc0c1b5488b3807f4067b0245c4ec3a211548d138c4df5875e74f2b1c320ee556"
+        "address": "0x21d7e0ffeb8b8d288d9922d870ab22127fc0f641",
+        "transaction": "0x26317451da96ec6f2f85865b59230d5a1f0211fb2d570345095861d61c3cf26d"
       }
     }
   },
