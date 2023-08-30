@@ -31,7 +31,8 @@ IUniswapV2Pair constant POLYGON_NHT_USDT_PAIR_ADDRESS = IUniswapV2Pair(0xe427B62
 address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
 address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
-IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT = IOrderBookV3ArbOrderTaker(0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641);
+IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT =
+    IOrderBookV3ArbOrderTaker(0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641);
 
 address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
@@ -49,6 +50,7 @@ uint256 constant ORDER_INIT_TIME = 1693216509;
 uint256 constant USDT_PER_SECOND = 13889;
 
 uint256 constant MIN_USDT_AMOUNT = 50e6;
+uint256 constant ONE_HOUR = 3600;
 
 uint256 constant SELL_MULTIPLIER = 1e18;
 uint256 constant BUY_MULTIPLIER = 999e15;
@@ -84,14 +86,12 @@ bytes constant RAINSTRING_SELL_NHT =
     // Get the last time.
     "last-time: get(last-time-key),"
     // Ensure it is more than 3600 seconds ago.
-    ":ensure<1>(less-than(int-add(last-time 3600) block-timestamp())),"
-    ":set(last-time-key block-timestamp()),"
+    ":ensure<1>(less-than(int-add(last-time 3600) block-timestamp()))," ":set(last-time-key block-timestamp()),"
     // Token in for uniswap is ob's token out, and vice versa.
     // We want the timestamp as well as the nht amount that sushi wants in.
     "last-price-timestamp nht-amount: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
     // Don't allow the price to change this block before this trade.
-    ":ensure<1>(less-than(last-price-timestamp block-timestamp())),"
-    "order-output-max: nht-amount,"
+    ":ensure<1>(less-than(last-price-timestamp block-timestamp()))," "order-output-max: nht-amount,"
     "io-ratio: decimal18-div(decimal18-scale18<6>(target-usdt-amount) order-output-max)"
     // end calculate order
     ";"
@@ -101,6 +101,9 @@ bytes constant RAINSTRING_SELL_NHT =
     ";";
 
 bytes constant EXPECTED_SELL_BYTECODE =
+    hex"02000000b82d0e000d010000000100000101000002010000030200020100000001020000040c02000000000002020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000503020000000000072501000008000000010000060000000819020000120200000b01000108000000000000072602000000000002000000010000000600000000270400010800000000000009120200000b0100010000000a0000000b0000000617010006140200000402000001000004020004030f0200000b010002";
+
+bytes constant EXPECTED_SELL_BYTECODEx =
 // 2 sources
     hex"02"
     // 0 offset
@@ -299,7 +302,7 @@ bytes constant RAINSTRING_BUY_NHT =
     ";";
 
 bytes constant EXPECTED_BUY_BYTECODE2 =
-    // 2 sources
+// 2 sources
     hex"02"
     // 0 offset
     hex"0000"
@@ -369,33 +372,15 @@ bytes constant EXPECTED_BUY_BYTECODE2 =
     // less than (2 inputs)
     hex"12020000"
     // ensure (1 input, 1 error code)
-    hex"0b010001"
-    hex"08000000"
-    hex"00000007"
-    hex"26020000"
-    hex"00000001"
-    hex"00000002"
-    hex"00000006"
-    hex"00000000"
-    hex"28040001"
-    hex"08000000"
-    hex"00000009"
-    hex"12020000"
-    hex"0b010002"
-    hex"0000000a"
-    hex"00000006"
-    hex"17010006"
-    hex"0000000c"
-    hex"0000000b"
-    hex"14020000"
-    hex"04020000"
-    hex"01000004"
-    hex"02000404"
-    hex"0f020000"
-    hex"0b010003";
+    hex"0b010001" hex"08000000" hex"00000007" hex"26020000" hex"00000001" hex"00000002" hex"00000006" hex"00000000"
+    hex"28040001" hex"08000000" hex"00000009" hex"12020000" hex"0b010002" hex"0000000a" hex"00000006" hex"17010006"
+    hex"0000000c" hex"0000000b" hex"14020000" hex"04020000" hex"01000004" hex"02000404" hex"0f020000" hex"0b010003";
 
 bytes constant EXPECTED_BUY_BYTECODE =
-    // 2 sources
+    hex"02000000b82d0e000d010000000100000101000002010000030200020100000002020000040c02000000000001020000030c02000000000004000000030c0200000b0300000200000101000004010000050000000503020000000000072501000008000000010000060000000819020000120200000b01000108000000000000072602000000000001000000020000000600000000280400010800000000000009120200000b01000200000006170100060000000b0000000a140200000402000001000004020004040f0200000b010003";
+
+bytes constant EXPECTED_BUY_BYTECODEx =
+// 2 sources
     hex"02"
     // 0 offset
     hex"0000"
