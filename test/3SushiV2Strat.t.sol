@@ -437,8 +437,6 @@ contract Test3SushiV2Strat is OpTest {
         uint256 outputIOIndex = 0;
         TakeOrderConfig[] memory innerConfigs = new TakeOrderConfig[](1);
         innerConfigs[0] = TakeOrderConfig(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
-        address inputToken = order.validOutputs[outputIOIndex].token;
-        address outputToken = order.validInputs[inputIOIndex].token;
 
         // (uint112 reserve0, uint112 reserve1, uint32 time) = POLYGON_NHT_USDT_PAIR_ADDRESS.getReserves();
 
@@ -454,8 +452,6 @@ contract Test3SushiV2Strat is OpTest {
         // bytes memory encodedSwap = abi.encodeCall(UniswapV2Router02.swapExactTokensForTokens, ());
 
         TakeOrdersConfigV2 memory takeOrdersConfig = TakeOrdersConfigV2(
-            outputToken,
-            inputToken,
             0,
             type(uint256).max,
             type(uint256).max,
