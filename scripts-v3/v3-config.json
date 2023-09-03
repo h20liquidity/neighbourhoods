@@ -1,77 +1,61 @@
 {
   "contracts": {
     "mumbai": {
-      "interpreter": {
+      "Rainterpreter": {
         "address": "0x4badfda392e6a328ce86296bc2b5b5c595764aba",
         "transaction": "0xcc702e8918040e517cc6d38b9e3a49dacfbd44896f3d8666b2978e983b3d9e8c"
       },
-      "store": {
+      "RainterpreterStore": {
         "address": "0xa03f96ea5ad454d7af94a0c23006e6e0287b2d55",
         "transaction": "0xc4b887af1ba44a7fd26dde9ffce403eb3c328846c7a905a9ad01cdbd29b00f22"
       },
-      "expressionDeployer": {
+      "RainterpreterExpressionDeployer": {
         "address": "0xca0ef6e0d9cd47d44af5d87098f8482669303b06",
         "transaction": "0xc95c38f21c087143275f864d11ec56e1544e4834c91314397d70914774b88b34"
       },
-      "orderbook": {
+      "Orderbook": {
         "address": "0x3318babd5f88108b2568dd8a739930ef4406f535",
         "transaction": "0x0f45274c053d443a85ee152783a114c4a9f9e9981f4a8f6f495df9df19b87138"
       },
-      "zeroexorderbookimplmentation": {
+      "GenericPoolOrderBookFlashBorrowerImplementation": {
         "address": "0x883bd4c3399f483a098bc51bb5d587b57a6d5f01",
         "transaction": "0x9fb53e46a20f12395f28ee6da518ef71571f3d2609c40857bfdf2d71ea97089b"
       },
-      "clonefactory": {
+      "CloneFactory": {
         "address": "0x64160afe43ac5dfdee37142070a70a906f750937",
         "transaction": "0x0a39c2b6175b63483729e37b225db9aca4c31364e7019ffd8521953bdbb75896"
       },
-      "zeroexorderbookinstance": {
+      "GenericPoolOrderBookFlashBorrowerInstance": {
         "address": "0x0e5c35ae38d6364b4ee6a062a9e15f5c07f24df4",
         "transaction": "0x8323c5c638f9268746daec14c1c5694882e2abf0564ff489d72e52de024cf844"
-      },
-      "usdt": {
-        "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
-        "decimals": 18
-      },
-      "nht": {
-        "address": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
-        "decimals": 18
       }
     },
     "polygon": {
-      "usdt": {
-        "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-        "decimals": 6
-      },
-      "nht": {
-        "address": "0x84342e932797FC62814189f01F0Fb05F52519708",
-        "decimals": 18
-      },
-      "interpreter": {
+      "Rainterpreter": {
         "address": "0x1536dcd0a05ec1ed40053f3f21a6bbf69528d00a",
         "transaction": "0x6cf5056d2691335918bb3caa2ae59a949ca4485466fc89161d1dff198988a4f9"
       },
-      "store": {
+      "RainterpreterStore": {
         "address": "0x9d082fc1b0b34c3f41bd682476e285c38c9cbf45",
         "transaction": "0x8e505f147eff8fca377bfdabc3581ecd730bb9fd4ae2efd7dd38e12d0b2eef63"
       },
-      "expressionDeployer": {
+      "RainterpreterExpressionDeployer": {
         "address": "0x595b5f7fbfa23a4cc5bd3d2b66b903b1df28199f",
         "transaction": "0xb3bd5a3f60b08da65d8600767eeaac6eeee5c0093865c96418045afbba1ff563"
       },
-      "orderbook": {
+      "Orderbook": {
         "address": "0x72331a00d8e93148fd2ce9ef0efa1fedecff2f6b",
         "transaction": "0x6905b36735f27d80f76d7ee8eab4aa58ce75de613b3d347706030bfdc376cb9a"
       },
-      "clonefactory": {
+      "GenericPoolOrderBookFlashBorrowerImplementation": {
         "address": "0x57d731cd17fae4415fdf59d5b48ec633647511b3",
         "transaction": "0x2e9e506f71847fca6a0fe70d265c718333ba30b249e267b34e8711b88c92fcb6"
       },
-      "zeroexorderbookimplmentation": {
+      "CloneFactory": {
         "address": "0xbe22a6d97ebdc1b2300dccfbf5ec08e68b8b826e",
         "transaction": "0x7e544cf3be0f319d01e40c90de6e3737089fb55cfaa5f273e6e5ea1aba204fcd"
       },
-      "zeroexorderbookinstance": {
+      "GenericPoolOrderBookFlashBorrowerInstance": {
         "address": "0x21d7e0ffeb8b8d288d9922d870ab22127fc0f641",
         "transaction": "0x26317451da96ec6f2f85865b59230d5a1f0211fb2d570345095861d61c3cf26d"
       }

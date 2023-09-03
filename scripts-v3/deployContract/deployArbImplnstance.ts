@@ -1,12 +1,14 @@
 
 import * as dotenv from "dotenv";
-import { getCommons, getProvider, deployArbContractInstance} from "../utils";
+import {  getCommons, getProvider, deployArbContractInstance, supportedContracts} from "../utils";
 import {writeFileSync} from "fs";
-import contractConfig from "../config.json"  
+
+import contractConfig from "../v3-config.json"  
+
 dotenv.config();
 
 
-export const deployZeroExInstance = async(toNetwork) => {    
+export const deployArbInstance = async(toNetwork) => {    
 
     
     //Get Provider for the network where the contract is to be deployed to
@@ -25,13 +27,13 @@ export const deployZeroExInstance = async(toNetwork) => {
     let updateContractConfig = contractConfig["contracts"]  
 
     updateContractConfig[toNetwork] ? (
-      updateContractConfig[toNetwork]["zeroexorderbookinstance"] = {
+      updateContractConfig[toNetwork][supportedContracts.GenericPoolOrderBookFlashBorrowerInstance] = {
         "address" : cloneEventData.clone.toLowerCase(),
         "transaction" : contractTransaction.hash.toLowerCase()
        } 
     ) : ( 
       updateContractConfig[toNetwork] = {
-        "zeroexorderbookinstance" :{
+        [supportedContracts.GenericPoolOrderBookFlashBorrowerInstance]  :{
             "address" : cloneEventData.clone.toLowerCase(),
             "transaction" : contractTransaction.hash.toLowerCase()
          }
@@ -41,7 +43,7 @@ export const deployZeroExInstance = async(toNetwork) => {
     contractConfig["contracts"] = updateContractConfig
     let data = JSON.stringify(contractConfig,null,2)  
 
-    writeFileSync('./scripts-v2/config.json', data)  
+    writeFileSync('./scripts-v3/v3-config.json', data)  
 
   
 }

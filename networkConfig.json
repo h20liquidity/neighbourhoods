@@ -1,0 +1,224 @@
+[
+    {
+        "network": "polygon",
+        "chainId": 137,
+        "explorer": "https://polygonscan.com/",
+        "nativeToken": {
+            "name": "Matic Token",
+            "symbol": "MATIC",
+            "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "decimals": 18
+        },
+        "nativeWrappedToken": {
+            "symbol": "WMATIC",
+            "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "decimals": 18
+        },
+        "stableTokens": [
+            {
+                "symbol": "NHT",
+                "address": "0x84342e932797FC62814189f01F0Fb05F52519708",
+                "decimals": 18
+            },
+            {
+                "symbol": "USDT",
+                "address": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+                "decimals": 6
+            },
+            {
+                "symbol": "amUSDT",
+                "address": "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
+                "decimals": 6
+            },
+            {
+                "symbol": "USDC",
+                "address": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+                "decimals": 6
+            },
+            {
+                "symbol": "amUSDC",
+                "address": "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+                "decimals": 6
+            },
+            {
+                "symbol": "BUSD",
+                "address": "0x9C9e5fD8bbc25984B178FdCE6117Defa39d2db39",
+                "decimals": 18
+            },
+            {
+                "symbol": "BUSD",
+                "address": "0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7",
+                "decimals": 18
+            },
+            {
+                "symbol": "DAI",
+                "address": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+                "decimals": 18
+            },
+            {
+                "symbol": "amDAI",
+                "address": "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+                "decimals": 18
+            },
+            {
+                "symbol": "TUSD",
+                "address": "0x2e1ad108ff1d8c782fcbbb89aad783ac49586756",
+                "decimals": 18
+            },
+            {
+                "symbol": "GUSD",
+                "address": "0xc8a94a3d3d2dabc3c1caffffdca6a7543c3e3e65",
+                "decimals": 2
+            },
+            {
+                "symbol": "FRAX",
+                "address": "0x45c32fa6df82ead1e2ef74d17b76547eddfaff89",
+                "decimals": 18
+            },
+            {
+                "symbol": "MUSD",
+                "address": "0xe840b73e5287865eec17d250bfb1536704b43b21",
+                "decimals": 18
+            },
+            {
+                "symbol": "MAI",
+                "address": "0xa3fa99a148fa48d14ed51d610c367c61876997f1",
+                "decimals": 18
+            },
+            {
+                "symbol": "STAKE",
+                "address": "0xeb5c9e515629b725d3588a55e2a43964dcfde8ca",
+                "decimals": 18
+            },
+            {
+                "symbol": "USDD",
+                "address": "0xffa4d863c96e743a2e1513824ea006b8d0353c57",
+                "decimals": 18
+            }
+        ]
+    },
+    {
+        "network": "mumbai",
+        "chainId": 80001,
+        "explorer": "https://mumbai.polygonscan.com/",
+        "nativeToken": {
+            "symbol": "MATIC",
+            "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "decimals": 18
+        },
+        "nativeWrappedToken": {
+            "symbol": "WMATIC",
+            "address": "0x5B67676a984807a212b1c59eBFc9B3568a474F0a",
+            "decimals": 18
+        },
+        "stableTokens": [
+            {
+                "symbol": "NHT",
+                "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
+                "decimals": 18
+            },
+            {
+                "symbol": "USDT",
+                "address": "0x67696314fFD98ae763923C775173B6E8b24B7eFc",
+                "decimals": 18
+            }
+        ]
+    },
+    {
+        "network": "ethereum",
+        "chainId": 1,
+        "explorer": "https://etherscan.io/",
+        "nativeToken": {
+            "symbol": "ETH",
+            "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "decimals": 18
+        },
+        "nativeWrappedToken": {
+            "symbol": "WETH",
+            "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "decimals": 18
+        },
+        "stableTokens": [
+            {
+                "symbol": "USDT",
+                "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                "decimals": 6
+            } ,
+            {
+                "symbol": "USDC",
+                "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                "decimals": 6
+            },
+            {
+                "symbol": "BUSD",
+                "address": "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+                "decimals": 18
+            },
+            {
+                "symbol": "DAI",
+                "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                "decimals": 18
+            },
+            {
+                "symbol": "USDP",
+                "address": "0x8e870d67f660d95d5be530380d0ec0bd388289e1",
+                "decimals": 18
+            },
+            {
+                "symbol": "TUSD",
+                "address": "0x0000000000085d4780b73119b644ae5ecd22b376",
+                "decimals": 18
+            },
+            {
+                "symbol": "GUSD",
+                "address": "0x056fd409e1d7a124bd7017459dfea2f387b6d5cd",
+                "decimals": 2
+            },
+            {
+                "symbol": "FRAX",
+                "address": "0x853d955acef822db058eb8505911ed77F175b99e",
+                "decimals": 18
+            },
+            {
+                "symbol": "LUSD",
+                "address": "0x5f98805a4e8be255a32880fdec7f6728c6568ba0",
+                "decimals": 18
+            },
+            {
+                "symbol": "MUSD",
+                "address": "0xe2f2a5c287993345a840db3b0845fbc70f5935a5",
+                "decimals": 18
+            },
+            {
+                "symbol": "MAI",
+                "address": "0x8d6cebd76f18e1558d4db88138e2defb3909fad6",
+                "decimals": 18
+            },
+            {
+                "symbol": "STAKE",
+                "address": "0x0ae055097c6d159879521c384f1d2123d1f195e6",
+                "decimals": 18
+            },
+            {
+                "symbol": "ALUSD",
+                "address": "0xbc6da0fe9ad5f3b0d58160288917aa56653660e9",
+                "decimals": 18
+            },
+            {
+                "symbol": "FEI",
+                "address": "0x956f47f50a910163d8bf957cf5846d573e7f87ca",
+                "decimals": 18
+            },
+            {
+                "symbol": "USDD",
+                "address": "0x0c10bf8fcb7bf5412187a595ab97a3609160b5c6",
+                "decimals": 18
+            },
+            {
+                "symbol": "MIM",
+                "address": "0x99d8a9c45b2eca8864373a26d1459e3dff1e17f3",
+                "decimals": 18
+            }
+        ]
+    }
+]

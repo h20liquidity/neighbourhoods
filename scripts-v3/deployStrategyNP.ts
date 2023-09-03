@@ -4,74 +4,39 @@ import * as dotenv from "dotenv";
 import { deployPilotStrategyWithNP } from "./DeployStrategy/deployStrategy";
 import { BigNumber, ethers } from "ethers";  
 import { randomUint256 } from "../utils";
-// import orderDetails from "../DeployStrategy/orderDetails.json"
-
+import { supportedNetworks } from "./utils";
+const { Command } = require("commander");
 
 dotenv.config();
 
 
-async function main() {    
+async function main(argv){  
 
-  const root = path.resolve();
-  const args = argv.slice(2);   
+  const cmdOptions = new Command()
+    .requiredOption("-t --to <network-name>",`Target network to deploy order to. Any of [${supportedNetworks}]`)
+    .description([
+      "Deploy Strategy to target network"
+    ].join("\n"))
+    .parse(argv) 
+    .opts();   
 
-
-  if (
-    !args.length ||
-    args.includes("--help") ||
-    args.includes("-h") ||
-    args.includes("-H")
-  ) {
-    console.log(
-      `
-      Deploy a strategy.
-      options:
-
-        --to, -t <network name>
-          Name of the network to deploy the contract. Any of ["snowtrace",goerli","mumbai","sepolia","polygon"]. 
-      `
-    );
-  }else{ 
-
-    let toNetwork
-
-    //valid networks
-    const validNetworks = ["goerli","snowtrace","mumbai","sepolia","polygon"]
-   
-    if (
-      args.includes("--to") ||
-      args.includes("-t")
-    ) {
-      const _i =
-        args.indexOf("--to") > -1
-          ? args.indexOf("--to")
-          : args.indexOf("-t")
-      const _tmp = args.splice(_i,2);
-      if (_tmp.length != 2) throw new Error("expected network to deploy to");
-      if(validNetworks.indexOf(_tmp[1]) == -1 ) throw new Error(`Unsupported network : ${_tmp[1]}`);
-      toNetwork = _tmp[1]
-    }   
+  const toNetwork = cmdOptions.to 
   
-    if(!toNetwork) throw Error("Target Network not provided. Must provide --to <network name> argument") 
+  console.log(`\n>>>> Deploying strategy to ${toNetwork.toUpperCase()}...`) 
+  // Generating random vaultId 
+  // Generating random vaultId 
+  const vaultId = randomUint256().toString()
 
-
-    // Generating random vaultId 
-    const vaultId = randomUint256().toString()
-
-     await deployPilotStrategyWithNP(toNetwork,vaultId)
-
-  }
-
-  
-
+  await deployPilotStrategyWithNP(toNetwork,vaultId)
 
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-main().catch((error) => {
+main(process.argv).catch((error) => {
   console.error(error);
   process.exitCode = 1;
 }); 
+
 
 

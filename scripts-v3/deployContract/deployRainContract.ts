@@ -1,16 +1,15 @@
 import * as dotenv from "dotenv";
-import { deployContractToNetwork, getCommons, getProvider, getTransactionData } from "../utils";
+import { deployContractToNetwork, getCommons, getProvider, getTransactionData, getTransactionDataForNetwork } from "../utils";
 dotenv.config();
-import contractConfig from "../np-config.json" 
+import contractConfig from "../v3-config.json"  
 import {writeFileSync} from "fs";
 import { delay, verify } from "../verify";
 
 
 
-export const  deployInterpreterNP = async (fromNetwork:string, toNetwork:string) => {    
+export const deployRainContract = async(fromNetwork: string, toNetwork:string,contractName:string) => {    
 
-   
-    const txHash = contractConfig.contracts[fromNetwork].interpreter.transaction
+    const txHash  = contractConfig.contracts[fromNetwork][contractName].transaction
 
     //Get Provider for testnet from where the data is to be fetched 
     const mumbaiProvider = getProvider(fromNetwork)  
@@ -19,7 +18,10 @@ export const  deployInterpreterNP = async (fromNetwork:string, toNetwork:string)
     const deployProvider = getProvider(toNetwork) 
 
     // Get transaction data
-    const txData = await getTransactionData(mumbaiProvider, txHash) 
+    let txData = await getTransactionData(mumbaiProvider, txHash) 
+
+    //replace DISpair instances
+    txData = getTransactionDataForNetwork(txData,fromNetwork, toNetwork) 
 
     // Get Chain details
     const common = getCommons(toNetwork) 
@@ -30,30 +32,31 @@ export const  deployInterpreterNP = async (fromNetwork:string, toNetwork:string)
     //Wait for confirmation and get receipt
     const transactionReceipt = await deployTransaction.wait()  
 
-    console.log(`Interpreter deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)  
+    console.log(`${contractName} deployed to ${toNetwork} at : ${transactionReceipt.contractAddress}`)  
 
 
-    let updateContractConfig = contractConfig["contracts"]
-   
+    let updateContractConfig = contractConfig["contracts"] 
+
     updateContractConfig[toNetwork] ? (
-      updateContractConfig[toNetwork]["interpreter"] = {
+      updateContractConfig[toNetwork][contractName] = {
         "address" : transactionReceipt.contractAddress.toLowerCase(),
         "transaction" : transactionReceipt.transactionHash.toLowerCase()
        } 
     ) : ( 
        updateContractConfig[toNetwork] = {
-        "interpreter" :{
+        [contractName] :{
             "address" : transactionReceipt.contractAddress.toLowerCase(),
             "transaction" : transactionReceipt.transactionHash.toLowerCase()
          }
-      }       
-    )
+      }    
+    )   
+
     contractConfig["contracts"] = updateContractConfig
     let data = JSON.stringify(contractConfig,null,2)  
 
-    writeFileSync('./scripts-np/np-config.json', data)  
+    writeFileSync('./scripts-v3/v3-config.json', data) 
 
-    
+
 
     if(toNetwork != 'hardhat'){ 
       console.log("Submitting contract for verification...")
@@ -67,8 +70,8 @@ export const  deployInterpreterNP = async (fromNetwork:string, toNetwork:string)
 
   
 
+  
+
 
 }
-
-
 

@@ -9,17 +9,17 @@ npm install
 - Create a .env file at the project root and add the following to the file 
 ``` 
 # Unprefixed private Key of the account to deploy from. 
-DEPLOYMENT_KEY=  
+DEPLOYMENT_KEY= 
 
-# Alchmey keys for supported networks.
+# Alchmey keys for supported networks
 ALCHEMY_KEY_MUMBAI=
 ALCHEMY_KEY_POLYGON=
-ALCHEMY_KEY_SEPOLIA= 
+ALCHEMY_KEY_SEPOLIA=
+ALCHEMY_KEY_ETHEREUM= 
 
 # Blockscanner api keys for the supported networks.
 POLYGONSCAN_API_KEY=
 ETHERSCAN_API_KEY=
-SNOWTRACE_KEY= 
 ```
 
 Once you have ennvironment setup, follow the steps : 
