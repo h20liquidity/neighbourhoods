@@ -32,16 +32,16 @@ address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
 address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
 IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT =
-    IOrderBookV3ArbOrderTaker(0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641);
+    IOrderBookV3ArbOrderTaker(0xD79F0D1AdD1CCd65CCeb5Ffd1F1735Afb97E54f4);
 
 address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
 
 RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
-    RainterpreterExpressionDeployerNP(0x595b5f7FbfA23A4CC5Bd3d2b66B903B1df28199F);
-address constant POLYGON_INTERPRETER = 0x1536dcd0A05Ec1ED40053f3f21A6bbF69528d00A;
-address constant POLYGON_STORE = 0x9D082FC1B0B34C3f41Bd682476E285C38C9CbF45;
-IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x72331A00D8e93148fD2Ce9eF0eFa1fedECFf2f6B);
+    RainterpreterExpressionDeployerNP(0x3C996F522fCC4FE7E8a5774341abc402e0702Bc3);
+address constant POLYGON_INTERPRETER = 0x556Ed978DF843bd26d0C41Da30857678b4cc7300;
+address constant POLYGON_STORE = 0xfA1F62FD2cd39393fA46E0A294B10F87bEa1B83E;
+IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x63Ed223484F5EECAac3b9E15728cc308742D6BEa);
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
 
@@ -64,7 +64,7 @@ bytes constant RAINSTRING_SELL_NHT =
     // String version of usdt token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // String version of approved counterparty.
-    "approved-counterparty: 0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641,"
+    "approved-counterparty: 0xD79F0D1AdD1CCd65CCeb5Ffd1F1735Afb97E54f4,"
     // actual counterparty is from context.
     "actual-counterparty: context<1 2>(),"
     // Check that
@@ -263,7 +263,7 @@ bytes constant RAINSTRING_BUY_NHT =
     // String version of usdt token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // String version of approved counterparty.
-    "approved-counterparty: 0x21d7e0fFEb8b8d288D9922d870ab22127fc0f641,"
+    "approved-counterparty: 0xD79F0D1AdD1CCd65CCeb5Ffd1F1735Afb97E54f4,"
     // actual counterparty is from context
     "actual-counterparty: context<1 2>(),"
     // Check that

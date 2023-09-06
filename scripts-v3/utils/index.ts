@@ -331,7 +331,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   
   const abiEncodedRouter = ethers.utils.defaultAbiCoder.encode(
     ["address"],
-    ["0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"] // Sushi Router Address
+    ["0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6"] // Route Processor
   ) 
 
   const borrowerConfig = {

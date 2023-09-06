@@ -45,9 +45,9 @@ describe("Order Ratio", async function () {
     await tokenA.initialize();
     await tokenB.initialize(); 
 
-    orderBook = await getOrderBook(config.contracts[testNetwork].orderbook.address) 
+    orderBook = await getOrderBook(config.contracts[testNetwork].Orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.contracts[testNetwork].expressionDeployer.address) 
+    expressionDeployer = await getExpressionDelopyer(config.contracts[testNetwork].RainterpreterExpressionDeployer.address) 
 
 
   });

@@ -1,1 +1,45 @@
-export const RAINSTRING_BUY_NHT = "polygon-sushi-v2-factory: 0xc35DADB65012eC5796536bD9864eD8773aBc74C4,nht-token-address: 0x84342e932797FC62814189f01F0Fb05F52519708,usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,approved-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036,actual-counterparty: context<1 2>(),:ensure<0>( equal-to(approved-counterparty actual-counterparty) equal-to(context<3 0>() nht-token-address) equal-to(context<4 0>() usdt-token-address)),order-hash: context<1 0>(),order-init-time: 1692775491,usdt-per-second: 13889,total-time: int-sub(block-timestamp() order-init-time),max-usdt-amount: int-mul(total-time usdt-per-second),current-usdt-amount-key: hash(order-hash 1),current-usdt-amount: get(current-usdt-amount-key),target-usdt-amount: int-sub(max-usdt-amount current-usdt-amount),last-price-timestamp max-nht-amount: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),:ensure<1>(less-than(last-price-timestamp block-timestamp())),actual-nht-amount: decimal18-mul(max-nht-amount 99e16),order-output-max: decimal18-scale18<6>(target-usdt-amount),io-ratio: decimal18-div(actual-nht-amount order-output-max);usdt-diff: context<4 4>(),order-hash: context<1 0>(),current-usdt-amount-key: hash(order-hash 1),:set(current-usdt-amount-key int-add(get(current-usdt-amount-key) usdt-diff)),:ensure(greater-than(usdt-diff 50e6));"
+export  const RAINSTRING_BUY_NHT =
+// String version of factory address.
+    "polygon-sushi-v2-factory: 0xc35DADB65012eC5796536bD9864eD8773aBc74C4,"+
+    // String version of nht token address.
+    "nht-token-address: 0x84342e932797FC62814189f01F0Fb05F52519708,"+
+    // String version of usdt token address.
+    "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"+
+    // String version of approved counterparty.
+    "approved-counterparty: 0xD79F0D1AdD1CCd65CCeb5Ffd1F1735Afb97E54f4,"+
+    // actual counterparty is from context
+    "actual-counterparty: context<1 2>(),"+
+    // Check that
+    ":ensure<0>("+
+    // - counterparty is approved.
+    " equal-to(approved-counterparty actual-counterparty)"+
+    // - nht token address is the token in to ob.
+    " equal-to(context<3 0>() nht-token-address)"+
+    // - usdt token address is the token out from ob.
+    " equal-to(context<4 0>() usdt-token-address)"+
+    //
+    "),"+
+    // Order hash.
+    "order-hash: context<1 0>(),"+
+    // Try to buy $50 worth of nht.
+    "target-usdt-amount: 50e6,"+
+    // Ensure a 1 hour cooldown.
+    "last-time-key: hash(order-hash 1),"+
+    // Get the last time.
+    "last-time: get(last-time-key),"+
+    // Ensure it is more than 3600 seconds ago.
+    ":ensure<1>(less-than(int-add(last-time 3600) block-timestamp())),"+
+    // Set the new cooldown to start now.
+    ":set(last-time-key block-timestamp()),"+
+    // Token out for uni is in for ob, and vice versa.
+    "last-price-timestamp max-nht-amount: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"+
+    // Don't allow the price to change this block before this trade.
+    ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"+
+    "order-output-max: decimal18-scale18<6>(target-usdt-amount),"+
+    "io-ratio: decimal18-div(max-nht-amount order-output-max)"+
+    //
+    ";"+
+    // Ensure that we sold at least $50 worth of usdt.
+    ":ensure<3>(greater-than-or-equal-to(context<4 4>() 50e6))"+
+    // ;
+    ";";

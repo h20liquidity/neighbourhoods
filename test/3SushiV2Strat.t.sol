@@ -11,7 +11,7 @@ uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 46904416;
+uint256 constant FORK_BLOCK_NUMBER = 47218349;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
@@ -209,8 +209,10 @@ contract Test3SushiV2Strat is OpTest {
 
         Order memory sellOrder = placeSellOrder();
         Order memory buyOrder = placeBuyOrder();
-        (buyOrder);
-
+        (buyOrder); 
+        uint start = block.timestamp;
+        uint256 duration = 3600;
+        vm.warp(start + duration);
         takeOrder(sellOrder);
     }
 
@@ -348,22 +350,22 @@ contract Test3SushiV2Strat is OpTest {
     function giveTestAccountsTokens() internal {
         {
             vm.startPrank(POLYGON_NHT_HOLDER);
-            // 100 mill nht to each of order owner and counterparty
-            uint256 amountNht = 100000000e18;
+            //More than 100 USDT worth NHT.
+            uint256 amountNht = 200000e18;
             POLYGON_NHT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountNht);
             assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountNht);
-            // POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
-            // assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
+            POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
+            assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
             vm.stopPrank();
         }
         {
             vm.startPrank(POLYGON_USDT_HOLDER);
-            // one million tether to each of owner order and counterparty.
-            uint256 amountUsdt = 1000000e6;
+            // one hundred to each of owner order and counterparty. 
+            uint256 amountUsdt = 100e6; //197382173455965722867290
             POLYGON_USDT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountUsdt);
             assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountUsdt);
-            // POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
-            // assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
+            POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
+            assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
             vm.stopPrank();
         }
     }
@@ -449,14 +451,17 @@ contract Test3SushiV2Strat is OpTest {
         //     address to,
         //     uint deadline
         // ) external returns (uint[] memory amounts);
-        // bytes memory encodedSwap = abi.encodeCall(UniswapV2Router02.swapExactTokensForTokens, ());
+        // bytes memory encodedSwap = abi.encodeCall(UniswapV2Router02.swapExactTokensForTokens, ()); 
+
+        // This data was obtain from the bot logs for NHT/USDT.  
+        bytes memory data = hex"0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004202c2132D05D31c914a87C6611C10748AEb04B58e8F01ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce007dd413076234dB1eEf111C9B455125DCf581AC2C000000000000000000000000000000000000000000000000000000000000";
 
         TakeOrdersConfigV2 memory takeOrdersConfig = TakeOrdersConfigV2(
             0,
             type(uint256).max,
             type(uint256).max,
             innerConfigs,
-            abi.encode(POLYGON_NHT_USDT_PAIR_ADDRESS, POLYGON_NHT_USDT_PAIR_ADDRESS, "")
+            data
         );
         POLYGON_ARB_CONTRACT.arb(takeOrdersConfig, 0);
         // IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
