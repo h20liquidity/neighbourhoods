@@ -10,8 +10,8 @@ uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
 uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
-string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 47218349;
+string constant FORK_RPC = "https://polygon-mainnet.g.alchemy.com/v2/PuZDHvznTt9uWJEivHGWRK_4EPGrjQcf";
+uint256 constant FORK_BLOCK_NUMBER = 47222499 ;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
@@ -210,10 +210,12 @@ contract Test3SushiV2Strat is OpTest {
         Order memory sellOrder = placeSellOrder();
         Order memory buyOrder = placeBuyOrder();
         (buyOrder); 
-        uint start = block.timestamp;
-        uint256 duration = 3600;
-        vm.warp(start + duration);
-        takeOrder(sellOrder);
+
+        // This is the bytes encoded route data that is built off chain for particular token pair.
+        // Will change depending on the token traded.
+        bytes memory route = hex"000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000420284342e932797fc62814189f01f0fb05f5251970801ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce01d79f0d1add1ccd65cceb5ffd1f1735afb97e54f4000000000000000000000000000000000000000000000000000000000000"; 
+
+        takeOrder(sellOrder,route);
     }
 
     function checkBuyCalculate(
@@ -344,28 +346,32 @@ contract Test3SushiV2Strat is OpTest {
         (sellOrder);
         Order memory buyOrder = placeBuyOrder();
 
-        takeOrder(buyOrder);
+        // This is the bytes encoded route data that is built off chain for particular token pair.
+        // Will change depending on the token traded.
+        bytes memory route = hex"0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004202c2132D05D31c914a87C6611C10748AEb04B58e8F01ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce00d79f0d1add1ccd65cceb5ffd1f1735afb97e54f4000000000000000000000000000000000000000000000000000000000000"; 
+
+        takeOrder(buyOrder,route);
     }
 
     function giveTestAccountsTokens() internal {
         {
             vm.startPrank(POLYGON_NHT_HOLDER);
-            //More than 100 USDT worth NHT.
-            uint256 amountNht = 200000e18;
+            //100 mil NHT deposit.
+            uint256 amountNht = 100000000e18;
             POLYGON_NHT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountNht);
             assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountNht);
-            POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
-            assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
+            // POLYGON_NHT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountNht);
+            // assertEq(POLYGON_NHT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountNht);
             vm.stopPrank();
         }
         {
             vm.startPrank(POLYGON_USDT_HOLDER);
-            // one hundred to each of owner order and counterparty. 
-            uint256 amountUsdt = 100e6; //197382173455965722867290
+            // one mil usdt to each of owner order and counterparty. 
+            uint256 amountUsdt = 1000000e6; 
             POLYGON_USDT_TOKEN_ADDRESS.transfer(TEST_ORDER_OWNER, amountUsdt);
             assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER), amountUsdt);
-            POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
-            assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
+            // POLYGON_USDT_TOKEN_ADDRESS.transfer(APPROVED_COUNTERPARTY, amountUsdt);
+            // assertEq(POLYGON_USDT_TOKEN_ADDRESS.balanceOf(APPROVED_COUNTERPARTY), amountUsdt);
             vm.stopPrank();
         }
     }
@@ -374,7 +380,7 @@ contract Test3SushiV2Strat is OpTest {
         vm.startPrank(TEST_ORDER_OWNER);
 
         uint256 amountNht = POLYGON_NHT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER);
-        POLYGON_NHT_TOKEN_ADDRESS.approve(address(POLYGON_ORDERBOOK), amountNht);
+        POLYGON_NHT_TOKEN_ADDRESS.approve(address(POLYGON_ORDERBOOK), amountNht); 
         POLYGON_ORDERBOOK.deposit(address(POLYGON_NHT_TOKEN_ADDRESS), VAULT_ID, amountNht);
 
         uint256 amountUsdt = POLYGON_USDT_TOKEN_ADDRESS.balanceOf(TEST_ORDER_OWNER);
@@ -432,7 +438,7 @@ contract Test3SushiV2Strat is OpTest {
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
-    function takeOrder(Order memory order) internal {
+    function takeOrder(Order memory order, bytes memory route) internal {
         assertTrue(POLYGON_ORDERBOOK.orderExists(keccak256(abi.encode(order))), "order exists");
         vm.startPrank(APPROVED_EOA);
         uint256 inputIOIndex = 0;
@@ -453,15 +459,12 @@ contract Test3SushiV2Strat is OpTest {
         // ) external returns (uint[] memory amounts);
         // bytes memory encodedSwap = abi.encodeCall(UniswapV2Router02.swapExactTokensForTokens, ()); 
 
-        // This data was obtain from the bot logs for NHT/USDT.  
-        bytes memory data = hex"00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000004202c2132D05D31c914a87C6611C10748AEb04B58e8F01ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce00d79f0d1add1ccd65cceb5ffd1f1735afb97e54f4000000000000000000000000000000000000000000000000000000000000";
-
         TakeOrdersConfigV2 memory takeOrdersConfig = TakeOrdersConfigV2(
             0,
             type(uint256).max,
             type(uint256).max,
             innerConfigs,
-            data
+            route
         );
         POLYGON_ARB_CONTRACT.arb(takeOrdersConfig, 0);
         // IERC20(outputToken).approve(address(POLYGON_ORDERBOOK), type(uint256).max);
