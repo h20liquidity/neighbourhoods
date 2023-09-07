@@ -27,13 +27,13 @@ export const deployArbInstance = async(toNetwork) => {
     let updateContractConfig = contractConfig["contracts"]  
 
     updateContractConfig[toNetwork] ? (
-      updateContractConfig[toNetwork][supportedContracts.GenericPoolOrderBookFlashBorrowerInstance] = {
+      updateContractConfig[toNetwork][supportedContracts.RouteProcessorOrderBookV3ArbOrderTakerInstance] = {
         "address" : cloneEventData.clone.toLowerCase(),
         "transaction" : contractTransaction.hash.toLowerCase()
        } 
     ) : ( 
       updateContractConfig[toNetwork] = {
-        [supportedContracts.GenericPoolOrderBookFlashBorrowerInstance]  :{
+        [supportedContracts.RouteProcessorOrderBookV3ArbOrderTakerInstance]  :{
             "address" : cloneEventData.clone.toLowerCase(),
             "transaction" : contractTransaction.hash.toLowerCase()
          }

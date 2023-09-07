@@ -3,21 +3,14 @@ import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
 import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
 import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
-import {
-  allChains,
-  configureChains,
-  createClient,
-  fetchFeeData,
-} from "@sonicswap/wagmi-core";
-import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 import contractConfig from "../np-config.json"
 
 import axios from "axios";
 import { hexlify } from "ethers/lib/utils";
-import {ARB_RAINLANG_STRING} from "../../src/3-sushi-v2-arb" ;
 import Parser from "../abis/IParserV1.json" 
 import Cloneable from "../abis/ICloneableV2.json" 
+import { getArbRainlangString } from "../ContractDeploy/arb";
 
 /**
  * Supported Networks to x-deploy contracts.
@@ -323,7 +316,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   const cloneFactoryAddress = contractConfig.contracts[network].CloneFactory.address  
   const arbImplementationAddress = contractConfig.contracts[network].GenericPoolOrderBookFlashBorrowerImplementation.address 
 
-  const arbString = ARB_RAINLANG_STRING ;
+  const arbString = getArbRainlangString() ;
 
   const parser = new ethers.Contract(expressionDeployer,Parser.abi,provider) 
 

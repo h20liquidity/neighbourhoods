@@ -6,11 +6,10 @@ import orderBookDetails from "../abis/Orderbook.json"
 import abi from 'erc-20-abi' 
 import contractConfig from "../np-config.json"
 import { encodeMeta, estimateFeeData, getProvider } from "./index";
-import {RAINSTRING_BUY_NHT} from "../../src/3-sushi-v2-buy-strat";
-import {RAINSTRING_SELL_NHT} from "../../src/3-sushi-v2-sell-strat";
 
 import Parser from "../abis/IParserV1.json" 
 import networkConfig from "../../networkConfig.json"
+import { getRainBuyNhtString, getRainSellNhtString } from "../DeployStrategy/strat";
 
 
 export const deploySushiSellStrategy = async(network:string,priKey: string, common: Common,vaultId) => { 
@@ -53,7 +52,7 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
 
   const parser = new ethers.Contract(parserAddress,Parser.abi,provider) 
 
-  const strategyString = RAINSTRING_SELL_NHT;
+  const strategyString = getRainSellNhtString(network);
 
   let [bytecode,constants] = await parser.parse(
     ethers.utils.toUtf8Bytes(
@@ -168,7 +167,7 @@ export const deploySushiBuyStrategy = async(network:string,priKey: string, commo
 
   const parser = new ethers.Contract(parserAddress,Parser.abi,provider) 
 
-  const strategyString = RAINSTRING_BUY_NHT
+  const strategyString = getRainBuyNhtString(network);
 
   let [bytecode,constants] = await parser.parse(
     ethers.utils.toUtf8Bytes(

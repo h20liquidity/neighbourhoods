@@ -37,7 +37,7 @@ async function main(argv){
 
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.CloneFactory)
 
-  await deployRainContract(fromNetwork,toNetwork,supportedContracts.GenericPoolOrderBookFlashBorrowerImplementation) 
+  await deployRainContract(fromNetwork,toNetwork,supportedContracts.RouteProcessorOrderBookV3ArbOrderTakerImplementation) 
 
   await deployArbInstance(toNetwork) 
 

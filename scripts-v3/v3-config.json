@@ -17,7 +17,7 @@
         "address": "0xf6d2ba75dc37d55626fe27b488c39cb02a56641b",
         "transaction": "0x3e96d4720ae234aad2c3ee792d7367a80d431cf7a563790ea147746fc4e58137"
       },
-      "GenericPoolOrderBookFlashBorrowerImplementation": {
+      "RouteProcessorOrderBookV3ArbOrderTakerImplementation": {
         "address": "0x4b19eabba13958285f21641b12f853efbd23f281",
         "transaction": "0xd49621156c3e68bb2f7a680d0854d3187b76b5cd4afb3c7a82274b432cbc87ce"
       },
@@ -25,9 +25,12 @@
         "address": "0x31e8c4889d51aa0be58a65626497b57cab72d926",
         "transaction": "0x3603500bc717db050e24f50c4476c84547275dcefffcccc9108c1299ca02cea7"
       },
-      "GenericPoolOrderBookFlashBorrowerInstance": {
-        "address": "0xea05cb8a26ef191a8acf98edaa5773dff400b686",
-        "transaction": "0x73636069e9d6f6dea914df39663054299e85a398c0e6d7a4b93ec730f0632832"
+      "RouteProcessorOrderBookV3ArbOrderTakerInstance": {
+        "address": "0xd8fd11a9fb372ce3c6be7a5a107a9fad2ecdb94a",
+        "transaction": "0x550d561b11b4ffd4e4d2117d0d9da086e32662e1cfc4f9d9db8a5855818adbf9"
+      },
+      "routeProcessor3Address": {
+        "address": "0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6"
       }
     },
     "polygon": {
@@ -47,7 +50,7 @@
         "address": "0x63ed223484f5eecaac3b9e15728cc308742d6bea",
         "transaction": "0xfad83309daea1b905b932b59b547e48b75c15fa33772c868839d0c591bcd3bbb"
       },
-      "GenericPoolOrderBookFlashBorrowerImplementation": {
+      "RouteProcessorOrderBookV3ArbOrderTakerImplementation": {
         "address": "0x39341028c78e9de9f1829af4c9a3a27324d9dbc0",
         "transaction": "0xeafca4f9bbd93746f39022a1b3d96f08d88f240144984b6785c7c53dc7ec98d8"
       },
@@ -55,9 +58,17 @@
         "address": "0x2b29c77cd97ca1b37b73275fd75db72c84f6dfd6",
         "transaction": "0x516a525a1256731ac0f6ad674e4e220274d61544aedf37f45eb51ccf5b253b1b"
       },
-      "GenericPoolOrderBookFlashBorrowerInstance": {
+      "RouteProcessorOrderBookV3ArbOrderTakerInstance": {
         "address": "0xd79f0d1add1ccd65cceb5ffd1f1735afb97e54f4",
         "transaction": "0xa5c3e3927f4b307a847e47ad1c388f52b190d537123c4c9d636f843b8215e52b"
+      },
+      "routeProcessor3Address": {
+        "address": "0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6"
+      }
+    },
+    "ethereum": {
+      "routeProcessor3Address": {
+        "address": "0x827179dD56d07A7eeA32e3873493835da2866976"
       }
     }
   },

@@ -8,9 +8,9 @@ import contractConfig from "../v3-config.json"
 
 import axios from "axios";
 import { hexlify } from "ethers/lib/utils";
-import {ARB_RAINLANG_STRING} from "../../src/3-sushi-v2-arb" ;
 import Parser from "../abis/IParserV1.json" 
 import Cloneable from "../abis/ICloneableV2.json" 
+import {  getArbRainlangString } from "../deployContract/arb";
 
 /**
  * Supported Networks to x-deploy contracts.
@@ -26,8 +26,8 @@ export const supportedContracts = Object.freeze({
   RainterpreterExpressionDeployer : "RainterpreterExpressionDeployer",
   Orderbook : "Orderbook",
   CloneFactory : "CloneFactory",
-  GenericPoolOrderBookFlashBorrowerImplementation : "GenericPoolOrderBookFlashBorrowerImplementation",
-  GenericPoolOrderBookFlashBorrowerInstance : "GenericPoolOrderBookFlashBorrowerInstance"
+  RouteProcessorOrderBookV3ArbOrderTakerImplementation : "RouteProcessorOrderBookV3ArbOrderTakerImplementation",
+  RouteProcessorOrderBookV3ArbOrderTakerInstance : "RouteProcessorOrderBookV3ArbOrderTakerInstance"
 }) 
  
 
@@ -111,31 +111,6 @@ export const getTransactionData = async (provider: any, address:string): Promise
 }   
 
 /**
- *Replace all DISpair instances 
- */
- export const getTransactionDataForZeroEx = (txData:string,fromNetwork:string,toNetwork:string) => { 
-
-  const fromProvider = getProvider(fromNetwork)
-  const toProvider = getProvider(toNetwork)  
-
-  const { exchangeProxy: fromNetworkProxy } = getContractAddressesForChainOrThrow(fromProvider._network.chainId);
-  const { exchangeProxy: toNetworkProxy } = getContractAddressesForChainOrThrow(toProvider._network.chainId);  
-
-  
-  txData = txData.toLocaleLowerCase()
-  const fromContractConfig = contractConfig.contracts[fromNetwork]
-  const toContractConfig = contractConfig.contracts[toNetwork] 
-
-  if(txData.includes(fromContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase())){ 
-    txData = txData.replace(fromContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase(), toContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase())
-  }
-  if(txData.includes(fromNetworkProxy.split('x')[1].toLowerCase())){
-    txData = txData.replace(fromNetworkProxy.split('x')[1].toLowerCase(), toNetworkProxy.split('x')[1].toLowerCase())
-  }
-  return txData 
-}   
-
-/**
  * @returns a random 32 byte number in hexstring format
  */
 export function randomUint256(): string {
@@ -151,9 +126,6 @@ export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,t
   txData = txData.toLocaleLowerCase()
   const fromNetworkConfig = contractConfig.contracts[fromNetwork]
   const toNetworkConfig = contractConfig.contracts[toNetwork]  
-
-  // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
-  // console.log("contract : " , contract )
 
   if(txData.includes(fromNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase())){ 
     txData = txData.replace(fromNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase())
@@ -314,11 +286,13 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
   const nonce = await provider.getTransactionCount(signer.address)    
 
-  const arbString = ARB_RAINLANG_STRING ; 
+  const arbString = getArbRainlangString() ; 
   const expressionDeployerAddress = contractConfig.contracts[network].RainterpreterExpressionDeployer
   const orderBookAddress = contractConfig.contracts[network].Orderbook.address 
   const cloneFactoryAddress = contractConfig.contracts[network].CloneFactory.address
-  const arbImplementationAddress = contractConfig.contracts[network].GenericPoolOrderBookFlashBorrowerImplementation.address
+  const arbImplementationAddress = contractConfig.contracts[network].RouteProcessorOrderBookV3ArbOrderTakerImplementation.address
+  const routeProcessor = contractConfig.contracts[network].routeProcessor3Address.address
+
 
 
   const parser = new ethers.Contract(expressionDeployerAddress.address,Parser.abi,provider) 
@@ -331,7 +305,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   
   const abiEncodedRouter = ethers.utils.defaultAbiCoder.encode(
     ["address"],
-    ["0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6"] // Route Processor
+    [routeProcessor] // Route Processor Address 
   ) 
 
   const borrowerConfig = {
