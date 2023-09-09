@@ -22,7 +22,6 @@ async function main(argv){
   
   console.log(`\n>>>> Deploying strategy to ${toNetwork.toUpperCase()}...`) 
   // Generating random vaultId 
-  // Generating random vaultId 
   const vaultId = randomUint256().toString()
 
   await deployPilotStrategyWithNP(toNetwork,vaultId)

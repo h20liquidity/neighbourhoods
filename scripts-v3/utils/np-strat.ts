@@ -20,7 +20,7 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
   const provider = getProvider(network)    
 
   const validInputs = networkConfig
-    .filter(n => n.chainId === provider._network.chainId)[0].stableTokens
+    .filter(n => n.chainId === provider._network.chainId)[0].erc20Tokens
     .filter(t => t.symbol == 'USDT')  
     .map(t => {
       return{
@@ -31,7 +31,7 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
     }) 
     
     const validOutputs = networkConfig
-    .filter(n => n.chainId === provider._network.chainId)[0].stableTokens
+    .filter(n => n.chainId === provider._network.chainId)[0].erc20Tokens
     .filter(t => t.symbol == 'NHT')  
     .map(t => {
       return{
@@ -133,7 +133,7 @@ export const deploySushiBuyStrategy = async(network:string,priKey: string, commo
   const provider = getProvider(network)   
 
   const validInputs = networkConfig
-    .filter(n => n.chainId === provider._network.chainId)[0].stableTokens
+    .filter(n => n.chainId === provider._network.chainId)[0].erc20Tokens
     .filter(t => t.symbol == 'NHT')  
     .map(t => {
       return{
@@ -144,7 +144,7 @@ export const deploySushiBuyStrategy = async(network:string,priKey: string, commo
     }) 
     
     const validOutputs = networkConfig
-    .filter(n => n.chainId === provider._network.chainId)[0].stableTokens
+    .filter(n => n.chainId === provider._network.chainId)[0].erc20Tokens
     .filter(t => t.symbol == 'USDT')  
     .map(t => {
       return{

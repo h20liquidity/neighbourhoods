@@ -14,7 +14,7 @@
             "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
             "decimals": 18
         },
-        "stableTokens": [
+        "erc20Tokens": [
             {
                 "symbol": "NHT",
                 "address": "0x84342e932797fc62814189f01f0fb05f52519708",
@@ -111,7 +111,7 @@
             "address": "0x5B67676a984807a212b1c59eBFc9B3568a474F0a",
             "decimals": 18
         },
-        "stableTokens": [
+        "erc20Tokens": [
             {
                 "symbol": "NHT",
                 "address": "0x05cE0B29D94Cb8b156638D06336228b935212652",
@@ -138,7 +138,7 @@
             "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
             "decimals": 18
         },
-        "stableTokens": [
+        "erc20Tokens": [
             {
                 "symbol": "USDT",
                 "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",

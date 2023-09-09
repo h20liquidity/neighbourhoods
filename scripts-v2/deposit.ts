@@ -27,7 +27,7 @@ async function main(argv){
   const vaultId = cmdOptions.vault 
   const amount = cmdOptions.amount 
 
-  const tokenDeatils = networkConfig.filter(n => n.network === toNetwork)[0].stableTokens
+  const tokenDeatils = networkConfig.filter(n => n.network === toNetwork)[0].erc20Tokens
     .filter(t => t.symbol === token)[0]
   
   if(!tokenDeatils){ 

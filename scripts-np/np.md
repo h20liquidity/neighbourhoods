@@ -10,6 +10,8 @@ npm install
 ``` 
 # Unprefixed private Key of the account to deploy from. 
 DEPLOYMENT_KEY= 
+# Public key of the bot wallet.
+BOT_ADDRESS= 
 
 # Alchmey keys for supported networks
 ALCHEMY_KEY_MUMBAI=
@@ -17,9 +19,11 @@ ALCHEMY_KEY_POLYGON=
 ALCHEMY_KEY_SEPOLIA=
 ALCHEMY_KEY_ETHEREUM= 
 
+
 # Blockscanner api keys for the supported networks.
 POLYGONSCAN_API_KEY=
 ETHERSCAN_API_KEY=
+
 ```
 
 Once you have ennvironment setup, follow the steps : 
@@ -27,16 +31,6 @@ Once you have ennvironment setup, follow the steps :
 #### Deploying Contracts (with Native Parser).
 
 The script clones the contract deployed on one network to another. 
-
-Before we deploy the contracts make sure that correct counterparty address is set in the `src/3-sushi-v2-arb.ts` under the `allowed-counterparty` 
-- The `allowed-counterparty` will be the public key of the bot wallet . 
-```sh
-// Refuse any counterparties other than named . This will be the public key of the bot wallet.
-"allowed-counterparty: 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88,"+
-":ensure(equal-to(allowed-counterparty context<0 0>()))"+
-";"
-```
-
 To deploy contracts **run** the following command in shell from the **root of the project**.
 
 ```sh
@@ -51,39 +45,7 @@ Wait for all the contracts to be deployed and verified.
 
 #### Deploying Strategy.
 
-Before deploying the strategy, double check that the Orderbook and ZeroEx contracts are deployed on the target network (Polygon mainnet), and the corresponding addresses are updated in `scripts-np/np-config.json`.
-
-Make sure that the correct **approved-counterparty** addresses are set in `src/3-sushi-v2-sell-strat.ts` and `src/3-sushi-v2-buy-strat.ts`. 
-- The `approved-counterparty` will be the `zeroexorderbookinstance` address from the `scripts-np/np-config.json` under `polygon` network
-- Also make sure that `order-init-time` represents current unix timestamp. You can get it from https://www.epochconverter.com/
-
-For Eg : 
-```sh
-export const RAINSTRING_BUY_NHT = 
-.
-.
-// String version of approved counterparty.
-"approved-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036," +
-.
-// Figure out when the order started.
-"order-init-time: 1692775491," +
-.
-.
-```
-and 
-```sh
-export const RAINSTRING_SELL_NHT = 
-.
-.
-// String version of approved counterparty.
-"approved-counterparty: 0x1F8Cd7FB14b6930665EaaA5F5C71b9e7396df036," +
-.
-// Figure out when the order started.
-"order-init-time: 1692775491,"+
-.
-.
-```
-Also make sure that all the necessary ERC20 token details on the target network required for the strategy are correct in `scripts-np/np-config.json` itself
+Before deploying the strategy, double check that the Orderbook and GenericPoolOrderBookFlashBorrowerInstance contracts are deployed on the target network (Polygon mainnet), and the corresponding addresses are updated in `scripts-np/np-config.json`.
 
 To deploy strategy **run** the following command in your shell from the **root of the project** :
 

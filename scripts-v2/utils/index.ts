@@ -12,6 +12,7 @@ import axios from "axios";
 import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
 import { hexlify } from "ethers/lib/utils";
 import { arb_entrypoints } from "../../utils/deploy/orderBook";
+import CloneFactory from "../abis/CloneFactory.json";
 
 
 /**
@@ -340,14 +341,10 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     ],
     [borrowerConfig]
   ); 
-  
-
-    //Get Source code from contract
-    const url = `${getEtherscanBaseURL(network)}?module=contract&action=getsourcecode&address=${cloneFactoryAddress}&apikey=${getEtherscanKey(network)}`; 
-    const source = await axios.get(url);    
+     
 
     // Create Clone Factory Instance
-    const cloneFactory = new ethers.Contract(cloneFactoryAddress,source.data.result[0].ABI,signer)  
+    const cloneFactory = new ethers.Contract(cloneFactoryAddress,CloneFactory.abi,signer)  
 
     const cloneData = await cloneFactory.populateTransaction.clone(arbImplementationAddress,encodedConfig);   
     
