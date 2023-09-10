@@ -174,11 +174,12 @@ export const estimateFeeData = async (
   gasPrice: BigNumber;
   maxFeePerGas: BigNumber;
   maxPriorityFeePerGas: BigNumber;
-}> => {
-  if (chainProvider._network.chainId === 137 || chainProvider._network.chainId === 1) {    
+}> => { 
+  const chainId = chainProvider._network.chainId;
+  if (chainId === 137 || chainId === 1) {    
      
     let res = await axios.get(
-      `https://api.blocknative.com/gasprices/blockprices?chainid=${chainProvider._network.chainId}`,
+      `https://api.blocknative.com/gasprices/blockprices?chainid=${chainId}`,
       {headers: {
           "Authorization" : "49281639-8d0e-4d3c-a55a-71f18585deef"
         }
@@ -194,7 +195,7 @@ export const estimateFeeData = async (
       maxFeePerGas: maxFeePerGas 
     }
 
-  }else if(chainProvider._network.chainId === 43113 || chainProvider._network.chainId === 11155111 || chainProvider._network.chainId === 80001 ){
+  }else if(chainId === 43113 || chainId === 11155111 || chainId === 80001 ){
     // Snowtrace Network
     const feeData = await chainProvider.getFeeData();   
     return {
