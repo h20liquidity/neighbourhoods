@@ -1,7 +1,6 @@
-name: Tests
+name: Strategy Foundry tests
 
 on: 
-  pull_request:
   push:
 
 jobs:
