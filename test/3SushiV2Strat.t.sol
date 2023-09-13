@@ -214,7 +214,28 @@ contract Test3SushiV2Strat is OpTest {
         // This is the bytes encoded route data that is built off chain for particular token pair.
         // Will change depending on the token traded.
         bytes memory route =
-            hex"000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000420284342e932797fc62814189f01f0fb05f5251970801ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce01d79f0d1add1ccd65cceb5ffd1f1735afb97e54f4000000000000000000000000000000000000000000000000000000000000";
+        // offset?
+            hex"0000000000000000000000000000000000000000000000000000000000000020"
+            // stream length
+            hex"0000000000000000000000000000000000000000000000000000000000000042"
+            // command 2 = processUserERC20
+            hex"02"
+            // token address
+            hex"84342e932797fc62814189f01f0fb05f52519708"
+            // number of pools
+            hex"01"
+            // pool share
+            hex"ffff"
+            // pool type 0 = uni v2
+            hex"00"
+            // pool address
+            hex"e427b62b495c1dfe1fe9f78bebfceb877ad05dce"
+            // direction 1
+            hex"01"
+            // to
+            hex"D709Bc4c77929C4d9900cB275769Ed9C68716bde"
+            // padding
+            hex"000000000000000000000000000000000000000000000000000000000000";
 
         takeOrder(sellOrder, route);
     }
@@ -350,7 +371,28 @@ contract Test3SushiV2Strat is OpTest {
         // This is the bytes encoded route data that is built off chain for particular token pair.
         // Will change depending on the token traded.
         bytes memory route =
-            hex"0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004202c2132d05d31c914a87c6611c10748aeb04b58e8f01ffff00e427b62b495c1dfe1fe9f78bebfceb877ad05dce00d79f0d1add1ccd65cceb5ffd1f1735afb97e54f4000000000000000000000000000000000000000000000000000000000000";
+        // offset?
+            hex"0000000000000000000000000000000000000000000000000000000000000020"
+            // stream length
+            hex"0000000000000000000000000000000000000000000000000000000000000042"
+            // command 2 = processUserERC20
+            hex"02"
+            // token address
+            hex"c2132d05d31c914a87c6611c10748aeb04b58e8f"
+            // number of pools
+            hex"01"
+            // pool share
+            hex"ffff"
+            // pool type 0 = uni v2
+            hex"00"
+            // pool address
+            hex"e427b62b495c1dfe1fe9f78bebfceb877ad05dce"
+            // direction 0
+            hex"00"
+            // to
+            hex"D709Bc4c77929C4d9900cB275769Ed9C68716bde"
+            // padding
+            hex"000000000000000000000000000000000000000000000000000000000000";
 
         takeOrder(buyOrder, route);
     }
