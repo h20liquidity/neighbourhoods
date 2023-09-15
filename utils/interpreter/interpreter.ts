@@ -1,8 +1,6 @@
 
-import { solidityKeccak256,  hexlify } from "ethers/lib/utils";
+import { solidityKeccak256} from "ethers/lib/utils";
 import { ExpressionConfig, rainlangc, MetaStore } from "@rainprotocol/rainlang";
-import { MAGIC_NUMBERS, decodeRainMetaDocument } from "../meta/cbor";
-
 
 /**
  * @public

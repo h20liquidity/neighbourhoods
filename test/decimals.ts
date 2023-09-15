@@ -23,9 +23,9 @@ import { basicDeploy } from "../utils/deploy/basicDeploy";
 
 import { getOrderBook, ob_entrypoints } from "../utils/deploy/orderBook";
 import { getExpressionDelopyer } from "../utils/deploy/interpreter";
-import config from "../config/config.json"
+import config from "../scripts-v2/config.json"
 import * as dotenv from "dotenv";
-import { encodeMeta } from "../scripts/utils";
+import { encodeMeta } from "../scripts-v2/utils";
 import { prbScale, scaleOutputMax, scaleRatio, takeOrder } from "../utils/orderBook";
 dotenv.config();
 
@@ -51,9 +51,9 @@ describe("Decimals", async function () {
     await tokenA.initialize();
     await tokenB.initialize(); 
 
-    orderBook = await getOrderBook(config.contracts[testNetwork].orderbook.address) 
+    orderBook = await getOrderBook(config.contracts[testNetwork].Orderbook.address) 
 
-    expressionDeployer = await getExpressionDelopyer(config.contracts[testNetwork].expressionDeployer.address) 
+    expressionDeployer = await getExpressionDelopyer(config.contracts[testNetwork].RainterpreterExpressionDeployer.address) 
 
 
   });

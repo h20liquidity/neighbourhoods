@@ -3,21 +3,34 @@ import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
 import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
 import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
 import fs from "fs"  
-import {
-  allChains,
-  configureChains,
-  createClient,
-  fetchFeeData,
-} from "@sonicswap/wagmi-core";
-import { publicProvider } from "@sonicswap/wagmi-core/providers/public";
 
 import contractConfig from "../np-config.json"
 
 import axios from "axios";
 import { hexlify } from "ethers/lib/utils";
-import {ARB_RAINLANG_STRING} from "../../src/3-sushi-v2-arb" ;
 import Parser from "../abis/IParserV1.json" 
-import Cloneable from "../abis/ICloneableV2.json"
+import Cloneable from "../abis/ICloneableV2.json" 
+import { getArbRainlangString } from "../ContractDeploy/arb";
+
+/**
+ * Supported Networks to x-deploy contracts.
+ */
+export const supportedNetworks = ["mumbai","polygon","ethereum","sepolia"]  
+
+/**
+ * Supported Contracts to x-deploy.
+ */
+export const supportedContracts = Object.freeze({
+  Rainterpreter : "Rainterpreter",
+  RainterpreterStore : "RainterpreterStore",
+  RainterpreterExpressionDeployer : "RainterpreterExpressionDeployer",
+  Orderbook : "Orderbook",
+  CloneFactory : "CloneFactory",
+  GenericPoolOrderBookFlashBorrowerImplementation : "GenericPoolOrderBookFlashBorrowerImplementation",
+  GenericPoolOrderBookFlashBorrowerInstance : "GenericPoolOrderBookFlashBorrowerInstance"
+}) 
+
+
 /*
 * Get etherscan key
 */
@@ -26,14 +39,8 @@ export const getEtherscanKey = (network:string) => {
   let key = ''
   if (network === "mumbai" || network === "polygon"){ 
     key = process.env.POLYGONSCAN_API_KEY
-  }else if(network === "goerli"){
-    key = ''
-  }else if(network === "snowtrace"){
-    key =  process.env.SNOWTRACE_KEY
-  }else if(network === "sepolia"){
+  }else if(network === "sepolia" || network === "ethereum"){
     key = process.env.ETHERSCAN_API_KEY
-  }else if(network === "hardhat"){
-    key = ''
   }
   return key
 }    
@@ -46,16 +53,12 @@ export const getEtherscanBaseURL = (network:string) => {
   let url = ''
   if (network === "mumbai"){ 
     url = 'https://api-testnet.polygonscan.com/api'
-  }else if(network === "goerli"){
-    url = ''
-  }else if(network === "snowtrace"){
-    url = 'https://api-testnet.snowtrace.io/'
   }else if(network === "sepolia"){
     url = 'https://api-sepolia.etherscan.io/api'
   }else if(network === "polygon"){
     url = 'https://api.polygonscan.com/api'
-  }else if(network === "hardhat"){
-    url = ''
+  }else if(network === "ethereum"){
+    url = 'https://api.etherscan.io/api'
   }
   return url
 }  
@@ -71,17 +74,12 @@ export const getProvider = (network:string) => {
     let provider 
     if (network === "mumbai"){  
       provider = new ethers.providers.AlchemyProvider("maticmum",`${process.env.ALCHEMY_KEY_MUMBAI}`)   
-    }else if(network === "goerli"){
-      provider = new ethers.providers.AlchemyProvider("goerli",`${process.env.ALCHEMY_KEY_GORELI}`)  
-    }else if(network === "snowtrace"){
-      provider = new ethers.providers.JsonRpcProvider('https://api.avax-test.network/ext/bc/C/rpc')
     }else if(network === "sepolia"){ 
       provider = new ethers.providers.JsonRpcProvider(`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_SEPOLIA}`)
     }else if(network === "polygon"){
       provider = new ethers.providers.AlchemyProvider("matic",`${process.env.ALCHEMY_KEY_POLYGON}`)   
-    }else if(network === "hardhat"){
-      provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545') 
-      
+    }else if(network === "ethereum"){
+      provider = new ethers.providers.AlchemyProvider("homestead",`${process.env.ALCHEMY_KEY_ETHEREUM}`)   
     }
     return provider
 } 
@@ -93,17 +91,12 @@ export const getCommons = (network:string) => {
     let common 
     if (network === "mumbai"){
         common = Common.custom(CustomChain.PolygonMumbai) 
-    }else if(network === "goerli"){
-      common = new Common({ chain: Chain.Goerli, hardfork: Hardfork.London })
-    }else if(network === "snowtrace"){
-      common = Common.custom({ chainId: 43113 })
     }else if(network === "sepolia"){
       common = Common.custom({ chainId: 11155111 })
     }else if(network === "polygon"){
       common = Common.custom(CustomChain.PolygonMainnet) 
-    }else if(network === "hardhat"){
-      common = Common.custom({ chainId: 31337 })
-
+    }else if(network === "ethereum"){
+      common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.London })
     }
     
     return common
@@ -135,8 +128,8 @@ export const getTransactionData = async (provider: any, address:string): Promise
   const fromContractConfig = contractConfig.contracts[fromNetwork]
   const toContractConfig = contractConfig.contracts[toNetwork] 
 
-  if(txData.includes(fromContractConfig["orderbook"]["address"].split('x')[1].toLowerCase())){ 
-    txData = txData.replace(fromContractConfig["orderbook"]["address"].split('x')[1].toLowerCase(), toContractConfig["orderbook"]["address"].split('x')[1].toLowerCase())
+  if(txData.includes(fromContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase())){ 
+    txData = txData.replace(fromContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase(), toContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase())
   }
   if(txData.includes(fromNetworkProxy.split('x')[1].toLowerCase())){
     txData = txData.replace(fromNetworkProxy.split('x')[1].toLowerCase(), toNetworkProxy.split('x')[1].toLowerCase())
@@ -164,23 +157,18 @@ export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,t
   // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
   // console.log("contract : " , contract )
 
-  if(txData.includes(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())){ 
-    txData = txData.replace(fromNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["interpreter"]["address"].split('x')[1].toLowerCase())
+  if(txData.includes(fromNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase())){ 
+    txData = txData.replace(fromNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase())
   }
-  if(txData.includes(fromNetworkConfig["store"]["address"].split('x')[1].toLowerCase())){
-    txData = txData.replace(fromNetworkConfig["store"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["store"]["address"].split('x')[1].toLowerCase())
+  if(txData.includes(fromNetworkConfig["RainterpreterStore"]["address"].split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkConfig["RainterpreterStore"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["RainterpreterStore"]["address"].split('x')[1].toLowerCase())
   }
-  if(txData.includes(fromNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase())){
-    txData = txData.replace(fromNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["expressionDeployer"]["address"].split('x')[1].toLowerCase())
+  if(txData.includes(fromNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase())
   }
   return txData 
 }  
 
-export const getGasDataForPolygon = async () => {
-
-  let gasData = await axios.get('https://gasstation-mainnet.matic.network/v2') 
-  return gasData
-}
 
 export const estimateFeeData = async ( 
   chainProvider:any ,
@@ -188,13 +176,13 @@ export const estimateFeeData = async (
   gasPrice: BigNumber;
   maxFeePerGas: BigNumber;
   maxPriorityFeePerGas: BigNumber;
-}> => {
-  if (chainProvider._network.chainId === 137) {    
-     
+}> => { 
+  const chainId = chainProvider._network.chainId
+  if (chainId === 137 || chainId === 1) {    
     let res = await axios.get(
-      "https://api.blocknative.com/gasprices/blockprices?chainid=137",
+      `https://api.blocknative.com/gasprices/blockprices?chainid=${chainId}`,
       {headers: {
-          "Authorization" : " 49281639-8d0e-4d3c-a55a-71f18585deef"
+          "Authorization" : "49281639-8d0e-4d3c-a55a-71f18585deef"
         }
       }
     ) 
@@ -207,14 +195,7 @@ export const estimateFeeData = async (
       maxPriorityFeePerGas: maxPriorityFeePerGas,
       maxFeePerGas: maxFeePerGas 
     }
-
-  }else if (chainProvider._network.chainId === 31337) {
-    return {
-      gasPrice: BigNumber.from("1980000104"),
-      maxFeePerGas: BigNumber.from("1500000030"),
-      maxPriorityFeePerGas: BigNumber.from("1500000000"),
-    };
-  }else if(chainProvider._network.chainId === 43113 || chainProvider._network.chainId === 11155111 || chainProvider._network.chainId === 80001 ){
+  }else if(chainId === 43113 || chainId === 11155111 || chainId === 80001 ){
     // Snowtrace Network
     const feeData = await chainProvider.getFeeData();   
     return {
@@ -222,28 +203,7 @@ export const estimateFeeData = async (
       maxPriorityFeePerGas: feeData["maxPriorityFeePerGas"],
       maxFeePerGas: feeData["maxFeePerGas"],
     }
-  } else {
-    const chain = allChains.find((chain) => chain.id === chainProvider._network.chainId); 
-
-    const { provider, webSocketProvider } = configureChains(
-      [chain],
-      [publicProvider()]
-    );
-
-    createClient({
-      autoConnect: true,
-      provider,
-      webSocketProvider,
-    });
-    const { gasPrice, maxFeePerGas, maxPriorityFeePerGas } =
-      await fetchFeeData();
-
-    return {
-      gasPrice,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-    };
-  }
+  } 
 };
  
 
@@ -352,12 +312,14 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   console.log("Deploying Arb Instance...")
 
   const signer  = new ethers.Wallet(priKey,provider)   
+  const orderBookAddress = contractConfig.contracts[network].Orderbook.address
+  const expressionDeployer = contractConfig.contracts[network].RainterpreterExpressionDeployer.address
+  const cloneFactoryAddress = contractConfig.contracts[network].CloneFactory.address  
+  const arbImplementationAddress = contractConfig.contracts[network].GenericPoolOrderBookFlashBorrowerImplementation.address 
 
-  const nonce = await provider.getTransactionCount(signer.address)    
+  const arbString = getArbRainlangString() ;
 
-  const arbString = ARB_RAINLANG_STRING ;
-
-  const parser = new ethers.Contract(contractConfig.contracts[network].expressionDeployer.address,Parser.abi,provider) 
+  const parser = new ethers.Contract(expressionDeployer,Parser.abi,provider) 
 
   let [bytecode,constants] = await parser.parse(
     ethers.utils.toUtf8Bytes(
@@ -366,9 +328,9 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   ) 
 
   const borrowerConfig = {
-    orderBook : contractConfig.contracts[network].orderbook.address,
+    orderBook : orderBookAddress,
     evaluableConfig: {
-      deployer: contractConfig.contracts[network].expressionDeployer.address,
+      deployer: expressionDeployer,
       bytecode,
       constants
     },
@@ -381,17 +343,11 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
     [borrowerConfig]
   ); 
   
-  
-  if(contractConfig.contracts[network].zeroexorderbookimplmentation.address){
-    const zeroExImplementation = contractConfig.contracts[network].zeroexorderbookimplmentation.address 
-    const cloneFactoryAddress = contractConfig.contracts[network].clonefactory.address  
-
-
 
     // Create Clone Factory Instance
     const cloneFactory = new ethers.Contract(cloneFactoryAddress,Cloneable.abi,signer)  
 
-    const cloneData = await cloneFactory.populateTransaction.clone(zeroExImplementation,encodedConfig);   
+    const cloneData = await cloneFactory.populateTransaction.clone(arbImplementationAddress,encodedConfig);   
     
     // Building Tx
     const nonce = await provider.getTransactionCount(signer.address)   
@@ -439,14 +395,6 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
   
     return {cloneEventData,contractTransaction}
-
-  }
-
-
-
-
-
-
   
 }  
 
