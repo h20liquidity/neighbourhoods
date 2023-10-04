@@ -2,8 +2,13 @@
 pragma solidity =0.8.19;
 
 import "rain.interpreter/test/util/abstract/OpTest.sol";
-import "forge-std/console.sol";
+import {console2} from "forge-std/console2.sol";
 import "src/3SushiV2Strat.sol";
+import {LibUniswapV2} from "rain.interpreter/src/lib/uniswap/LibUniswapV2.sol";
+import {IUniswapV2Factory} from "rain.interpreter/lib/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import {LibFixedPointDecimalScale} from "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
+import {UD60x18, mul} from "rain.interpreter/lib/prb-math/src/UD60x18.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 uint256 constant CONTEXT_VAULT_INPUTS_COLUMN = 3;
 uint256 constant CONTEXT_VAULT_OUTPUTS_COLUMN = 4;
@@ -180,7 +185,7 @@ contract Test3SushiV2Strat is OpTest {
 
         // usdt diff is the amount of usdt we bought (order output max * io ratio) scaled to 6 decimals.
         // usdt is the input here as we're selling nht.
-        context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = FixedPointDecimalScale.scaleN(
+        context[CONTEXT_VAULT_INPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] = LibFixedPointDecimalScale.scaleN(
             UD60x18.unwrap(mul(UD60x18.wrap(orderOutputMax), UD60x18.wrap(ioRatio))), 6, 1
         );
 
@@ -348,7 +353,7 @@ contract Test3SushiV2Strat is OpTest {
         // usdt diff is the order output max scaled to 6 decimals.
         // usdt is the output here as we're buying nht.
         context[CONTEXT_VAULT_OUTPUTS_COLUMN][CONTEXT_VAULT_IO_BALANCE_DIFF] =
-            FixedPointDecimalScale.scaleN(outputMax, 6, 1);
+            LibFixedPointDecimalScale.scaleN(outputMax, 6, 1);
 
         // nht diff is the amount of nht we sold (order output max * io ratio).
         // nht is the input here as we're buying nht.
