@@ -51,6 +51,7 @@ uint256 constant USDT_PER_SECOND = 13889;
 
 uint256 constant MIN_USDT_AMOUNT = 50e6;
 uint256 constant ONE_HOUR = 3600;
+uint256 constant MAX_COOLDOWN = 2 * ONE_HOUR;
 
 uint256 constant SELL_MULTIPLIER = 1e18;
 uint256 constant BUY_MULTIPLIER = 999e15;
