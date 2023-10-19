@@ -116,15 +116,8 @@ bytes constant RAINSTRING_PRELUDE =
     // Scale the cooldown to integer seconds.
     "cooldown: decimal18-scale-n<0>(cooldown18),"
     // Check all the addresses are correct.
-    ":ensure<0>("
     // - counterparty is approved.
-    " equal-to(approved-counterparty actual-counterparty)"
-    // - nht token address is the token in to ob.
-    " equal-to(context<3 0>() nht-token-address)"
-    // - usdt token address is the token out from ob.
-    " equal-to(context<4 0>() usdt-token-address)"
-    //
-    "),"
+    ":ensure<0>(equal-to(approved-counterparty actual-counterparty)),"
     // Check the cooldown.
     ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),";
 
@@ -135,6 +128,10 @@ bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
     "last-price-timestamp nht-amount18: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
     // Don't allow the price to change this block before this trade.
     ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
+    // nht token address is the token out during a sale.
+    ":ensure<3>(equal-to(context<4 0>() nht-token-address)),"
+    // usdt token address is the token in during a sale.
+    ":ensure<4>(equal-to(context<3 0>() usdt-token-address)),"
     // Order output max is the nht amount from sushi.
     "order-output-max18: nht-amount18,"
     // IO ratio is the usdt target divided by the nht amount from sushi.
@@ -146,7 +143,7 @@ bytes constant RAINSTRING_HANDLE_IO_SELL =
 // context 4 4 is the vault outputs as absolute values.
 // context 2 0 is the calculated output as decimal 18.
 // NHT is the output which is decimal 18 natively so no scaling is needed.
- ":ensure<3>(greater-than-or-equal-to(context<4 4>() context<2 0>()));";
+ ":ensure<5>(greater-than-or-equal-to(context<4 4>() context<2 0>()));";
 
 function rainstringSell() pure returns (bytes memory) {
     return bytes.concat(
@@ -154,7 +151,7 @@ function rainstringSell() pure returns (bytes memory) {
     );
 }
 
-bytes constant EXPECTED_SELL_BYTECODE = hex"";
+bytes constant EXPECTED_SELL_BYTECODE = hex"03000000f001043b14001301000000010000010100000201000003040002010400000100000005270100000a0000000000000528020000010000040000000603010102000000080000000717020000000000091a010006010000050000000605010000030101020000000c0000000b170200000000000d1a01000000000004000000030e0200000d0100000a0000000000000e000000061b020000140200000d01000100000002000000010000000a00000000290400010a0000000000000f140200000d01000200000001040000040e0200000d01000300000002040000030e0200000d01000400000010000000110000000916020000040200000400000204000404110200000d01000512070106000000000501000002010000000000011901000001000007010000060000000005020000230200000100000800000003000000021c02000026020000010000090000000416020000";
 
 bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
 // Token out for uni is in for ob, and vice versa.
@@ -162,7 +159,11 @@ bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
 // NHT is already 18 decimals, so we don't need to scale it.
     "last-price-timestamp nht-amount18: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"
     // Don't allow the price to change this block before this trade.
-    ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
+    ":ensure<6>(less-than(last-price-timestamp block-timestamp())),"
+    // nht token address is the token in during a buy.
+    ":ensure<7>(equal-to(context<3 0>() nht-token-address)),"
+    // usdt token address is the token out during a buy.
+    ":ensure<8>(equal-to(context<4 0>() usdt-token-address)),"
     // Order output max is the usdt amount as decimal 18.
     "order-output-max18: target-usdt-amount18,"
     // IO ratio is the nht amount from sushi divided by the usdt target.
@@ -174,7 +175,7 @@ bytes constant RAINSTRING_HANDLE_IO_BUY =
 // context 4 4 is the vault outputs as absolute values.
 // context 2 0 is the calculated output as decimal 18.
 // USDT is the output which is decimal 6 natively so we need to scale it.
- ":ensure<3>(greater-than-or-equal-to(context<4 4>() decimal18-scalen<6>(context<2 0>())));";
+ ":ensure<9>(greater-than-or-equal-to(context<4 4>() decimal18-scalen<6>(context<2 0>())));";
 
 function rainstringBuy() pure returns (bytes memory) {
     return bytes.concat(
