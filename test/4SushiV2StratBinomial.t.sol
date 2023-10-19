@@ -1,16 +1,25 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
+import {console2} from "forge-std/console2.sol";
+
 import {OpTest} from "rain.interpreter/test/util/abstract/OpTest.sol";
 import {StateNamespace, IInterpreterV1, SourceIndex} from "rain.interpreter/src/interface/IInterpreterV1.sol";
 import {IInterpreterStoreV1} from "rain.interpreter/src/interface/IInterpreterStoreV1.sol";
 import {LibEncodedDispatch} from "rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {SignedContextV1} from "rain.interpreter/src/interface/IInterpreterCallerV2.sol";
 import {LibContext} from "rain.interpreter/src/lib/caller/LibContext.sol";
-import {LibUniswapV2} from "rain.interpreter/src/lib/uniswap/LibUniswapV2.sol";
+import {LibUniswapV2, IUniswapV2Pair} from "rain.interpreter/src/lib/uniswap/LibUniswapV2.sol";
 import {IUniswapV2Factory} from "rain.interpreter/lib/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 
-import "src/4SushiV2StratBinomial.sol";
+import {
+    rainstringSell,
+    EXPECTED_SELL_BYTECODE,
+    POLYGON_SUSHI_V2_FACTORY,
+    POLYGON_USDT_TOKEN_ADDRESS,
+    POLYGON_NHT_TOKEN_ADDRESS,
+    APPROVED_COUNTERPARTY
+} from "src/4SushiV2StratBinomial.sol";
 
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
@@ -18,6 +27,10 @@ string constant FORK_RPC = "https://polygon.llamarpc.com";
 uint256 constant FORK_BLOCK_NUMBER = 48315276;
 
 contract Test4SushiV2StratBinomial is OpTest {
+    function constructionMetaPath() internal pure override returns (string memory) {
+        return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNP.rain.meta";
+    }
+
     function selectPolygonFork() internal {
         uint256 fork = vm.createFork(FORK_RPC);
         vm.selectFork(fork);
@@ -30,6 +43,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         uint256[][] memory context,
         SourceIndex sourceIndex
     ) internal returns (uint256[] memory, uint256[] memory) {
+        console2.log(string(rainString));
         IInterpreterV1 interpreterDeployer;
         IInterpreterStoreV1 storeDeployer;
         address expression;
@@ -51,7 +65,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         return (stack, kvs);
     }
 
-    function testStratSellNHTHappyPath(uint256 orderHash) public {
+    function test4StratSellNHTHappyPath(uint256 orderHash) public {
         uint256 reserve0 = 53138576564435538694955386;
         // Using USDT as an example.
         uint256 reserve1 = 12270399039;

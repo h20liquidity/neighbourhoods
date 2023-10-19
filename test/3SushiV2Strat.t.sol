@@ -6,7 +6,8 @@ import {console2} from "forge-std/console2.sol";
 import "src/3SushiV2Strat.sol";
 import {LibUniswapV2} from "rain.interpreter/src/lib/uniswap/LibUniswapV2.sol";
 import {IUniswapV2Factory} from "rain.interpreter/lib/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import {LibFixedPointDecimalScale} from "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
+import {LibFixedPointDecimalScale} from
+    "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
 import {UD60x18, mul} from "rain.interpreter/lib/prb-math/src/UD60x18.sol";
 import {Vm} from "forge-std/Vm.sol";
 

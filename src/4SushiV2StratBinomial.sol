@@ -56,7 +56,7 @@ uint256 constant SELL_MULTIPLIER = 1e18;
 uint256 constant BUY_MULTIPLIER = 999e15;
 
 bytes constant RAINSTRING_JITTERY_BINOMIAL =
-    // Paramaterise the seed for our randomness (hash).
+// Paramaterise the seed for our randomness (hash).
     "input:,"
     // The binomial part is using ctpop over a hash to simulate 256 coin flips.
     "binomial: bitwise-count-ones(hash(input)),"
@@ -66,7 +66,7 @@ bytes constant RAINSTRING_JITTERY_BINOMIAL =
     // Generate some noise for the binomial. The noise is a number between 0 and
     // 1e18. Ensure that we use a different seed for the noise than the binomial
     // by concatenating 0 to the seed.
-    "noise18: mod(hash(input 0) 1e18),"
+    "noise18: int-mod(hash(input 0) 1e18),"
     // Add the noise to the binomial, subtracting 0.5 to ensure that the noise
     // is centred around the binomial value. This will underflow if the binomial
     // is 0, but that's only possible if the hash of the seed is `0` which is
@@ -77,11 +77,10 @@ bytes constant RAINSTRING_JITTERY_BINOMIAL =
     // produce a value outside this range if the hash of the input is
     // `type(256).max`, which is just as unlikely as the hash of the input being
     // `0`.
-    "output: decimal18-div(jittery-binomial18 256e18);"
-;
+    "output: decimal18-div(jittery-binomial18 256e18);";
 
 bytes constant RAINSTRING_PRELUDE =
-    // Sushi v2 factory address.
+// Sushi v2 factory address.
     "polygon-sushi-v2-factory: 0xc35DADB65012eC5796536bD9864eD8773aBc74C4,"
     // NHT token address.
     "nht-token-address: 0x84342e932797FC62814189f01F0Fb05F52519708,"
@@ -102,20 +101,20 @@ bytes constant RAINSTRING_PRELUDE =
     // Set the max at $100 so that the binomial peak sits at $50.
     "max-usdt-amount18: 100e18,"
     // We can just seed the rng with last time.
-    "amount-random-multiplier18: call<0 1>(last-time),"
+    "amount-random-multiplier18: call<2 1>(last-time),"
     // Calculate the target usdt amount for the order, as decimal18.
     "target-usdt-amount18: decimal18-mul(max-usdt-amount18 amount-random-multiplier18),"
     // Sushi needs the usdt amount as 6 decimals (tether's native size).
-    "target-usdt-amount: decimal18-scalen<6>(target-usdt-amount18),"
+    "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"
     // Try to average a 1 hour cooldown, so the max is 2 hours.
     "max-cooldown18: 7200e18,"
     // Seed the rng with the hash of the last time to make it distinct from the
     // amount random multiplier.
-    "cooldown-random-multiplier18: call<0 1>(hash(last-time)),"
+    "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"
     // Calculate the cooldown for the order.
     "cooldown18: decimal18-mul(max-cooldown18 cooldown-random-multiplier18),"
     // Scale the cooldown to integer seconds.
-    "cooldown: decimal18-scalen<0>(cooldown18),"
+    "cooldown: decimal18-scale-n<0>(cooldown18),"
     // Check all the addresses are correct.
     ":ensure<0>("
     // - counterparty is approved.
@@ -130,40 +129,37 @@ bytes constant RAINSTRING_PRELUDE =
     ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),";
 
 bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
-        // Token in for uniswap is ob's token out, and vice versa.
-        // We want the timestamp as well as the nht amount that sushi wants in.
-        // NHT is already 18 decimals, so we don't need to scale it.
-        "last-price-timestamp nht-amount18: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
-        // Don't allow the price to change this block before this trade.
-        ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
-        // Order output max is the nht amount from sushi.
-        "order-output-max18: nht-amount18,"
-        // IO ratio is the usdt target divided by the nht amount from sushi.
-        "io-ratio: decimal18-div(target-usdt-amount18 order-output-max18),"
-        // end calculate order
-        ";";
+// Token in for uniswap is ob's token out, and vice versa.
+// We want the timestamp as well as the nht amount that sushi wants in.
+// NHT is already 18 decimals, so we don't need to scale it.
+    "last-price-timestamp nht-amount18: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
+    // Don't allow the price to change this block before this trade.
+    ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
+    // Order output max is the nht amount from sushi.
+    "order-output-max18: nht-amount18,"
+    // IO ratio is the usdt target divided by the nht amount from sushi.
+    "io-ratio: decimal18-div(target-usdt-amount18 order-output-max18)"
+    // end calculate order
+    ";";
 
 bytes constant RAINSTRING_HANDLE_IO_SELL =
-    // context 4 4 is the vault outputs as absolute values.
-    // context 2 0 is the calculated output as decimal 18.
-    // NHT is the output which is decimal 18 natively so no scaling is needed.
-    ":ensure<3>(greater-than-or-equal-to(context<4 4>() context<2 0>()));";
+// context 4 4 is the vault outputs as absolute values.
+// context 2 0 is the calculated output as decimal 18.
+// NHT is the output which is decimal 18 natively so no scaling is needed.
+ ":ensure<3>(greater-than-or-equal-to(context<4 4>() context<2 0>()));";
 
 function rainstringSell() pure returns (bytes memory) {
     return bytes.concat(
-        RAINSTRING_PRELUDE,
-        RAINSTRING_CALCULATE_ORDER_SELL,
-        RAINSTRING_HANDLE_IO_SELL,
-        RAINSTRING_JITTERY_BINOMIAL
+        RAINSTRING_PRELUDE, RAINSTRING_CALCULATE_ORDER_SELL, RAINSTRING_HANDLE_IO_SELL, RAINSTRING_JITTERY_BINOMIAL
     );
 }
 
 bytes constant EXPECTED_SELL_BYTECODE = hex"";
 
 bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
-    // Token out for uni is in for ob, and vice versa.
-    // We want the timestamp as well as the nht amount that sushi will give us.
-    // NHT is already 18 decimals, so we don't need to scale it.
+// Token out for uni is in for ob, and vice versa.
+// We want the timestamp as well as the nht amount that sushi will give us.
+// NHT is already 18 decimals, so we don't need to scale it.
     "last-price-timestamp nht-amount18: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"
     // Don't allow the price to change this block before this trade.
     ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
@@ -175,16 +171,13 @@ bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
     ";";
 
 bytes constant RAINSTRING_HANDLE_IO_BUY =
-    // context 4 4 is the vault outputs as absolute values.
-    // context 2 0 is the calculated output as decimal 18.
-    // USDT is the output which is decimal 6 natively so we need to scale it.
-    ":ensure<3>(greater-than-or-equal-to(context<4 4>() decimal18-scalen<6>(context<2 0>())));";
+// context 4 4 is the vault outputs as absolute values.
+// context 2 0 is the calculated output as decimal 18.
+// USDT is the output which is decimal 6 natively so we need to scale it.
+ ":ensure<3>(greater-than-or-equal-to(context<4 4>() decimal18-scalen<6>(context<2 0>())));";
 
 function rainstringBuy() pure returns (bytes memory) {
     return bytes.concat(
-        RAINSTRING_PRELUDE,
-        RAINSTRING_CALCULATE_ORDER_BUY,
-        RAINSTRING_HANDLE_IO_BUY,
-        RAINSTRING_JITTERY_BINOMIAL
+        RAINSTRING_PRELUDE, RAINSTRING_CALCULATE_ORDER_BUY, RAINSTRING_HANDLE_IO_BUY, RAINSTRING_JITTERY_BINOMIAL
     );
 }
