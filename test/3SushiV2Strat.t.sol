@@ -217,8 +217,8 @@ contract Test3SushiV2Strat is OpTest {
         giveTestAccountsTokens();
         depositTokens();
 
-        Order memory sellOrder = placeSellOrder();
-        Order memory buyOrder = placeBuyOrder();
+        Order memory sellOrder = placeSellOrderFork();
+        Order memory buyOrder = placeBuyOrderFork();
         (buyOrder);
 
         // This is the bytes encoded route data that is built off chain for particular token pair.
@@ -374,9 +374,9 @@ contract Test3SushiV2Strat is OpTest {
         giveTestAccountsTokens();
         depositTokens();
 
-        Order memory sellOrder = placeSellOrder();
+        Order memory sellOrder = placeSellOrderFork();
         (sellOrder);
-        Order memory buyOrder = placeBuyOrder();
+        Order memory buyOrder = placeBuyOrderFork();
 
         // This is the bytes encoded route data that is built off chain for particular token pair.
         // Will change depending on the token traded.
@@ -478,16 +478,16 @@ contract Test3SushiV2Strat is OpTest {
         return IO(address(POLYGON_USDT_TOKEN_ADDRESS), 6, VAULT_ID);
     }
 
-    function placeBuyOrder() internal returns (Order memory) {
+    function placeBuyOrderFork() internal returns (Order memory) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_BUY_NHT);
-        assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+        assertEq(bytecode, EXPECTED_BUY_BYTECODE_FORK);
         checkBuyConstants(constants);
         return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
     }
 
-    function placeSellOrder() internal returns (Order memory order) {
+    function placeSellOrderFork() internal returns (Order memory order) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(RAINSTRING_SELL_NHT);
-        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+        assertEq(bytecode, EXPECTED_SELL_BYTECODE_FORK);
         checkSellConstants(constants);
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
