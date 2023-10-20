@@ -168,7 +168,7 @@ bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
     // Order output max is the usdt amount as decimal 18.
     "order-output-max18: target-usdt-amount18,"
     // IO ratio is the nht amount from sushi divided by the usdt target.
-    "io-ratio: decimal18-div(nht-amount18 order-output-max18),"
+    "io-ratio: decimal18-div(nht-amount18 order-output-max18)"
     // end calculate order
     ";";
 
@@ -176,7 +176,7 @@ bytes constant RAINSTRING_HANDLE_IO_BUY =
 // context 4 4 is the vault outputs as absolute values.
 // context 2 0 is the calculated output as decimal 18.
 // USDT is the output which is decimal 6 natively so we need to scale it.
- ":ensure<9>(greater-than-or-equal-to(context<4 4>() decimal18-scalen<6>(context<2 0>())));";
+ ":ensure<9>(greater-than-or-equal-to(context<4 4>() decimal18-scale-n<6>(context<2 0>())));";
 
 function rainstringBuy() pure returns (bytes memory) {
     return bytes.concat(
