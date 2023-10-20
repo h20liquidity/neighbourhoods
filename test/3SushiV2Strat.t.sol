@@ -23,6 +23,10 @@ uint256 constant VAULT_ID = uint256(keccak256("vault"));
 address constant TEST_ORDER_OWNER = address(0x84723849238);
 
 contract Test3SushiV2Strat is OpTest {
+    function constructionMetaPath() internal pure override returns (string memory) {
+        return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNP.rain.meta";
+    }
+
     function selectPolygonFork() internal {
         uint256 fork = vm.createFork(FORK_RPC);
         vm.selectFork(fork);

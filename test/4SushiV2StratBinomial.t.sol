@@ -16,6 +16,7 @@ import {
     rainstringSell,
     rainstringBuy,
     EXPECTED_SELL_BYTECODE,
+    EXPECTED_BUY_BYTECODE,
     POLYGON_SUSHI_V2_FACTORY,
     POLYGON_USDT_TOKEN_ADDRESS,
     POLYGON_NHT_TOKEN_ADDRESS,
@@ -31,6 +32,11 @@ uint256 constant FORK_BLOCK_NUMBER = 48315276;
 // taken from block explorer.
 // uint256 constant FORK_BLOCK_TIME = 1696419600;
 
+uint256 constant RESERVE_ZERO = 53138576564435538694955386;
+// Using USDT as an example.
+uint256 constant RESERVE_ONE = 12270399039;
+uint32 constant RESERVE_TIMESTAMP = 1692775490;
+
 contract Test4SushiV2StratBinomial is OpTest {
     function constructionMetaPath() internal pure override returns (string memory) {
         return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNP.rain.meta";
@@ -40,7 +46,6 @@ contract Test4SushiV2StratBinomial is OpTest {
         uint256 fork = vm.createFork(FORK_RPC);
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
-        // vm.warp(FORK_BLOCK_TIME);
     }
 
     function parseAndEvalWithContext(
@@ -127,7 +132,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringBuy());
-            // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+            assertEq(bytecode, EXPECTED_BUY_BYTECODE);
             uint256[] memory minOutputs = new uint256[](1);
             minOutputs[0] = 0;
             (interpreterDeployer, storeDeployer, expression) =
@@ -173,12 +178,8 @@ contract Test4SushiV2StratBinomial is OpTest {
     }
 
     function test4StratSellNHTHappyPath(uint256 orderHash, uint16 startTime) public {
-        uint256 reserve0 = 53138576564435538694955386;
-        // Using USDT as an example.
-        uint256 reserve1 = 12270399039;
-        uint32 reserveTimestamp = 1692775490;
         uint256 lastTime = 0;
-        vm.warp(reserveTimestamp + startTime + 1);
+        vm.warp(RESERVE_TIMESTAMP + startTime + 1);
 
         uint256[][] memory context = new uint256[][](4);
         {
@@ -221,7 +222,7 @@ contract Test4SushiV2StratBinomial is OpTest {
             vm.mockCall(
                 expectedPair,
                 abi.encodeWithSelector(IUniswapV2Pair.getReserves.selector),
-                abi.encode(reserve0, reserve1, reserveTimestamp)
+                abi.encode(RESERVE_ZERO, RESERVE_ONE, RESERVE_TIMESTAMP)
             );
         }
 
@@ -230,7 +231,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringSell());
-            // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+            assertEq(bytecode, EXPECTED_SELL_BYTECODE);
             uint256[] memory minOutputs = new uint256[](1);
             minOutputs[0] = 0;
             (interpreterDeployer, storeDeployer, expression) =
@@ -245,13 +246,12 @@ contract Test4SushiV2StratBinomial is OpTest {
             context
         );
         storeDeployer.set(StateNamespace.wrap(0), kvs);
-        checkSellCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
+        checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
         lastTime = block.timestamp;
 
         // Check the first cooldown against what we expect.
         // last time is 0 originally.
-        uint256 cooldown0 = cooldown(block.timestamp);
-        vm.warp(block.timestamp + cooldown0);
+        vm.warp(block.timestamp + cooldown(block.timestamp));
 
         // At this point the cooldown is not expired.
         vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
@@ -272,13 +272,11 @@ contract Test4SushiV2StratBinomial is OpTest {
             context
         );
         storeDeployer.set(StateNamespace.wrap(0), kvs);
-        checkSellCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
+        checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
     }
 
     function jitteryBinomial(uint256 input) internal pure returns (uint256) {
-        uint256 binomial = LibCtPop.ctpop(uint256(keccak256(abi.encodePacked(
-            input
-        )))) * 1e18;
+        uint256 binomial = LibCtPop.ctpop(uint256(keccak256(abi.encodePacked(input)))) * 1e18;
         uint256 noise = uint256(keccak256(abi.encodePacked(input, uint256(0)))) % 1e18;
 
         uint256 jittery = binomial + noise - 5e17;
@@ -339,7 +337,11 @@ contract Test4SushiV2StratBinomial is OpTest {
         // last price timestamp
         assertEq(stack[15], sushiLastTime);
         // nht amount 18
-        // assertEq(stack[16], 0);
+        assertEq(stack[16], LibUniswapV2.getAmountIn(stack[10], RESERVE_ZERO, RESERVE_ONE));
+        // amount is nht amount 18
+        assertEq(stack[17], stack[16]);
+        // ratio is the usdt 18 amount divided by the nht 18 amount
+        assertEq(stack[18], stack[9] * 1e18 / stack[16]);
     }
 
     function checkBuyCalculate(
@@ -390,7 +392,10 @@ contract Test4SushiV2StratBinomial is OpTest {
         // last price timestamp
         assertEq(stack[15], sushiLastTime);
         // nht amount 18
-        // assertEq(stack[16], 0);
+        assertEq(stack[16], LibUniswapV2.getAmountOut(stack[10], RESERVE_ONE, RESERVE_ZERO));
+        // amount is usdt amount 18
+        assertEq(stack[17], stack[9]);
+        // io ratio is the nht amount 18 divided by the usdt 18 amount
+        assertEq(stack[18], stack[16] * 1e18 / stack[9]);
     }
-
 }
