@@ -28,7 +28,7 @@ import {LibCtPop} from "rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 48315276;
+uint256 constant FORK_BLOCK_NUMBER = 48987671;
 // taken from block explorer.
 // uint256 constant FORK_BLOCK_TIME = 1696419600;
 

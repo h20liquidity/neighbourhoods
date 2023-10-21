@@ -17,7 +17,7 @@ uint256 constant CONTEXT_VAULT_IO_BALANCE_DIFF = 4;
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 47331008;
+uint256 constant FORK_BLOCK_NUMBER = 48987671;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
@@ -243,7 +243,7 @@ contract Test3SushiV2Strat is OpTest {
             // direction 1
             hex"01"
             // to
-            hex"D709Bc4c77929C4d9900cB275769Ed9C68716bde"
+            hex"D1c3Df3b3c5a1059FC1a123562a7215a94F34876"
             // padding
             hex"000000000000000000000000000000000000000000000000000000000000";
 
@@ -400,7 +400,7 @@ contract Test3SushiV2Strat is OpTest {
             // direction 0
             hex"00"
             // to
-            hex"D709Bc4c77929C4d9900cB275769Ed9C68716bde"
+            hex"D1c3Df3b3c5a1059FC1a123562a7215a94F34876"
             // padding
             hex"000000000000000000000000000000000000000000000000000000000000";
 
