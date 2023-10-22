@@ -74,15 +74,15 @@ contract Test4SushiV2StratBinomial is OpTest {
             context
         );
         return (stack, kvs);
-    } 
+    }
 
     function testBuyForkBytecode() public {
-        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringBuy()); 
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringBuy());
         assertEq(bytecode, EXPECTED_BUY_BYTECODE);
-    } 
+    }
 
     function testSellForkBytecode() public {
-        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringSell()); 
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringSell());
         assertEq(bytecode, EXPECTED_SELL_BYTECODE);
     }
 
