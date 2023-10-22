@@ -21,7 +21,8 @@ import {
     POLYGON_USDT_TOKEN_ADDRESS,
     POLYGON_NHT_TOKEN_ADDRESS,
     APPROVED_COUNTERPARTY,
-    MAX_COOLDOWN
+    MAX_COOLDOWN,
+    POLYGON_DEPLOYER
 } from "src/4SushiV2StratBinomial.sol";
 import {LibCtPop} from "rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 
@@ -73,6 +74,16 @@ contract Test4SushiV2StratBinomial is OpTest {
             context
         );
         return (stack, kvs);
+    } 
+
+    function testBuyForkBytecode() public {
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringBuy()); 
+        assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+    } 
+
+    function testSellForkBytecode() public {
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringSell()); 
+        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
     }
 
     function test4StratBuyNHTHappyPath(uint256 orderHash, uint16 startTime) public {
