@@ -1,7 +1,7 @@
 import * as path from "path";
 import { argv } from "process";
 import * as dotenv from "dotenv";
-import { deployPilotStrategyWithNP } from "./DeployStrategy/deployStrategy";
+import { deployPilotBinomialStrategy, deployPilotStrategyWithNP } from "./DeployStrategy/deployStrategy";
 import { BigNumber, ethers } from "ethers";  
 import { randomUint256 } from "../utils";
 import { supportedNetworks } from "./utils";
@@ -26,7 +26,10 @@ async function main(argv){
  
   const vaultId = randomUint256().toString()
 
-  await deployPilotStrategyWithNP(toNetwork,vaultId)
+  // await deployPilotStrategyWithNP(toNetwork,vaultId)
+  await deployPilotBinomialStrategy(toNetwork,vaultId)
+
+  
 
 }
 
