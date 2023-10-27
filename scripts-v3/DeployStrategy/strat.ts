@@ -26,9 +26,25 @@ export const RAINSTRING_JITTERY_BINOMIAL =
     "output: decimal18-div(jittery-binomial18 256e18);";
 
 export const RAINSTRING_CALCULATE_ORDER_SELL =
-    // Token in for uniswap is ob's token out, and vice versa.
-    // We want the timestamp as well as the nht amount that sushi wants in.
-    // NHT is already 18 decimals, so we don't need to scale it.
+        // Sushi needs the usdt amount as 6 decimals (tether's native size).
+        "target-usdt-amount: decimal18-scale-n<6 1>(target-usdt-amount18),"+
+        // Try to average a 1 hour cooldown, so the max is 2 hours.
+        "max-cooldown18: 7200e18,"+
+        // Seed the rng with the hash of the last time to make it distinct from the
+        // amount random multiplier.
+        "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"+
+        // Calculate the cooldown for the order.
+        "cooldown18: decimal18-mul(max-cooldown18 cooldown-random-multiplier18),"+
+        // Scale the cooldown to integer seconds.
+        "cooldown: decimal18-scale-n<0>(cooldown18),"+
+        // Check all the addresses are correct.
+        // - counterparty is approved.
+        ":ensure<0>(equal-to(approved-counterparty actual-counterparty)),"+
+        // Check the cooldown.
+        ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp()))," + 
+        // Token in for uniswap is ob's token out, and vice versa.
+        // We want the timestamp as well as the nht amount that sushi wants in.
+        // NHT is already 18 decimals, so we don't need to scale it.
         "last-price-timestamp nht-amount18: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"+
         // Don't allow the price to change this block before this trade.
         ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"+ 
@@ -44,9 +60,25 @@ export const RAINSTRING_CALCULATE_ORDER_SELL =
         ";"; 
 
 export const RAINSTRING_CALCULATE_ORDER_BUY =
-        // Token out for uni is in for ob, and vice versa.
-        // We want the timestamp as well as the nht amount that sushi will give us.
-        // NHT is already 18 decimals, so we don't need to scale it.
+            // Sushi needs the usdt amount as 6 decimals (tether's native size).
+            "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"+
+            // Try to average a 1 hour cooldown, so the max is 2 hours.
+            "max-cooldown18: 7200e18,"+
+            // Seed the rng with the hash of the last time to make it distinct from the
+            // amount random multiplier.
+            "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"+
+            // Calculate the cooldown for the order.
+            "cooldown18: decimal18-mul(max-cooldown18 cooldown-random-multiplier18),"+
+            // Scale the cooldown to integer seconds.
+            "cooldown: decimal18-scale-n<0>(cooldown18),"+
+            // Check all the addresses are correct.
+            // - counterparty is approved.
+            ":ensure<0>(equal-to(approved-counterparty actual-counterparty)),"+
+            // Check the cooldown.
+            ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),"+
+            // Token out for uni is in for ob, and vice versa.
+            // We want the timestamp as well as the nht amount that sushi will give us.
+            // NHT is already 18 decimals, so we don't need to scale it.
             "last-price-timestamp nht-amount18: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"+
             // Don't allow the price to change this block before this trade.
             ":ensure<6>(less-than(last-price-timestamp block-timestamp())),"+
@@ -102,23 +134,7 @@ export const getRainPrelude = (network) => {
     // We can just seed the rng with last time.
     "amount-random-multiplier18: call<2 1>(last-time),"+
     // Calculate the target usdt amount for the order, as decimal18.
-    "target-usdt-amount18: decimal18-mul(max-usdt-amount18 amount-random-multiplier18),"+
-    // Sushi needs the usdt amount as 6 decimals (tether's native size).
-    "target-usdt-amount: decimal18-scale-n<6 1 1>(target-usdt-amount18),"+
-    // Try to average a 1 hour cooldown, so the max is 2 hours.
-    "max-cooldown18: 7200e18,"+
-    // Seed the rng with the hash of the last time to make it distinct from the
-    // amount random multiplier.
-    "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"+
-    // Calculate the cooldown for the order.
-    "cooldown18: decimal18-mul(max-cooldown18 cooldown-random-multiplier18),"+
-    // Scale the cooldown to integer seconds.
-    "cooldown: decimal18-scale-n<0>(cooldown18),"+
-    // Check all the addresses are correct.
-    // - counterparty is approved.
-    ":ensure<0>(equal-to(approved-counterparty actual-counterparty)),"+
-    // Check the cooldown.
-    ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),";
+    "target-usdt-amount18: decimal18-mul(max-usdt-amount18 amount-random-multiplier18),";
 
     return RAINSTRING_PRELUDE
 }
