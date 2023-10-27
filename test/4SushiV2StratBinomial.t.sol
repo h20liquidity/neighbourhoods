@@ -14,6 +14,8 @@ import {LibContext} from "rain.interpreter/src/lib/caller/LibContext.sol";
 import {LibUniswapV2, IUniswapV2Pair} from "rain.interpreter/src/lib/uniswap/LibUniswapV2.sol";
 import {IUniswapV2Factory} from "rain.interpreter/lib/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import {EnsureFailed} from "rain.interpreter/src/lib/op/logic/LibOpEnsureNP.sol";
+import "lib/rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
+import "lib/rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
 import {
     rainstringSell,
     rainstringBuy,
@@ -60,6 +62,9 @@ uint256 constant RESERVE_ONE = 12270399039;
 uint32 constant RESERVE_TIMESTAMP = 1692775490;
 
 contract Test4SushiV2StratBinomial is OpTest {
+    using LibFixedPointDecimalArithmeticOpenZeppelin for uint256 ;
+    using LibFixedPointDecimalScale for uint256 ;
+
     function constructionMetaPath() internal pure override returns (string memory) {
         return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNP.rain.meta";
     }
@@ -135,7 +140,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         selectPolygonFork(); 
         {   
             // Deposit more than 100$ worth NHT
-            uint256 depositAmount = 400000e18 ;
+            uint256 depositAmount = 4000000e18 ;
             giveTestAccountsTokens(POLYGON_NHT_TOKEN_ADDRESS,POLYGON_NHT_HOLDER,TEST_ORDER_OWNER,depositAmount);
             depositTokens(POLYGON_NHT_TOKEN_ADDRESS,VAULT_ID,depositAmount);
         } 
@@ -163,9 +168,15 @@ contract Test4SushiV2StratBinomial is OpTest {
         // to
         hex"d1c3df3b3c5a1059fc1a123562a7215a94f34876"
         // padding
-        hex"000000000000000000000000000000000000000000000000000000000000";     
+        hex"000000000000000000000000000000000000000000000000000000000000";
 
-        takeOrder(sellOrder,sellRoute);
+        for(uint256 i = 0 ; i < 10 ; i++){
+            // Warp by 2hours as that could be the maximum time for the strategy.
+            vm.warp(block.timestamp + 7200);  
+            takeOrder(sellOrder,sellRoute);
+        }      
+
+        
     }
  
     function testBuyOrderHappyFork() public { 
@@ -173,7 +184,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         selectPolygonFork();   
         {   
             // Deposit 100 USDT.
-            uint256 depositAmount = 100e6 ;
+            uint256 depositAmount = 1000e6 ;
             giveTestAccountsTokens(POLYGON_USDT_TOKEN_ADDRESS,POLYGON_USDT_HOLDER,TEST_ORDER_OWNER,depositAmount);
             depositTokens(POLYGON_USDT_TOKEN_ADDRESS,VAULT_ID,depositAmount);
         } 
@@ -203,7 +214,11 @@ contract Test4SushiV2StratBinomial is OpTest {
         // padding
         hex"000000000000000000000000000000000000000000000000000000000000";  
 
-        takeOrder(buyOrder,buyRoute);
+        for(uint256 i = 0 ; i < 10 ; i++){
+            // Warping by 2 hours as that is the maximum time. 
+            vm.warp(block.timestamp + 7200);
+            takeOrder(buyOrder,buyRoute);  
+        } 
         
     } 
 
@@ -216,7 +231,6 @@ contract Test4SushiV2StratBinomial is OpTest {
         
         innerConfigs[0] = TakeOrderConfig(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
         uint256 outputTokenBalance = POLYGON_ORDERBOOK.vaultBalance(order.owner,order.validOutputs[0].token,order.validOutputs[0].vaultId); 
-        console2.log("outputTokenBalance : %s",outputTokenBalance);
         TakeOrdersConfigV2 memory takeOrdersConfig =
             TakeOrdersConfigV2(0, outputTokenBalance, type(uint256).max, innerConfigs, route);
         POLYGON_ARB_CONTRACT.arb(takeOrdersConfig, 0);
@@ -456,7 +470,8 @@ contract Test4SushiV2StratBinomial is OpTest {
 
         uint256 jittery = binomial + noise - 5e17;
 
-        return jittery * 1e18 / 256e18;
+        return jittery.fixedPointDiv(256e18,Math.Rounding.Down) ;
+
     }
 
     function cooldown(uint256 seed) internal pure returns (uint256) {
@@ -500,15 +515,15 @@ contract Test4SushiV2StratBinomial is OpTest {
         // target usdt amount e18
         assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
-        assertEq(stack[10], stack[9] / 1e12);
+        assertEq(stack[10], stack[9].scaleN(6,1));
         // max cooldown e18
         assertEq(stack[11], MAX_COOLDOWN * 1e18);
         // cooldown random multiplier 18
         assertEq(stack[12], jitteryBinomial(uint256(keccak256(abi.encode(lastTime)))));
         // cooldown e18
-        assertEq(stack[13], stack[11] * stack[12] / 1e18);
+        assertEq(stack[13], stack[11].fixedPointMul(stack[12],Math.Rounding.Up) );
         // cooldown e0
-        assertEq(stack[14], stack[13] / 1e18);
+        assertEq(stack[14], stack[13].scaleN(0,0));
         // last price timestamp
         assertEq(stack[15], sushiLastTime);
         // nht amount 18
@@ -516,7 +531,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         // amount is nht amount 18
         assertEq(stack[17], stack[16]);
         // ratio is the usdt 18 amount divided by the nht 18 amount
-        assertEq(stack[18], stack[9] * 1e18 / stack[16]);
+        assertEq(stack[18], stack[9].fixedPointDiv(stack[16],Math.Rounding.Down));
     }
 
     function checkBuyCalculate(
@@ -573,4 +588,4 @@ contract Test4SushiV2StratBinomial is OpTest {
         // io ratio is the nht amount 18 divided by the usdt 18 amount
         assertEq(stack[18], stack[16] * 1e18 / stack[9]);
     }
-}
+} 
