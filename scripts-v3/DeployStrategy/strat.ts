@@ -104,7 +104,7 @@ export const getRainPrelude = (network) => {
     // Calculate the target usdt amount for the order, as decimal18.
     "target-usdt-amount18: decimal18-mul(max-usdt-amount18 amount-random-multiplier18),"+
     // Sushi needs the usdt amount as 6 decimals (tether's native size).
-    "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"+
+    "target-usdt-amount: decimal18-scale-n<6 1 1>(target-usdt-amount18),"+
     // Try to average a 1 hour cooldown, so the max is 2 hours.
     "max-cooldown18: 7200e18,"+
     // Seed the rng with the hash of the last time to make it distinct from the
