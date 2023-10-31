@@ -51,7 +51,7 @@ import "lib/rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecim
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 49208332;
+uint256 constant FORK_BLOCK_NUMBER = 49373079;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
@@ -166,7 +166,7 @@ contract Test4SushiV2StratBinomial is OpTest {
             // direction 1
             hex"01"
             // to
-            hex"d1c3df3b3c5a1059fc1a123562a7215a94f34876"
+            hex"5910cBEe2665A206E637F4183D27b433264fB878"
             // padding
             hex"000000000000000000000000000000000000000000000000000000000000";
 
@@ -207,7 +207,7 @@ contract Test4SushiV2StratBinomial is OpTest {
             // direction 0
             hex"00"
             // to
-            hex"d1c3df3b3c5a1059fc1a123562a7215a94f34876"
+            hex"5910cBEe2665A206E637F4183D27b433264fB878"
             // padding
             hex"000000000000000000000000000000000000000000000000000000000000";
 

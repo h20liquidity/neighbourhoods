@@ -14,8 +14,8 @@
         "transaction": "0xa3107f487c49fc03384dd869b1e479361beb83871f7446fc56d9245ab962811c"
       },
       "Orderbook": {
-        "address": "0xf49893d893d9bb7455559c82fd77c40bdebd6bba",
-        "transaction": "0x4a613702f7825d6bd86e98851b81db8922f53de0b05c69bb94e2224f90a79c92"
+        "address": "0x64f1189906d967849504b24108d9a4c35dd41a4b",
+        "transaction": "0xd2162fa4d79876dfda918fd851b2bdf8d0f0b807ed24055ef0557d6b62a0d9ca"
       },
       "RouteProcessorOrderBookV3ArbOrderTakerImplementation": {
         "address": "0xa5bd262db1a0a18b884b57218a99501ea159229d",
