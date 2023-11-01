@@ -93,10 +93,9 @@ contract Test4SushiV2StratBinomial is OpTest {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringSell());
         // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
-    }  
+    }
 
-    function getInterpreterStack(Order memory order) internal { 
-
+    function getInterpreterStack(Order memory order) internal {
         uint256[][] memory context = new uint256[][](5);
         {
             uint256[] memory baseContext = new uint256[](2);
@@ -129,23 +128,23 @@ contract Test4SushiV2StratBinomial is OpTest {
             uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
             outputsContext[0] = uint256(uint160(order.validOutputs[0].token));
             context[4] = outputsContext;
-        }  
+        }
 
         (uint256[] memory stack, uint256[] memory kvs) = IInterpreterV1(POLYGON_INTERPRETER).eval(
             IInterpreterStoreV1(POLYGON_STORE),
             StateNamespace.wrap(uint256(uint160(order.owner))),
             LibEncodedDispatch.encode(order.evaluable.expression, SourceIndex.wrap(0), type(uint16).max),
             context
-        ); 
-        
-        for(uint256 i = 0 ; i < stack.length ; i++){
+        );
+
+        for (uint256 i = 0; i < stack.length; i++) {
             console2.log(stack[i]);
-        }  
+        }
         console2.log("**************************************************************");
-        
-    } 
-    function getInputVaultBalance(Order memory order) internal returns(uint256){
-        return POLYGON_ORDERBOOK.vaultBalance(order.owner,order.validInputs[0].token,order.validInputs[0].vaultId) ;
+    }
+
+    function getInputVaultBalance(Order memory order) internal returns (uint256) {
+        return POLYGON_ORDERBOOK.vaultBalance(order.owner, order.validInputs[0].token, order.validInputs[0].vaultId);
     }
 
     function placeOrder(bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output)
@@ -223,15 +222,15 @@ contract Test4SushiV2StratBinomial is OpTest {
             // padding
             hex"000000000000000000000000000000000000000000000000000000000000";
 
-        for (uint256 i = 0; i < 10; i++) { 
-            console2.log("i -------------------------------------------------------------------------> : %s",i); 
+        for (uint256 i = 0; i < 10; i++) {
+            console2.log("i -------------------------------------------------------------------------> : %s", i);
             uint256 initBal = getInputVaultBalance(sellOrder);
             takeOrder(sellOrder, sellRoute);
             vm.warp(block.timestamp + 7200);
-            getInterpreterStack(sellOrder);  
+            getInterpreterStack(sellOrder);
             uint256 afterBal = getInputVaultBalance(sellOrder);
-            console2.log("USDT : %s", afterBal - initBal  );
-            console2.log("i -------------------------------------------------------------------------> : %s",i); 
+            console2.log("USDT : %s", afterBal - initBal);
+            console2.log("i -------------------------------------------------------------------------> : %s", i);
         }
     }
 
@@ -270,14 +269,14 @@ contract Test4SushiV2StratBinomial is OpTest {
             hex"000000000000000000000000000000000000000000000000000000000000";
 
         for (uint256 i = 0; i < 10; i++) {
-            console2.log("i -------------------------------------------------------------------------> : %s",i); 
+            console2.log("i -------------------------------------------------------------------------> : %s", i);
             uint256 initBal = getInputVaultBalance(buyOrder);
             takeOrder(buyOrder, buyRoute);
             vm.warp(block.timestamp + 7200);
-            getInterpreterStack(buyOrder);  
+            getInterpreterStack(buyOrder);
             uint256 afterBal = getInputVaultBalance(buyOrder);
-            console2.log("NHT : %s", afterBal - initBal  );
-            console2.log("i -------------------------------------------------------------------------> : %s",i); 
+            console2.log("NHT : %s", afterBal - initBal);
+            console2.log("i -------------------------------------------------------------------------> : %s", i);
         }
     }
 
