@@ -9,12 +9,11 @@ import { encodeMeta, estimateFeeData, getProvider } from "./index";
 import networkConfig from "../../networkConfig.json"
 
 import Parser from "../abis/IParserV1.json" 
-import { getRainBuyNhtString, getRainSellNhtString } from "../DeployStrategy/strat";
 
 
-export const deploySushiSellStrategy = async(network:string,priKey: string, common: Common,vaultId) => { 
+export const deploySushiSellStrategy = async(network:string,priKey: string, common: Common,vaultId, strategyString: string) => { 
 
-  console.log("Deploying Sushi Sell Strategy with Native Parser...") 
+  console.log("Deploying Sell Strategy with Native Parser...") 
     
   //Get Provider for testnet from where the data is to be fetched 
   const provider = getProvider(network)    
@@ -51,8 +50,6 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
   const orderBook = new ethers.Contract(orderBookAddress,orderBookDetails.abi,signer) 
 
   const parser = new ethers.Contract(parserAddress,Parser.abi,provider) 
-
-  const strategyString = getRainSellNhtString(network);
 
   let [bytecode,constants] = await parser.parse(
     ethers.utils.toUtf8Bytes(
@@ -124,9 +121,9 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
 
 } 
 
-export const deploySushiBuyStrategy = async(network:string,priKey: string, common: Common,vaultId) => { 
+export const deploySushiBuyStrategy = async(network:string,priKey: string, common: Common,vaultId, strategyString: string) => { 
 
-  console.log("Deploying Sushi Buy Strategy with Native Parser...") 
+  console.log("Deploying Buy Strategy with Native Parser...") 
 
     
   //Get Provider for testnet from where the data is to be fetched 
@@ -166,8 +163,6 @@ export const deploySushiBuyStrategy = async(network:string,priKey: string, commo
   const orderBook = new ethers.Contract(orderBookAddress,orderBookDetails.abi,signer) 
 
   const parser = new ethers.Contract(parserAddress,Parser.abi,provider) 
-
-  const strategyString = getRainBuyNhtString(network);
 
   let [bytecode,constants] = await parser.parse(
     ethers.utils.toUtf8Bytes(

@@ -32,7 +32,7 @@ address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
 address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
 IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT =
-    IOrderBookV3ArbOrderTaker(0xD1c3Df3b3c5a1059FC1a123562a7215a94F34876);
+    IOrderBookV3ArbOrderTaker(0x5910cBEe2665A206E637F4183D27b433264fB878);
 
 address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
@@ -41,7 +41,7 @@ RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
     RainterpreterExpressionDeployerNP(0x2E4b43db4d4866016eF58D1F9641e835014B3bd5);
 address constant POLYGON_INTERPRETER = 0x4B4D3b75209b7e4802F3b23cC09a036386bc1197;
 address constant POLYGON_STORE = 0xB10bEb93858Be01eF856304645eBc7d7eC001Ec3;
-IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0xcE00CBCC5AeDfee3374d2a4d0e2a207Dc345E650);
+IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x12022a10aAEcC1601A38a028c97F297713b6a230);
 
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
@@ -89,7 +89,7 @@ bytes constant RAINSTRING_PRELUDE =
     // USDT token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // Approved counterparty.
-    "approved-counterparty: 0xD1c3Df3b3c5a1059FC1a123562a7215a94F34876,"
+    "approved-counterparty: 0x5910cBEe2665A206E637F4183D27b433264fB878,"
     // Actual counterparty.
     "actual-counterparty: context<1 2>(),"
     // Order hash.
@@ -105,9 +105,11 @@ bytes constant RAINSTRING_PRELUDE =
     // We can just seed the rng with last time.
     "amount-random-multiplier18: call<2 1>(last-time),"
     // Calculate the target usdt amount for the order, as decimal18.
-    "target-usdt-amount18: decimal18-mul(max-usdt-amount18 amount-random-multiplier18),"
-    // Sushi needs the usdt amount as 6 decimals (tether's native size).
-    "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"
+    "target-usdt-amount18: decimal18-mul(max-usdt-amount18 amount-random-multiplier18),";
+
+bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
+// Sushi needs the usdt amount as 6 decimals (tether's native size).
+    "target-usdt-amount: decimal18-scale-n<6 1>(target-usdt-amount18),"
     // Try to average a 1 hour cooldown, so the max is 2 hours.
     "max-cooldown18: 7200e18,"
     // Seed the rng with the hash of the last time to make it distinct from the
@@ -121,12 +123,10 @@ bytes constant RAINSTRING_PRELUDE =
     // - counterparty is approved.
     ":ensure<0>(equal-to(approved-counterparty actual-counterparty)),"
     // Check the cooldown.
-    ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),";
-
-bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
-// Token in for uniswap is ob's token out, and vice versa.
-// We want the timestamp as well as the nht amount that sushi wants in.
-// NHT is already 18 decimals, so we don't need to scale it.
+    ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),"
+    // Token in for uniswap is ob's token out, and vice versa.
+    // We want the timestamp as well as the nht amount that sushi wants in.
+    // NHT is already 18 decimals, so we don't need to scale it.
     "last-price-timestamp nht-amount18: uniswap-v2-amount-in<1>(polygon-sushi-v2-factory target-usdt-amount nht-token-address usdt-token-address),"
     // Don't allow the price to change this block before this trade.
     ":ensure<2>(less-than(last-price-timestamp block-timestamp())),"
@@ -154,12 +154,28 @@ function rainstringSell() pure returns (bytes memory) {
 }
 
 bytes constant EXPECTED_SELL_BYTECODE =
-    hex"03000000f001043b14001301000000010000010100000201000003040002010400000100000005270100000a0000000000000528020000010000040000000603010102000000080000000717020000000000091a010006010000050000000605010000030101020000000c0000000b170200000000000d1a01000000000004000000030e0200000d0100000a0000000000000e000000061b020000140200000d01000100000002000000010000000a00000000290400010a0000000000000f140200000d01000200000001040000040e0200000d01000300000002040000030e0200000d01000400000010000000110000000916020000040200000400000204000404110200000d01000512070106000000000501000002010000000000011901000001000007010000060000000005020000230200000100000800000003000000021c02000026020000010000090000000416020000";
+    hex"03000000f001043b14001301000000010000010100000201000003040002010400000100000005270100000a0000000000000528020000010000040000000603010102000000080000000717020000000000091a010106010000050000000605010000030101020000000c0000000b170200000000000d1a01000000000004000000030e0200000d0100000a0000000000000e000000061b020000140200000d01000100000002000000010000000a00000000290400010a0000000000000f140200000d01000200000001040000040e0200000d01000300000002040000030e0200000d01000400000010000000110000000916020000040200000400000204000404110200000d01000512070106000000000501000002010000000000011901000001000007010000060000000005020000230200000100000800000003000000021c02000026020000010000090000000416020000";
 
 bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
-// Token out for uni is in for ob, and vice versa.
-// We want the timestamp as well as the nht amount that sushi will give us.
-// NHT is already 18 decimals, so we don't need to scale it.
+// Sushi needs the usdt amount as 6 decimals (tether's native size).
+    "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"
+    // Try to average a 1 hour cooldown, so the max is 2 hours.
+    "max-cooldown18: 7200e18,"
+    // Seed the rng with the hash of the last time to make it distinct from the
+    // amount random multiplier.
+    "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"
+    // Calculate the cooldown for the order.
+    "cooldown18: decimal18-mul(max-cooldown18 cooldown-random-multiplier18),"
+    // Scale the cooldown to integer seconds.
+    "cooldown: decimal18-scale-n<0>(cooldown18),"
+    // Check all the addresses are correct.
+    // - counterparty is approved.
+    ":ensure<0>(equal-to(approved-counterparty actual-counterparty)),"
+    // Check the cooldown.
+    ":ensure<1>(less-than(int-add(last-time cooldown) block-timestamp())),"
+    // Token out for uni is in for ob, and vice versa.
+    // We want the timestamp as well as the nht amount that sushi will give us.
+    // NHT is already 18 decimals, so we don't need to scale it.
     "last-price-timestamp nht-amount18: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-usdt-amount usdt-token-address nht-token-address),"
     // Don't allow the price to change this block before this trade.
     ":ensure<6>(less-than(last-price-timestamp block-timestamp())),"
