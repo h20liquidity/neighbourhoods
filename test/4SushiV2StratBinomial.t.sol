@@ -416,7 +416,6 @@ contract Test4SushiV2StratBinomial is OpTest {
         IInterpreterStoreV1 storeDeployer;
         address expression;
         {
-            console2.log(string(rainstringSell()));
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringSell());
             assertEq(bytecode, EXPECTED_SELL_BYTECODE);
             uint256[] memory minOutputs = new uint256[](1);
