@@ -32,16 +32,16 @@ address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
 address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
 IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT =
-    IOrderBookV3ArbOrderTaker(0x5910cBEe2665A206E637F4183D27b433264fB878);
+    IOrderBookV3ArbOrderTaker(0xe5518dC11644413418dFba18E53876a645665981);
 
 address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
 
 RainterpreterExpressionDeployerNP constant POLYGON_DEPLOYER =
-    RainterpreterExpressionDeployerNP(0x2E4b43db4d4866016eF58D1F9641e835014B3bd5);
-address constant POLYGON_INTERPRETER = 0x4B4D3b75209b7e4802F3b23cC09a036386bc1197;
-address constant POLYGON_STORE = 0xB10bEb93858Be01eF856304645eBc7d7eC001Ec3;
-IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x12022a10aAEcC1601A38a028c97F297713b6a230);
+    RainterpreterExpressionDeployerNP(0x808F049f53Ca70A2b8Ace4c117FFbec4ce77dE84);
+address constant POLYGON_INTERPRETER = 0xBBE3275DCD2dF953362f6eC9dB1e44A9c9EF21F2;
+address constant POLYGON_STORE = 0x97017811542bF3C4148847DC172d1a0F7e42342D;
+IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x95C9Bf235435b660AA69F519904C3F175Aab393d);
 
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
@@ -78,7 +78,7 @@ bytes constant RAINSTRING_PRELUDE =
     // USDT token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // Approved counterparty.
-    "approved-counterparty: 0x5910cBEe2665A206E637F4183D27b433264fB878,"
+    "approved-counterparty: 0xe5518dC11644413418dFba18E53876a645665981,"
     // Actual counterparty.
     "actual-counterparty: context<1 2>(),"
     // Order hash.
