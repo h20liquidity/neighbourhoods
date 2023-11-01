@@ -62,7 +62,7 @@ bytes constant RAINSTRING_JITTERY_BINOMIAL =
     "input:,"
     // The binomial part is using ctpop over a hash to simulate 10 coin flips.
     // produces a decimal number between 0 and 10.
-    "binomial18-10: decimal18-scale18<0>(bitwise-decode<0 10>(bitwise-count-ones(hash(input)))),"
+    "binomial18-10: decimal18-scale18<0>(bitwise-count-ones(bitwise-decode<0 10>(hash(input)))),"
     // The noise is a decimal number between 0 and 1.
     "noise18-1: int-mod(hash(input 0) 1e18),"
     // The jittery is the binomial plus the noise. Which is a range 0-11.
