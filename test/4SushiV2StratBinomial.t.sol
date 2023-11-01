@@ -28,7 +28,7 @@ import {LibCtPop} from "rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 48315276;
+uint256 constant FORK_BLOCK_NUMBER = 49417052;
 // taken from block explorer.
 // uint256 constant FORK_BLOCK_TIME = 1696419600;
 
@@ -230,6 +230,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         IInterpreterStoreV1 storeDeployer;
         address expression;
         {
+            console2.log(string(rainstringSell()));
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringSell());
             assertEq(bytecode, EXPECTED_SELL_BYTECODE);
             uint256[] memory minOutputs = new uint256[](1);
