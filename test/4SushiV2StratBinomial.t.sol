@@ -95,7 +95,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
-    function getInterpreterStack(Order memory order) internal{
+    function getInterpreterStack(Order memory order) internal {
         uint256[][] memory context = new uint256[][](5);
         {
             uint256[] memory baseContext = new uint256[](2);
@@ -138,7 +138,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         );
         IInterpreterStoreV1(POLYGON_STORE).set(StateNamespace.wrap(uint256(uint160(order.owner))), kvs);
 
-        for(uint256 i = 0 ; i < stack.length ; i++){
+        for (uint256 i = 0; i < stack.length; i++) {
             console2.log(stack[i]);
         }
     }
@@ -509,9 +509,9 @@ contract Test4SushiV2StratBinomial is OpTest {
         );
         storeDeployer.set(StateNamespace.wrap(0), kvs);
         checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
-    }  
+    }
 
-    function decodeBits(uint256 operand, uint256 input) internal returns(uint256 output){
+    function decodeBits(uint256 operand, uint256 input) internal returns (uint256 output) {
         uint256 startBit = operand & 0xFF;
         uint256 length = (operand >> 8) & 0xFF;
 
@@ -519,12 +519,12 @@ contract Test4SushiV2StratBinomial is OpTest {
         output = (input >> startBit) & mask;
     }
 
-    function jitteryBinomial(uint256 input) internal returns (uint256) { 
+    function jitteryBinomial(uint256 input) internal returns (uint256) {
         uint256 inputHash = uint256(keccak256(abi.encodePacked(input)));
-        uint256 binomial = LibCtPop.ctpop(decodeBits(0x010A00,inputHash)) * 1e18;
+        uint256 binomial = LibCtPop.ctpop(decodeBits(0x010A00, inputHash)) * 1e18;
         uint256 noise = uint256(keccak256(abi.encodePacked(input, uint256(0)))) % 1e18;
 
-        uint256 jittery = binomial + noise ;
+        uint256 jittery = binomial + noise;
 
         return jittery.fixedPointDiv(11e18, Math.Rounding.Down);
     }
@@ -568,7 +568,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         // amount random multiplier
         assertEq(stack[8], jitteryBinomial(lastTime));
         // target usdt amount e18
-        assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18); 
+        assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
         assertEq(stack[10], stack[9].scaleN(6, 1));
         // max cooldown e18
