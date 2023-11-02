@@ -26,5 +26,5 @@ ts-node scripts-v3/deployStrategyNP.ts --to polygon
 ts-node scripts-v3/deposit.ts --to polygon --token NHT --vault {vault} --amount 1000000
 ```
 ```sh
-ts-node scripts-v3/deposit.ts --to polygon --token USDT --vault {vault} --amount 100
+ts-node scripts-v3/deposit.ts --to polygon --token USDT --vault {vault} --amount 150
 ```

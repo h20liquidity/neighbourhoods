@@ -2,28 +2,17 @@ import config from "../v3-config.json";
 
 
 export const RAINSTRING_JITTERY_BINOMIAL =
-// Paramaterise the seed for our randomness (hash).
-    "input:,"+
-    // The binomial part is using ctpop over a hash to simulate 256 coin flips.
-    "binomial: bitwise-count-ones(hash(input)),"+
-    // Rescale the binomial to 18 decimal fixed point so we can easily add some
-    // noise to it with a simple mod of a hash.
-    "binomial18: decimal18-scale18<0>(binomial),"+
-    // Generate some noise for the binomial. The noise is a number between 0 and
-    // 1e18. Ensure that we use a different seed for the noise than the binomial
-    // by concatenating 0 to the seed.
-    "noise18: int-mod(hash(input 0) 1e18),"+
-    // Add the noise to the binomial, subtracting 0.5 to ensure that the noise
-    // is centred around the binomial value. This will underflow if the binomial
-    // is 0, but that's only possible if the hash of the seed is `0` which is
-    // somewhat unlikely.
-    "jittery-binomial18: decimal18-sub(decimal18-add(binomial18 noise18) 5e17),"+
-    // The jittery binomial is a number between 0 and 256e18. We want a number
-    // between 0 and 1e18, so we divide by 256. As above, technically this will
-    // produce a value outside this range if the hash of the input is
-    // `type(256).max`, which is just as unlikely as the hash of the input being
-    // `0`.
-    "output: decimal18-div(jittery-binomial18 256e18);";
+        // Paramaterise the seed for our randomness (hash).
+        "input:,"+
+        // The binomial part is using ctpop over a hash to simulate 10 coin flips.
+        // produces a decimal number between 0 and 10.
+        "binomial18-10: decimal18-scale18<0>(bitwise-count-ones(bitwise-decode<0 10>(hash(input)))),"+
+        // The noise is a decimal number between 0 and 1.
+        "noise18-1: int-mod(hash(input 0) 1e18),"+
+        // The jittery is the binomial plus the noise. Which is a range 0-11.
+        "jittery-11: decimal18-add(binomial18-10 noise18-1),"+
+        // The final jittery is the jittery divided by 11, which is a range 0-1.
+        "jittery-1: decimal18-div(jittery-11 11e18);";
 
 export const RAINSTRING_CALCULATE_ORDER_SELL =
         // Sushi needs the usdt amount as 6 decimals (tether's native size).
