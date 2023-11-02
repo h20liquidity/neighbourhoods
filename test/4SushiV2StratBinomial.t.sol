@@ -85,17 +85,17 @@ contract Test4SushiV2StratBinomial is OpTest {
 
     function placeBuyOrderFork() internal returns (Order memory) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringBuy());
-        // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+        assertEq(bytecode, EXPECTED_BUY_BYTECODE);
         return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
     }
 
     function placeSellOrderFork() internal returns (Order memory order) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringSell());
-        // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
-    function getInterpreterStack(Order memory order) internal {
+    function getInterpreterStack(Order memory order) internal{
         uint256[][] memory context = new uint256[][](5);
         {
             uint256[] memory baseContext = new uint256[](2);
@@ -138,10 +138,9 @@ contract Test4SushiV2StratBinomial is OpTest {
         );
         IInterpreterStoreV1(POLYGON_STORE).set(StateNamespace.wrap(uint256(uint160(order.owner))), kvs);
 
-        for (uint256 i = 0; i < stack.length; i++) {
+        for(uint256 i = 0 ; i < stack.length ; i++){
             console2.log(stack[i]);
         }
-        console2.log("**************************************************************");
     }
 
     function getInputVaultBalance(Order memory order) internal view returns (uint256) {
@@ -224,14 +223,8 @@ contract Test4SushiV2StratBinomial is OpTest {
             hex"000000000000000000000000000000000000000000000000000000000000";
 
         for (uint256 i = 0; i < 10; i++) {
-            console2.log("i -------------------------------------------------------------------------> : %s", i);
-            uint256 initBal = getInputVaultBalance(sellOrder);
             takeOrder(sellOrder, sellRoute);
             vm.warp(block.timestamp + 7200);
-            getInterpreterStack(sellOrder);
-            uint256 afterBal = getInputVaultBalance(sellOrder);
-            console2.log("USDT : %s", afterBal - initBal);
-            console2.log("i -------------------------------------------------------------------------> : %s", i);
         }
     }
 
@@ -270,14 +263,8 @@ contract Test4SushiV2StratBinomial is OpTest {
             hex"000000000000000000000000000000000000000000000000000000000000";
 
         for (uint256 i = 0; i < 10; i++) {
-            console2.log("i -------------------------------------------------------------------------> : %s", i);
-            uint256 initBal = getInputVaultBalance(buyOrder);
             takeOrder(buyOrder, buyRoute);
             vm.warp(block.timestamp + 7200);
-            getInterpreterStack(buyOrder);
-            uint256 afterBal = getInputVaultBalance(buyOrder);
-            console2.log("NHT : %s", afterBal - initBal);
-            console2.log("i -------------------------------------------------------------------------> : %s", i);
         }
     }
 
@@ -381,7 +368,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringBuy());
-            // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+            assertEq(bytecode, EXPECTED_BUY_BYTECODE);
             uint256[] memory minOutputs = new uint256[](1);
             minOutputs[0] = 0;
             (interpreterDeployer, storeDeployer, expression) =
@@ -480,7 +467,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringSell());
-            // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+            assertEq(bytecode, EXPECTED_SELL_BYTECODE);
             uint256[] memory minOutputs = new uint256[](1);
             minOutputs[0] = 0;
             (interpreterDeployer, storeDeployer, expression) =
@@ -522,18 +509,27 @@ contract Test4SushiV2StratBinomial is OpTest {
         );
         storeDeployer.set(StateNamespace.wrap(0), kvs);
         checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
+    }  
+
+    function decodeBits(uint256 operand, uint256 input) internal returns(uint256 output){
+        uint256 startBit = operand & 0xFF;
+        uint256 length = (operand >> 8) & 0xFF;
+
+        uint256 mask = (2 ** length) - 1;
+        output = (input >> startBit) & mask;
     }
 
-    function jitteryBinomial(uint256 input) internal pure returns (uint256) {
-        uint256 binomial = LibCtPop.ctpop(uint256(keccak256(abi.encodePacked(input)))) * 1e18;
+    function jitteryBinomial(uint256 input) internal returns (uint256) { 
+        uint256 inputHash = uint256(keccak256(abi.encodePacked(input)));
+        uint256 binomial = LibCtPop.ctpop(decodeBits(0x010A00,inputHash)) * 1e18;
         uint256 noise = uint256(keccak256(abi.encodePacked(input, uint256(0)))) % 1e18;
 
-        uint256 jittery = binomial + noise - 5e17;
+        uint256 jittery = binomial + noise ;
 
-        return jittery.fixedPointDiv(256e18, Math.Rounding.Down);
+        return jittery.fixedPointDiv(11e18, Math.Rounding.Down);
     }
 
-    function cooldown(uint256 seed) internal pure returns (uint256) {
+    function cooldown(uint256 seed) internal returns (uint256) {
         uint256 multiplier = jitteryBinomial(uint256(keccak256(abi.encodePacked(seed))));
         return MAX_COOLDOWN * multiplier / 1e18;
     }
@@ -572,7 +568,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         // amount random multiplier
         assertEq(stack[8], jitteryBinomial(lastTime));
         // target usdt amount e18
-        assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
+        assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18); 
         // target usdt amount e6
         assertEq(stack[10], stack[9].scaleN(6, 1));
         // max cooldown e18
