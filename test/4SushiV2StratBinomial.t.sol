@@ -95,7 +95,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
-    function getInterpreterStack(Order memory order) internal view {
+    function getInterpreterStack(Order memory order) internal {
         uint256[][] memory context = new uint256[][](5);
         {
             uint256[] memory baseContext = new uint256[](2);
@@ -136,7 +136,7 @@ contract Test4SushiV2StratBinomial is OpTest {
             LibEncodedDispatch.encode(order.evaluable.expression, SourceIndex.wrap(0), type(uint16).max),
             context
         );
-        (kvs);
+        IInterpreterStoreV1(POLYGON_STORE).set(StateNamespace.wrap(uint256(uint160(order.owner))), kvs);
 
         for (uint256 i = 0; i < stack.length; i++) {
             console2.log(stack[i]);
