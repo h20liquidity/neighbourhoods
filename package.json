@@ -19,10 +19,6 @@
   "devDependencies": {
     "@ethereumjs/common": "^3.1.1",
     "@ethereumjs/tx": "^4.1.1",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "@prb/math": "=3.3.0",
-    "@rainprotocol/rain-protocol": "git://github.com/rainprotocol/rain-protocol.git#613769424da0faccd68bfa8d9b3af911a278c706",
     "@wagmi/core": "^0.10.3",
     "dotenv": "=16.0.3",
     "ethers": "^5.7.2",
