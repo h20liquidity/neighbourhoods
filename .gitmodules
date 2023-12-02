@@ -1,6 +1,3 @@
-[submodule "lib/rain.solmem"]
-	path = lib/rain.solmem
-	url = https://github.com/rainprotocol/rain.solmem
 [submodule "lib/rain.lib.typecast"]
 	path = lib/rain.lib.typecast
 	url = https://github.com/rainprotocol/rain.lib.typecast
