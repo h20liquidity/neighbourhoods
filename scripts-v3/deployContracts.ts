@@ -29,8 +29,10 @@ async function main(argv){
   
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.Rainterpreter)  
 
-  await deployRainContract(fromNetwork,toNetwork,supportedContracts.RainterpreterStore)  
-
+  await deployRainContract(fromNetwork,toNetwork,supportedContracts.RainterpreterStore)
+  
+  await deployRainContract(fromNetwork,toNetwork,supportedContracts.RainterpreterParser)  
+  
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.RainterpreterExpressionDeployer)
 
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.Orderbook) 

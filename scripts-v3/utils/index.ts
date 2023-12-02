@@ -10,7 +10,7 @@ import axios from "axios";
 import { hexlify } from "ethers/lib/utils";
 import Parser from "../abis/IParserV1.json" 
 import Cloneable from "../abis/ICloneableV2.json" 
-import {  getArbRainlangString } from "../deployContract/arb";
+import {  getArbRainlangString, getUngatedArbRainlangString } from "../deployContract/arb";
 
 /**
  * Supported Networks to x-deploy contracts.
@@ -23,6 +23,7 @@ export const supportedNetworks = ["mumbai","polygon","ethereum","sepolia"]
 export const supportedContracts = Object.freeze({
   Rainterpreter : "Rainterpreter",
   RainterpreterStore : "RainterpreterStore",
+  RainterpreterParser : "RainterpreterParser",
   RainterpreterExpressionDeployer : "RainterpreterExpressionDeployer",
   Orderbook : "Orderbook",
   CloneFactory : "CloneFactory",
@@ -135,6 +136,9 @@ export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,t
   }
   if(txData.includes(fromNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase())){
     txData = txData.replace(fromNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase())
+  }
+  if(txData.includes(fromNetworkConfig["RainterpreterParser"]["address"].split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkConfig["RainterpreterParser"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["RainterpreterParser"]["address"].split('x')[1].toLowerCase())
   }
   return txData 
 }  
@@ -287,8 +291,11 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
   const nonce = await provider.getTransactionCount(signer.address)    
 
-  const arbString = getArbRainlangString() ; 
+  const arbString = getArbRainlangString() ;
+  // const arbString = getUngatedArbRainlangString(); 
   const expressionDeployerAddress = contractConfig.contracts[network].RainterpreterExpressionDeployer
+  const parserAddress = contractConfig.contracts[network].RainterpreterParser
+
   const orderBookAddress = contractConfig.contracts[network].Orderbook.address 
   const cloneFactoryAddress = contractConfig.contracts[network].CloneFactory.address
   const arbImplementationAddress = contractConfig.contracts[network].RouteProcessorOrderBookV3ArbOrderTakerImplementation.address
@@ -296,7 +303,7 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
 
 
-  const parser = new ethers.Contract(expressionDeployerAddress.address,Parser.abi,provider) 
+  const parser = new ethers.Contract(parserAddress.address,Parser.abi,provider) 
 
   let [bytecode,constants] = await parser.parse(
     ethers.utils.toUtf8Bytes(
