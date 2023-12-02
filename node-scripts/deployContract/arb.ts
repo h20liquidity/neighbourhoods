@@ -10,3 +10,9 @@ export const getArbRainlangString = () => {
 
     return ARB_RAINLANG_STRING
 }
+
+export const getUngatedArbRainlangString = () => {
+    const ARB_RAINLANG_STRING = "" 
+
+    return ARB_RAINLANG_STRING
+}
