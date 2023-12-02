@@ -1,7 +1,6 @@
 import { BigNumber, ethers } from "ethers";  
 import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
-import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
-import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
+import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'
 import fs from "fs"  
 
 import contractConfig from "../v3-config.json"

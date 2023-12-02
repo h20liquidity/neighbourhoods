@@ -1,5 +1,3 @@
-import { ethers,  network} from "hardhat"; 
-
 import * as dotenv from "dotenv";
 import {supportedContracts, supportedNetworks } from "./utils";
 import { deployArbInstance} from "./deployContract/deployArbImplnstance";

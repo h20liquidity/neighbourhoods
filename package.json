@@ -31,7 +31,6 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@0x/contract-addresses": "^8.2.0",
     "@rainprotocol/rainlang": "^3.0.2",
     "@sonicswap/wagmi-core": "^3.0.0",
     "alchemy-sdk": "^2.9.2",
