@@ -5,15 +5,10 @@ import {console2} from "forge-std/console2.sol";
 
 import {Vm} from "forge-std/Vm.sol";
 import {OpTest} from "rain.interpreter/test/util/abstract/OpTest.sol";
-import {StateNamespace, LibNamespace, FullyQualifiedNamespace} from "rain.interpreter/src/lib/ns/LibNamespace.sol";
 import {IInterpreterStoreV1} from "rain.interpreter/src/interface/IInterpreterStoreV1.sol";
-import {LibEncodedDispatch} from "lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {SignedContextV1} from "rain.interpreter/src/interface/IInterpreterCallerV2.sol";
 import "rain.interpreter/lib/rain.uniswapv2/src/lib/LibUniswapV2.sol";
 import {EnsureFailed} from "rain.interpreter/src/lib/op/logic/LibOpEnsureNP.sol";
-import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
-import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
-
 import {
     rainstringSell,
     rainstringBuy,
@@ -46,9 +41,13 @@ import {
     POLYGON_STORE_NPE2,
     POLYGON_PARSER_NPE2,
     POLYGON_USDT_HOLDER,
-    POLYGON_NHT_HOLDER
+    POLYGON_NHT_HOLDER,
+    RAINSTRING_JITTERY_BINOMIAL
 } from "src/4SushiV2StratBinomial.sol";
 import "lib/rain.interpreter/src/lib/bitwise/LibCtPop.sol";
+import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
+import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
+import "test/lib/OrderBookNPE2Real.sol";
 
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
@@ -63,13 +62,9 @@ uint256 constant RESERVE_ZERO = 53138576564435538694955386;
 uint256 constant RESERVE_ONE = 12270399039;
 uint32 constant RESERVE_TIMESTAMP = 1692775490;
 
-contract Test4SushiV2StratBinomial is OpTest {
+contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
     using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
     using LibFixedPointDecimalScale for uint256;
-
-    function constructionMetaPath() internal pure override returns (string memory) {
-        return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta";
-    }
 
     function selectPolygonFork() internal {
         uint256 fork = vm.createFork(FORK_RPC);
@@ -247,26 +242,19 @@ contract Test4SushiV2StratBinomial is OpTest {
             );
         }
 
-        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
-        IInterpreterV2 interpreterDeployer;
-        IInterpreterStoreV1 storeDeployer;
+        address interpreterDeployer;
+        address storeDeployer;
         address expression;
         {
-            (bytes memory bytecode, uint256[] memory constants) = iParser.parse(rainstringBuy());
+            (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringBuy());
             // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
-            (interpreterDeployer, storeDeployer, expression,) =
-                iDeployer.deployExpression2(bytecode, constants);
+            (interpreterDeployer, storeDeployer, expression) =
+                iDeployExpression(bytecode, constants);
         }
 
         // At this point the cooldown has never triggered so it can eval.
-        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval2(
-            storeDeployer,
-            namespace,
-            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-            context,
-            new uint256[](0)
-        );
-        storeDeployer.set(StateNamespace.wrap(0), kvs);
+        (uint256[] memory stack, uint256[] memory kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+        IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
         checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
         lastTime = block.timestamp;
 
@@ -278,27 +266,16 @@ contract Test4SushiV2StratBinomial is OpTest {
 
             // At this point the cooldown is not expired.
             vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
-            (stack, kvs) = interpreterDeployer.eval2(
-                storeDeployer,
-                namespace,
-                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-                context,
-                new uint256[](0)
-            );
+            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
             (stack, kvs);
         }
+        
 
         {
             // The cooldown is expired one second later.
             vm.warp(block.timestamp + 1);
-            (stack, kvs) = interpreterDeployer.eval2(
-                storeDeployer,
-                namespace,
-                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-                context,
-                new uint256[](0)
-            );
-            storeDeployer.set(StateNamespace.wrap(0), kvs);
+            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+            IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
             checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
         }
     }
@@ -357,26 +334,20 @@ contract Test4SushiV2StratBinomial is OpTest {
             );
         }
 
-        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
-        IInterpreterV2 interpreterDeployer;
-        IInterpreterStoreV1 storeDeployer;
+        address interpreterDeployer;
+        address storeDeployer;
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iParser.parse(rainstringSell());
             // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
-            (interpreterDeployer, storeDeployer, expression,) =
-                iDeployer.deployExpression2(bytecode, constants);
+            (interpreterDeployer, storeDeployer, expression) =
+                iDeployExpression(bytecode, constants);
         }
 
         // At this point the cooldown has never triggered so it can eval.
-        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval2(
-            storeDeployer,
-            namespace,
-            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-            context,
-            new uint256[](0)
-        );
-        storeDeployer.set(StateNamespace.wrap(0), kvs);
+        (uint256[] memory stack, uint256[] memory kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+
+        IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
         checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
         lastTime = block.timestamp;
 
@@ -387,29 +358,36 @@ contract Test4SushiV2StratBinomial is OpTest {
 
             // At this point the cooldown is not expired.
             vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
-            (stack, kvs) = interpreterDeployer.eval2(
-                storeDeployer,
-                namespace,
-                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-                context,
-                new uint256[](0)
-            );
+            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
             (stack, kvs);
         }
 
         {
             // The cooldown is expired one second later.
             vm.warp(block.timestamp + 1);
-            (stack, kvs) = interpreterDeployer.eval2(
-                storeDeployer,
-                namespace,
-                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-                context,
-                new uint256[](0)
-            );
-            storeDeployer.set(StateNamespace.wrap(0), kvs);
+            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+            IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
             checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
         }
+    }
+
+    function testJitteryBinomial(uint256 input) public {
+        // Parser and Deploy expression
+        (bytes memory bytecode, uint256[] memory constants) = iParser.parse(RAINSTRING_JITTERY_BINOMIAL);
+        (address interpreter, address store, address expression) = iDeployExpression(bytecode, constants);
+
+        uint256[][] memory context = new uint256[][](0);
+        uint256[] memory inputs = new uint256[](1);
+        inputs[0] = input;
+
+        // Eval RAINSTRING_UD_RATIO expression
+        (uint256[] memory stack, uint256[] memory kvs) =
+            iEvalExpression(expression, interpreter, store, context, inputs);
+        (kvs);
+        uint256 expectedJitteryBinomial = jitteryBinomial(input);
+
+        // Assert stack 0
+        assertEq(stack[0], expectedJitteryBinomial);
     }
 
     function decodeBits(uint256 operand, uint256 input) internal returns (uint256 output) {
@@ -430,9 +408,9 @@ contract Test4SushiV2StratBinomial is OpTest {
         return jittery.fixedPointDiv(11e18, Math.Rounding.Down);
     }
 
-    function cooldown(uint256 seed) internal returns (uint256) {
-        uint256 multiplier = jitteryBinomial(uint256(keccak256(abi.encodePacked(seed))));
-        return MAX_COOLDOWN * multiplier / 1e18;
+    function cooldown(uint256 lastTime) internal returns (uint256) {
+        uint256 multiplier = jitteryBinomial(uint256(keccak256(abi.encodePacked(lastTime))));
+        return MAX_COOLDOWN.scale18(0,0).fixedPointMul(multiplier,Math.Rounding.Down).scaleN(0,0);
     }
 
     function checkSellCalculate(
