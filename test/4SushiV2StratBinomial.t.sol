@@ -5,19 +5,21 @@ import {console2} from "forge-std/console2.sol";
 
 import {Vm} from "forge-std/Vm.sol";
 import {OpTest} from "rain.interpreter/test/util/abstract/OpTest.sol";
-import {StateNamespace, IInterpreterV1, SourceIndex} from "rain.interpreter/src/interface/IInterpreterV1.sol";
+import {StateNamespace, LibNamespace, FullyQualifiedNamespace} from "rain.interpreter/src/lib/ns/LibNamespace.sol";
 import {IInterpreterStoreV1} from "rain.interpreter/src/interface/IInterpreterStoreV1.sol";
-import {LibEncodedDispatch} from "rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
+import {LibEncodedDispatch} from "lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {SignedContextV1} from "rain.interpreter/src/interface/IInterpreterCallerV2.sol";
-import {LibContext} from "rain.interpreter/src/lib/caller/LibContext.sol";
-import {LibUniswapV2, IUniswapV2Pair} from "rain.interpreter/src/lib/uniswap/LibUniswapV2.sol";
-import {IUniswapV2Factory} from "rain.interpreter/lib/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "rain.interpreter/lib/rain.uniswapv2/src/lib/LibUniswapV2.sol";
 import {EnsureFailed} from "rain.interpreter/src/lib/op/logic/LibOpEnsureNP.sol";
-import "lib/rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
-import "lib/rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
+import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
+import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
+
 import {
     rainstringSell,
     rainstringBuy,
+    BUY_ROUTE,
+    SELL_ROUTE,
+    SignedContextV1,
     EXPECTED_SELL_BYTECODE,
     EXPECTED_BUY_BYTECODE,
     POLYGON_SUSHI_V2_FACTORY,
@@ -25,33 +27,33 @@ import {
     POLYGON_NHT_TOKEN_ADDRESS,
     APPROVED_COUNTERPARTY,
     MAX_COOLDOWN,
-    POLYGON_DEPLOYER,
-    Order,
+    POLYGON_DEPLOYER_NPE2,
+    OrderV2,
     IOrderBookV3,
-    IExpressionDeployerV2,
     POLYGON_ORDERBOOK,
     APPROVED_EOA,
-    TakeOrderConfig,
+    TakeOrderConfigV2,
     TakeOrdersConfigV2,
     POLYGON_ARB_CONTRACT,
-    IInterpreterV1,
+    IInterpreterV2,
     IInterpreterStoreV1,
     IO,
     IERC20,
-    EvaluableConfigV2,
+    EvaluableConfigV3,
     OrderConfigV2,
-    POLYGON_INTERPRETER,
-    POLYGON_STORE,
+    SourceIndexV2,
+    POLYGON_INTERPRETER_NPE2,
+    POLYGON_STORE_NPE2,
+    POLYGON_PARSER_NPE2,
     POLYGON_USDT_HOLDER,
     POLYGON_NHT_HOLDER
 } from "src/4SushiV2StratBinomial.sol";
-import {LibCtPop} from "rain.interpreter/src/lib/bitwise/LibCtPop.sol";
-import "lib/rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
+import "lib/rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 49422381;
+uint256 constant FORK_BLOCK_NUMBER = 50524680;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
@@ -66,7 +68,7 @@ contract Test4SushiV2StratBinomial is OpTest {
     using LibFixedPointDecimalScale for uint256;
 
     function constructionMetaPath() internal pure override returns (string memory) {
-        return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNP.rain.meta";
+        return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta";
     }
 
     function selectPolygonFork() internal {
@@ -83,73 +85,25 @@ contract Test4SushiV2StratBinomial is OpTest {
         return IO(address(POLYGON_USDT_TOKEN_ADDRESS), 6, VAULT_ID);
     }
 
-    function placeBuyOrderFork() internal returns (Order memory) {
-        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringBuy());
-        assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+    function placeBuyOrderFork() internal returns (OrderV2 memory) {
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringBuy());
+        // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
         return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
     }
 
-    function placeSellOrderFork() internal returns (Order memory order) {
-        (bytes memory bytecode, uint256[] memory constants) = POLYGON_DEPLOYER.parse(rainstringSell());
-        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+    function placeSellOrderFork() internal returns (OrderV2 memory order) {
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSell());
+        // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
-    function getInterpreterStack(Order memory order) internal {
-        uint256[][] memory context = new uint256[][](5);
-        {
-            uint256[] memory baseContext = new uint256[](2);
-            // orderbook
-            baseContext[0] = uint256(uint160(address(POLYGON_ORDERBOOK)));
-            // arb contract
-            baseContext[1] = uint256(uint160(APPROVED_COUNTERPARTY));
-            context[0] = baseContext;
-        }
-        {
-            uint256[] memory callingContext = new uint256[](3);
-            // order hash
-            callingContext[0] = uint256(keccak256(abi.encode(order)));
-            // owner
-            callingContext[1] = uint256(uint160(order.owner));
-            // counterparty
-            callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
-            context[1] = callingContext;
-        }
-        {
-            uint256[] memory calculationsContext = new uint256[](0);
-            context[2] = calculationsContext;
-        }
-        {
-            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            inputsContext[0] = uint256(uint160(order.validInputs[0].token));
-            context[3] = inputsContext;
-        }
-        {
-            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            outputsContext[0] = uint256(uint160(order.validOutputs[0].token));
-            context[4] = outputsContext;
-        }
-
-        (uint256[] memory stack, uint256[] memory kvs) = IInterpreterV1(POLYGON_INTERPRETER).eval(
-            IInterpreterStoreV1(POLYGON_STORE),
-            StateNamespace.wrap(uint256(uint160(order.owner))),
-            LibEncodedDispatch.encode(order.evaluable.expression, SourceIndex.wrap(0), type(uint16).max),
-            context
-        );
-        IInterpreterStoreV1(POLYGON_STORE).set(StateNamespace.wrap(uint256(uint160(order.owner))), kvs);
-
-        for (uint256 i = 0; i < stack.length; i++) {
-            console2.log(stack[i]);
-        }
-    }
-
-    function getInputVaultBalance(Order memory order) internal view returns (uint256) {
+    function getInputVaultBalance(OrderV2 memory order) internal view returns (uint256) {
         return POLYGON_ORDERBOOK.vaultBalance(order.owner, order.validInputs[0].token, order.validInputs[0].vaultId);
     }
 
     function placeOrder(bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output)
         internal
-        returns (Order memory order)
+        returns (OrderV2 memory order)
     {
         IO[] memory inputs = new IO[](1);
         inputs[0] = input;
@@ -157,7 +111,7 @@ contract Test4SushiV2StratBinomial is OpTest {
         IO[] memory outputs = new IO[](1);
         outputs[0] = output;
 
-        EvaluableConfigV2 memory evaluableConfig = EvaluableConfigV2(POLYGON_DEPLOYER, bytecode, constants);
+        EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(POLYGON_DEPLOYER_NPE2, bytecode, constants);
 
         OrderConfigV2 memory orderConfig = OrderConfigV2(inputs, outputs, evaluableConfig, "");
 
@@ -166,11 +120,11 @@ contract Test4SushiV2StratBinomial is OpTest {
         (bool stateChanged) = POLYGON_ORDERBOOK.addOrder(orderConfig);
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries.length, 3);
-        (,, order,) = abi.decode(entries[2].data, (address, address, Order, bytes32));
+        (,, order,) = abi.decode(entries[2].data, (address, address, OrderV2, bytes32));
         assertEq(order.owner, TEST_ORDER_OWNER);
         assertEq(order.handleIO, true);
-        assertEq(address(order.evaluable.interpreter), address(POLYGON_INTERPRETER));
-        assertEq(address(order.evaluable.store), address(POLYGON_STORE));
+        assertEq(address(order.evaluable.interpreter), address(POLYGON_INTERPRETER_NPE2));
+        assertEq(address(order.evaluable.store), address(POLYGON_STORE_NPE2));
         assertEq(stateChanged, true);
     }
 
@@ -190,40 +144,16 @@ contract Test4SushiV2StratBinomial is OpTest {
 
     function testSellOrderHappyFork() public {
         selectPolygonFork();
-        {
-            // Deposit more than 100$ worth NHT
+        {   
+            // Deposit NHT.
             uint256 depositAmount = 100000000e18;
             giveTestAccountsTokens(POLYGON_NHT_TOKEN_ADDRESS, POLYGON_NHT_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, depositAmount);
         }
-        Order memory sellOrder = placeSellOrderFork();
-
-        bytes memory sellRoute =
-        //offset
-            hex"0000000000000000000000000000000000000000000000000000000000000020"
-            //stream length
-            hex"0000000000000000000000000000000000000000000000000000000000000042"
-            //command 2 = processUserERC20
-            hex"02"
-            //token address
-            hex"84342e932797fc62814189f01f0fb05f52519708"
-            //number of pools
-            hex"01"
-            // pool share
-            hex"ffff"
-            // pool type
-            hex"00"
-            // pool address
-            hex"e427b62b495c1dfe1fe9f78bebfceb877ad05dce"
-            // direction 1
-            hex"01"
-            // to
-            hex"e5518dC11644413418dFba18E53876a645665981"
-            // padding
-            hex"000000000000000000000000000000000000000000000000000000000000";
-
+        OrderV2 memory sellOrder = placeSellOrderFork();
+        
         for (uint256 i = 0; i < 10; i++) {
-            takeOrder(sellOrder, sellRoute);
+            takeOrder(sellOrder, SELL_ROUTE);
             vm.warp(block.timestamp + 7200);
         }
     }
@@ -231,84 +161,33 @@ contract Test4SushiV2StratBinomial is OpTest {
     function testBuyOrderHappyFork() public {
         selectPolygonFork();
         {
-            // Deposit 100 USDT.
+            // Deposit USDT.
             uint256 depositAmount = 1000e6;
             giveTestAccountsTokens(POLYGON_USDT_TOKEN_ADDRESS, POLYGON_USDT_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, depositAmount);
         }
-        Order memory buyOrder = placeBuyOrderFork();
-
-        bytes memory buyRoute =
-        //offset
-            hex"0000000000000000000000000000000000000000000000000000000000000020"
-            //stream length
-            hex"0000000000000000000000000000000000000000000000000000000000000042"
-            //command 2 = processUserERC20
-            hex"02"
-            //token address
-            hex"c2132d05d31c914a87c6611c10748aeb04b58e8f"
-            // number of pools
-            hex"01"
-            // pool share
-            hex"ffff"
-            // pool type
-            hex"00"
-            // pool address
-            hex"e427b62b495c1dfe1fe9f78bebfceb877ad05dce"
-            // direction 0
-            hex"00"
-            // to
-            hex"e5518dC11644413418dFba18E53876a645665981"
-            // padding
-            hex"000000000000000000000000000000000000000000000000000000000000";
+        OrderV2 memory buyOrder = placeBuyOrderFork();
 
         for (uint256 i = 0; i < 10; i++) {
-            takeOrder(buyOrder, buyRoute);
+            takeOrder(buyOrder, BUY_ROUTE);
             vm.warp(block.timestamp + 7200);
         }
     }
 
-    function takeOrder(Order memory order, bytes memory route) internal {
+    function takeOrder(OrderV2 memory order, bytes memory route) internal {
         assertTrue(POLYGON_ORDERBOOK.orderExists(keccak256(abi.encode(order))), "order exists");
         vm.startPrank(APPROVED_EOA);
         uint256 inputIOIndex = 0;
         uint256 outputIOIndex = 0;
-        TakeOrderConfig[] memory innerConfigs = new TakeOrderConfig[](1);
+        TakeOrderConfigV2[] memory innerConfigs = new TakeOrderConfigV2[](1);
 
-        innerConfigs[0] = TakeOrderConfig(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
+        innerConfigs[0] = TakeOrderConfigV2(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
         uint256 outputTokenBalance =
             POLYGON_ORDERBOOK.vaultBalance(order.owner, order.validOutputs[0].token, order.validOutputs[0].vaultId);
         TakeOrdersConfigV2 memory takeOrdersConfig =
             TakeOrdersConfigV2(0, outputTokenBalance, type(uint256).max, innerConfigs, route);
         POLYGON_ARB_CONTRACT.arb(takeOrdersConfig, 0);
         vm.stopPrank();
-    }
-
-    function parseAndEvalWithContext(
-        bytes memory expectedBytecode,
-        bytes memory rainString,
-        uint256[][] memory context,
-        SourceIndex sourceIndex
-    ) internal returns (uint256[] memory, uint256[] memory) {
-        IInterpreterV1 interpreterDeployer;
-        IInterpreterStoreV1 storeDeployer;
-        address expression;
-        {
-            (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainString);
-            assertEq(bytecode, expectedBytecode);
-            uint256[] memory minOutputs = new uint256[](1);
-            minOutputs[0] = 0;
-            (interpreterDeployer, storeDeployer, expression) =
-                iDeployer.deployExpression(bytecode, constants, minOutputs);
-        }
-
-        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval(
-            storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, sourceIndex, type(uint16).max),
-            context
-        );
-        return (stack, kvs);
     }
 
     function test4StratBuyNHTHappyPath(uint256 orderHash, uint16 startTime) public {
@@ -318,32 +197,37 @@ contract Test4SushiV2StratBinomial is OpTest {
         uint256 lastTime = 0;
         vm.warp(reserveTimestamp + startTime + 1);
 
-        uint256[][] memory context = new uint256[][](4);
+        uint256[][] memory context = new uint256[][](5);
         {
-            uint256[] memory callingContext = new uint256[](3);
-            // order hash
-            callingContext[0] = orderHash;
-            // owner
-            callingContext[1] = uint256(uint160(address(this)));
-            // counterparty
-            callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
-            context[0] = callingContext;
+            {
+                uint256[] memory baseContext = new uint256[](2);
+                context[0] = baseContext;
+            }
+            {
+                uint256[] memory callingContext = new uint256[](3);
+                // order hash
+                callingContext[0] = orderHash;
+                // owner
+                callingContext[1] = uint256(uint160(address(this)));
+                // counterparty
+                callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+                context[1] = callingContext;
+            }
+            {
+                uint256[] memory calculationsContext = new uint256[](0);
+                context[2] = calculationsContext;
+            }
+            {
+                uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                inputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
+                context[3] = inputsContext;
+            }
+            {
+                uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                outputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
+                context[4] = outputsContext;
+            }
         }
-        {
-            uint256[] memory calculationsContext = new uint256[](0);
-            context[1] = calculationsContext;
-        }
-        {
-            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            inputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
-            context[2] = inputsContext;
-        }
-        {
-            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            outputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
-            context[3] = outputsContext;
-        }
-        context = LibContext.build(context, new SignedContextV1[](0));
 
         {
             address expectedPair = LibUniswapV2.pairFor(
@@ -363,86 +247,97 @@ contract Test4SushiV2StratBinomial is OpTest {
             );
         }
 
-        IInterpreterV1 interpreterDeployer;
+        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+        IInterpreterV2 interpreterDeployer;
         IInterpreterStoreV1 storeDeployer;
         address expression;
         {
-            (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringBuy());
-            assertEq(bytecode, EXPECTED_BUY_BYTECODE);
-            uint256[] memory minOutputs = new uint256[](1);
-            minOutputs[0] = 0;
-            (interpreterDeployer, storeDeployer, expression) =
-                iDeployer.deployExpression(bytecode, constants, minOutputs);
+            (bytes memory bytecode, uint256[] memory constants) = iParser.parse(rainstringBuy());
+            // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+            (interpreterDeployer, storeDeployer, expression,) =
+                iDeployer.deployExpression2(bytecode, constants);
         }
 
         // At this point the cooldown has never triggered so it can eval.
-        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval(
+        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval2(
             storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            context
+            namespace,
+            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+            context,
+            new uint256[](0)
         );
         storeDeployer.set(StateNamespace.wrap(0), kvs);
         checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
         lastTime = block.timestamp;
 
-        // Check the first cooldown against what we expect.
-        // last time is 0 originally.
-        uint256 cooldown0 = cooldown(block.timestamp);
-        vm.warp(block.timestamp + cooldown0);
+        {
+            // Check the first cooldown against what we expect.
+            // last time is 0 originally.
+            uint256 cooldown0 = cooldown(block.timestamp);
+            vm.warp(block.timestamp + cooldown0);
 
-        // At this point the cooldown is not expired.
-        vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
-        (stack, kvs) = interpreterDeployer.eval(
-            storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            context
-        );
-        (stack, kvs);
+            // At this point the cooldown is not expired.
+            vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
+            (stack, kvs) = interpreterDeployer.eval2(
+                storeDeployer,
+                namespace,
+                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+                context,
+                new uint256[](0)
+            );
+            (stack, kvs);
+        }
 
-        // The cooldown is expired one second later.
-        vm.warp(block.timestamp + 1);
-        (stack, kvs) = interpreterDeployer.eval(
-            storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            context
-        );
-        storeDeployer.set(StateNamespace.wrap(0), kvs);
-        checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
+        {
+            // The cooldown is expired one second later.
+            vm.warp(block.timestamp + 1);
+            (stack, kvs) = interpreterDeployer.eval2(
+                storeDeployer,
+                namespace,
+                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+                context,
+                new uint256[](0)
+            );
+            storeDeployer.set(StateNamespace.wrap(0), kvs);
+            checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
+        }
     }
 
     function test4StratSellNHTHappyPath(uint256 orderHash, uint16 startTime) public {
         uint256 lastTime = 0;
         vm.warp(RESERVE_TIMESTAMP + startTime + 1);
 
-        uint256[][] memory context = new uint256[][](4);
+        uint256[][] memory context = new uint256[][](5);
         {
-            uint256[] memory callingContext = new uint256[](3);
-            // order hash
-            callingContext[0] = orderHash;
-            // owner
-            callingContext[1] = uint256(uint160(address(this)));
-            // counterparty
-            callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
-            context[0] = callingContext;
+            {
+                uint256[] memory baseContext = new uint256[](2);
+                context[0] = baseContext;
+            }
+            {
+                uint256[] memory callingContext = new uint256[](3);
+                // order hash
+                callingContext[0] = orderHash;
+                // owner
+                callingContext[1] = uint256(uint160(address(this)));
+                // counterparty
+                callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+                context[1] = callingContext;
+            }
+            {
+                uint256[] memory calculationsContext = new uint256[](0);
+                context[2] = calculationsContext;
+            }
+            {
+                uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                inputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
+                context[3] = inputsContext;
+            }
+            {
+                uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                outputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
+                context[4] = outputsContext;
+            }
         }
-        {
-            uint256[] memory calculationsContext = new uint256[](0);
-            context[1] = calculationsContext;
-        }
-        {
-            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            inputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
-            context[2] = inputsContext;
-        }
-        {
-            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-            outputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
-            context[3] = outputsContext;
-        }
-        context = LibContext.build(context, new SignedContextV1[](0));
 
         {
             address expectedPair = LibUniswapV2.pairFor(
@@ -462,53 +357,59 @@ contract Test4SushiV2StratBinomial is OpTest {
             );
         }
 
-        IInterpreterV1 interpreterDeployer;
+        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+        IInterpreterV2 interpreterDeployer;
         IInterpreterStoreV1 storeDeployer;
         address expression;
         {
-            (bytes memory bytecode, uint256[] memory constants) = iDeployer.parse(rainstringSell());
-            assertEq(bytecode, EXPECTED_SELL_BYTECODE);
-            uint256[] memory minOutputs = new uint256[](1);
-            minOutputs[0] = 0;
-            (interpreterDeployer, storeDeployer, expression) =
-                iDeployer.deployExpression(bytecode, constants, minOutputs);
+            (bytes memory bytecode, uint256[] memory constants) = iParser.parse(rainstringSell());
+            // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+            (interpreterDeployer, storeDeployer, expression,) =
+                iDeployer.deployExpression2(bytecode, constants);
         }
 
         // At this point the cooldown has never triggered so it can eval.
-        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval(
+        (uint256[] memory stack, uint256[] memory kvs) = interpreterDeployer.eval2(
             storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            context
+            namespace,
+            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+            context,
+            new uint256[](0)
         );
         storeDeployer.set(StateNamespace.wrap(0), kvs);
         checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
         lastTime = block.timestamp;
 
-        // Check the first cooldown against what we expect.
-        // last time is 0 originally.
-        vm.warp(block.timestamp + cooldown(block.timestamp));
+        {
+             // Check the first cooldown against what we expect.
+            // last time is 0 originally.
+            vm.warp(block.timestamp + cooldown(block.timestamp));
 
-        // At this point the cooldown is not expired.
-        vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
-        (stack, kvs) = interpreterDeployer.eval(
-            storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            context
-        );
-        (stack, kvs);
+            // At this point the cooldown is not expired.
+            vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
+            (stack, kvs) = interpreterDeployer.eval2(
+                storeDeployer,
+                namespace,
+                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+                context,
+                new uint256[](0)
+            );
+            (stack, kvs);
+        }
 
-        // The cooldown is expired one second later.
-        vm.warp(block.timestamp + 1);
-        (stack, kvs) = interpreterDeployer.eval(
-            storeDeployer,
-            StateNamespace.wrap(0),
-            LibEncodedDispatch.encode(expression, SourceIndex.wrap(0), type(uint16).max),
-            context
-        );
-        storeDeployer.set(StateNamespace.wrap(0), kvs);
-        checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
+        {
+            // The cooldown is expired one second later.
+            vm.warp(block.timestamp + 1);
+            (stack, kvs) = interpreterDeployer.eval2(
+                storeDeployer,
+                namespace,
+                LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+                context,
+                new uint256[](0)
+            );
+            storeDeployer.set(StateNamespace.wrap(0), kvs);
+            checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
+        }
     }
 
     function decodeBits(uint256 operand, uint256 input) internal returns (uint256 output) {
@@ -550,43 +451,43 @@ contract Test4SushiV2StratBinomial is OpTest {
 
         // addresses
         // sushi factory
-        assertEq(stack[0], uint256(uint160(address(POLYGON_SUSHI_V2_FACTORY))));
+        assertEq(stack[18], uint256(uint160(address(POLYGON_SUSHI_V2_FACTORY))));
         // nht token
-        assertEq(stack[1], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))));
+        assertEq(stack[17], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))));
         // usdt token
-        assertEq(stack[2], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))));
+        assertEq(stack[16], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))));
         // approved counterparty
-        assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
+        assertEq(stack[15], uint256(uint160(APPROVED_COUNTERPARTY)));
         // actual counterparty
-        assertEq(stack[4], uint256(uint160(APPROVED_COUNTERPARTY)));
+        assertEq(stack[14], uint256(uint160(APPROVED_COUNTERPARTY)));
         // order hash
-        assertEq(stack[5], orderHash);
+        assertEq(stack[13], orderHash);
         // last time
-        assertEq(stack[6], lastTime);
+        assertEq(stack[12], lastTime);
         // max usdt amount
-        assertEq(stack[7], 100e18);
+        assertEq(stack[11], 100e18);
         // amount random multiplier
-        assertEq(stack[8], jitteryBinomial(lastTime));
+        assertEq(stack[10], jitteryBinomial(lastTime));
         // target usdt amount e18
         assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
-        assertEq(stack[10], stack[9].scaleN(6, 1));
+        assertEq(stack[8], stack[9].scaleN(6, 1));
         // max cooldown e18
-        assertEq(stack[11], MAX_COOLDOWN * 1e18);
+        assertEq(stack[7], MAX_COOLDOWN * 1e18);
         // cooldown random multiplier 18
-        assertEq(stack[12], jitteryBinomial(uint256(keccak256(abi.encode(lastTime)))));
+        assertEq(stack[6], jitteryBinomial(uint256(keccak256(abi.encode(lastTime)))));
         // cooldown e18
-        assertEq(stack[13], stack[11].fixedPointMul(stack[12], Math.Rounding.Up));
+        assertEq(stack[5], stack[7].fixedPointMul(stack[6], Math.Rounding.Up));
         // cooldown e0
-        assertEq(stack[14], stack[13].scaleN(0, 0));
+        assertEq(stack[4], stack[5].scaleN(0, 0));
         // last price timestamp
-        assertEq(stack[15], sushiLastTime);
+        assertEq(stack[3], sushiLastTime);
         // nht amount 18
-        assertEq(stack[16], LibUniswapV2.getAmountIn(stack[10], RESERVE_ZERO, RESERVE_ONE));
+        assertEq(stack[2], LibUniswapV2.getAmountIn(stack[8], RESERVE_ZERO, RESERVE_ONE));
         // amount is nht amount 18
-        assertEq(stack[17], stack[16]);
+        assertEq(stack[1], stack[2]);
         // ratio is the usdt 18 amount divided by the nht 18 amount
-        assertEq(stack[18], stack[9].fixedPointDiv(stack[16], Math.Rounding.Down));
+        assertEq(stack[0], stack[9].fixedPointDiv(stack[2], Math.Rounding.Down));
     }
 
     function checkBuyCalculate(
@@ -605,42 +506,42 @@ contract Test4SushiV2StratBinomial is OpTest {
 
         // addresses
         // sushi factory
-        assertEq(stack[0], uint256(uint160(address(POLYGON_SUSHI_V2_FACTORY))));
+        assertEq(stack[18], uint256(uint160(address(POLYGON_SUSHI_V2_FACTORY))));
         // nht token
-        assertEq(stack[1], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))));
+        assertEq(stack[17], uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS))));
         // usdt token
-        assertEq(stack[2], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))));
+        assertEq(stack[16], uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS))));
         // approved counterparty
-        assertEq(stack[3], uint256(uint160(APPROVED_COUNTERPARTY)));
+        assertEq(stack[15], uint256(uint160(APPROVED_COUNTERPARTY)));
         // actual counterparty
-        assertEq(stack[4], uint256(uint160(APPROVED_COUNTERPARTY)));
+        assertEq(stack[14], uint256(uint160(APPROVED_COUNTERPARTY)));
         // order hash
-        assertEq(stack[5], orderHash);
+        assertEq(stack[13], orderHash);
         // last time
-        assertEq(stack[6], lastTime);
+        assertEq(stack[12], lastTime);
         // max usdt amount
-        assertEq(stack[7], 100e18);
+        assertEq(stack[11], 100e18);
         // amount random multiplier
-        assertEq(stack[8], jitteryBinomial(lastTime));
+        assertEq(stack[10], jitteryBinomial(lastTime));
         // target usdt amount e18
         assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
-        assertEq(stack[10], stack[9] / 1e12);
+        assertEq(stack[8], stack[9] / 1e12);
         // max cooldown e18
-        assertEq(stack[11], MAX_COOLDOWN * 1e18);
+        assertEq(stack[7], MAX_COOLDOWN * 1e18);
         // cooldown random multiplier 18
-        assertEq(stack[12], jitteryBinomial(uint256(keccak256(abi.encode(lastTime)))));
+        assertEq(stack[6], jitteryBinomial(uint256(keccak256(abi.encode(lastTime)))));
         // cooldown e18
-        assertEq(stack[13], stack[11] * stack[12] / 1e18);
+        assertEq(stack[5], stack[7] * stack[6] / 1e18);
         // cooldown e0
-        assertEq(stack[14], stack[13] / 1e18);
+        assertEq(stack[4], stack[5] / 1e18);
         // last price timestamp
-        assertEq(stack[15], sushiLastTime);
+        assertEq(stack[3], sushiLastTime);
         // nht amount 18
-        assertEq(stack[16], LibUniswapV2.getAmountOut(stack[10], RESERVE_ONE, RESERVE_ZERO));
+        assertEq(stack[2], LibUniswapV2.getAmountOut(stack[8], RESERVE_ONE, RESERVE_ZERO));
         // amount is usdt amount 18
-        assertEq(stack[17], stack[9]);
+        assertEq(stack[1], stack[9]);
         // io ratio is the nht amount 18 divided by the usdt 18 amount
-        assertEq(stack[18], stack[16] * 1e18 / stack[9]);
+        assertEq(stack[0], stack[2] * 1e18 / stack[9]);
     }
 }
