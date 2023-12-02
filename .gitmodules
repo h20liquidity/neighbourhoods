@@ -1,6 +1,3 @@
-[submodule "lib/rain.lib.typecast"]
-	path = lib/rain.lib.typecast
-	url = https://github.com/rainprotocol/rain.lib.typecast
 [submodule "lib/rain.interpreter"]
 	path = lib/rain.interpreter
 	url = https://github.com/rainprotocol/rain.interpreter
