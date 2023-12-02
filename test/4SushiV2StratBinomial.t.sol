@@ -139,14 +139,14 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
 
     function testSellOrderHappyFork() public {
         selectPolygonFork();
-        {   
+        {
             // Deposit NHT.
             uint256 depositAmount = 100000000e18;
             giveTestAccountsTokens(POLYGON_NHT_TOKEN_ADDRESS, POLYGON_NHT_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, depositAmount);
         }
         OrderV2 memory sellOrder = placeSellOrderFork();
-        
+
         for (uint256 i = 0; i < 10; i++) {
             takeOrder(sellOrder, SELL_ROUTE);
             vm.warp(block.timestamp + 7200);
@@ -248,12 +248,12 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         {
             (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringBuy());
             // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
-            (interpreterDeployer, storeDeployer, expression) =
-                iDeployExpression(bytecode, constants);
+            (interpreterDeployer, storeDeployer, expression) = iDeployExpression(bytecode, constants);
         }
 
         // At this point the cooldown has never triggered so it can eval.
-        (uint256[] memory stack, uint256[] memory kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+        (uint256[] memory stack, uint256[] memory kvs) =
+            iEvalExpression(expression, interpreterDeployer, storeDeployer, context, new uint256[](0));
         IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
         checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
         lastTime = block.timestamp;
@@ -266,15 +266,14 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
 
             // At this point the cooldown is not expired.
             vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
-            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+            (stack, kvs) = iEvalExpression(expression, interpreterDeployer, storeDeployer, context, new uint256[](0));
             (stack, kvs);
         }
-        
 
         {
             // The cooldown is expired one second later.
             vm.warp(block.timestamp + 1);
-            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+            (stack, kvs) = iEvalExpression(expression, interpreterDeployer, storeDeployer, context, new uint256[](0));
             IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
             checkBuyCalculate(stack, kvs, orderHash, lastTime, reserveTimestamp);
         }
@@ -340,32 +339,32 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         {
             (bytes memory bytecode, uint256[] memory constants) = iParser.parse(rainstringSell());
             // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
-            (interpreterDeployer, storeDeployer, expression) =
-                iDeployExpression(bytecode, constants);
+            (interpreterDeployer, storeDeployer, expression) = iDeployExpression(bytecode, constants);
         }
 
         // At this point the cooldown has never triggered so it can eval.
-        (uint256[] memory stack, uint256[] memory kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+        (uint256[] memory stack, uint256[] memory kvs) =
+            iEvalExpression(expression, interpreterDeployer, storeDeployer, context, new uint256[](0));
 
         IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
         checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
         lastTime = block.timestamp;
 
         {
-             // Check the first cooldown against what we expect.
+            // Check the first cooldown against what we expect.
             // last time is 0 originally.
             vm.warp(block.timestamp + cooldown(block.timestamp));
 
             // At this point the cooldown is not expired.
             vm.expectRevert(abi.encodeWithSelector(EnsureFailed.selector, 1, 0));
-            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+            (stack, kvs) = iEvalExpression(expression, interpreterDeployer, storeDeployer, context, new uint256[](0));
             (stack, kvs);
         }
 
         {
             // The cooldown is expired one second later.
             vm.warp(block.timestamp + 1);
-            (stack, kvs) = iEvalExpression(expression,interpreterDeployer,storeDeployer,context,new uint256[](0));
+            (stack, kvs) = iEvalExpression(expression, interpreterDeployer, storeDeployer, context, new uint256[](0));
             IInterpreterStoreV1(storeDeployer).set(StateNamespace.wrap(0), kvs);
             checkSellCalculate(stack, kvs, orderHash, lastTime, RESERVE_TIMESTAMP);
         }
@@ -410,7 +409,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
 
     function cooldown(uint256 lastTime) internal returns (uint256) {
         uint256 multiplier = jitteryBinomial(uint256(keccak256(abi.encodePacked(lastTime))));
-        return MAX_COOLDOWN.scale18(0,0).fixedPointMul(multiplier,Math.Rounding.Down).scaleN(0,0);
+        return MAX_COOLDOWN.scale18(0, 0).fixedPointMul(multiplier, Math.Rounding.Down).scaleN(0, 0);
     }
 
     function checkSellCalculate(

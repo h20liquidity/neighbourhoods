@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: CAL
-pragma solidity =0.8.19; 
+pragma solidity =0.8.19;
 
 import {OpTest} from "rain.interpreter/test/util/abstract/OpTest.sol";
 import {StateNamespace, LibNamespace, FullyQualifiedNamespace} from "rain.interpreter/src/lib/ns/LibNamespace.sol";
 
-import {
-    IInterpreterV2,
-    IInterpreterStoreV1,
-    SourceIndexV2
-} from "src/4SushiV2StratBinomial.sol";
+import {IInterpreterV2, IInterpreterStoreV1, SourceIndexV2} from "src/4SushiV2StratBinomial.sol";
 import {LibEncodedDispatch} from "lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 
 contract OrderBookNPE2Real is OpTest {
-
     function constructionMetaPath() internal pure override returns (string memory) {
         return "lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta";
     }
@@ -52,7 +47,5 @@ contract OrderBookNPE2Real is OpTest {
             inputs
         );
         return (stack, kvs);
-    } 
-    
-
+    }
 }
