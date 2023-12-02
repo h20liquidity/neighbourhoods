@@ -1,19 +1,15 @@
 import { BigNumber, ethers } from "ethers";  
-
 import {  Common,  CustomChain, Chain, Hardfork } from '@ethereumjs/common'
-import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'  
-import { getContractAddressesForChainOrThrow } from "@0x/contract-addresses";
+import {  FeeMarketEIP1559Transaction } from '@ethereumjs/tx'
 import fs from "fs"  
-import * as path from "path";  
 
-import contractConfig from "../config.json"
+import contractConfig from "../v3-config.json"
 
 import axios from "axios";
-import { standardEvaluableConfig } from "../../utils/interpreter/interpreter";
 import { hexlify } from "ethers/lib/utils";
-import { arb_entrypoints } from "../../utils/deploy/orderBook";
-import CloneFactory from "../abis/CloneFactory.json";
-
+import Parser from "../abis/IParserV1.json" 
+import Cloneable from "../abis/ICloneableV2.json" 
+import {  getArbRainlangString } from "../deployContract/arb";
 
 /**
  * Supported Networks to x-deploy contracts.
@@ -26,12 +22,14 @@ export const supportedNetworks = ["mumbai","polygon","ethereum","sepolia"]
 export const supportedContracts = Object.freeze({
   Rainterpreter : "Rainterpreter",
   RainterpreterStore : "RainterpreterStore",
+  RainterpreterParser : "RainterpreterParser",
   RainterpreterExpressionDeployer : "RainterpreterExpressionDeployer",
   Orderbook : "Orderbook",
   CloneFactory : "CloneFactory",
-  GenericPoolOrderBookFlashBorrowerImplementation : "GenericPoolOrderBookFlashBorrowerImplementation",
-  GenericPoolOrderBookFlashBorrowerInstance : "GenericPoolOrderBookFlashBorrowerInstance"
-})
+  RouteProcessorOrderBookV3ArbOrderTakerImplementation : "RouteProcessorOrderBookV3ArbOrderTakerImplementation",
+  RouteProcessorOrderBookV3ArbOrderTakerInstance : "RouteProcessorOrderBookV3ArbOrderTakerInstance"
+}) 
+ 
 
 /*
 * Get etherscan key
@@ -65,6 +63,7 @@ export const getEtherscanBaseURL = (network:string) => {
   return url
 }  
 
+
 /*
 * Get provider for a specific network
 */
@@ -94,8 +93,8 @@ export const getCommons = (network:string) => {
       common = Common.custom({ chainId: 11155111 })
     }else if(network === "polygon"){
       common = Common.custom(CustomChain.PolygonMainnet) 
-    }else if(network === "ethereum"){
-      common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.London })
+    }else if(network === "polygon"){
+      common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.London })  
     }
     
     return common
@@ -112,36 +111,12 @@ export const getTransactionData = async (provider: any, address:string): Promise
 }   
 
 /**
- *Replace all DISpair instances 
- */
- export const getTransactionDataForZeroEx = (txData:string,fromNetwork:string,toNetwork:string) => { 
-
-  const fromProvider = getProvider(fromNetwork)
-  const toProvider = getProvider(toNetwork)  
-
-  const { exchangeProxy: fromNetworkProxy } = getContractAddressesForChainOrThrow(fromProvider._network.chainId);
-  const { exchangeProxy: toNetworkProxy } = getContractAddressesForChainOrThrow(toProvider._network.chainId);  
-
-  
-  txData = txData.toLocaleLowerCase()
-  const fromContractConfig = contractConfig.contracts[fromNetwork]
-  const toContractConfig = contractConfig.contracts[toNetwork] 
-
-  if(txData.includes(fromContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase())){ 
-    txData = txData.replace(fromContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase(), toContractConfig["Orderbook"]["address"].split('x')[1].toLowerCase())
-  }
-  if(txData.includes(fromNetworkProxy.split('x')[1].toLowerCase())){
-    txData = txData.replace(fromNetworkProxy.split('x')[1].toLowerCase(), toNetworkProxy.split('x')[1].toLowerCase())
-  }
-  return txData 
-}   
-
-/**
  * @returns a random 32 byte number in hexstring format
  */
 export function randomUint256(): string {
   return ethers.utils.hexZeroPad(ethers.utils.randomBytes(32), 32);
 } 
+
 
 /**
  *Replace all DISpair instances 
@@ -152,9 +127,6 @@ export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,t
   const fromNetworkConfig = contractConfig.contracts[fromNetwork]
   const toNetworkConfig = contractConfig.contracts[toNetwork]  
 
-  // let contract = await hre.ethers.getContractAt('Rainterpreter',fromNetworkConfig["interpreter"]["address"]) 
-  // console.log("contract : " , contract )
-
   if(txData.includes(fromNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase())){ 
     txData = txData.replace(fromNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["Rainterpreter"]["address"].split('x')[1].toLowerCase())
   }
@@ -163,6 +135,9 @@ export const getTransactionDataForNetwork =  (txData:string,fromNetwork:string,t
   }
   if(txData.includes(fromNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase())){
     txData = txData.replace(fromNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["RainterpreterExpressionDeployer"]["address"].split('x')[1].toLowerCase())
+  }
+  if(txData.includes(fromNetworkConfig["RainterpreterParser"]["address"].split('x')[1].toLowerCase())){
+    txData = txData.replace(fromNetworkConfig["RainterpreterParser"]["address"].split('x')[1].toLowerCase(), toNetworkConfig["RainterpreterParser"]["address"].split('x')[1].toLowerCase())
   }
   return txData 
 }  
@@ -275,8 +250,8 @@ export const deployContractToNetwork = async (provider: any, common: Common,  pr
     
     return deployTransaction
   
-}   
-
+  }   
+ 
 export const decodeCloneEvent = async(transaction,cloneFactory) => {  
 
   const eventObj = (await transaction.wait()).logs.find(
@@ -306,95 +281,105 @@ export const decodeCloneEvent = async(transaction,cloneFactory) => {
 
 } 
 
+ 
 export const deployArbContractInstance = async (provider: any, common: Common,  priKey: string, network: string) => { 
 
   console.log("Deploying Arb Instance...")
 
   const signer  = new ethers.Wallet(priKey,provider)   
 
-  const orderBookAddress = contractConfig.contracts[network].Orderbook.address  
-  const expressionDeployerAddress = contractConfig.contracts[network].RainterpreterExpressionDeployer.address  
-  const cloneFactoryAddress = contractConfig.contracts[network].CloneFactory.address 
-  const arbImplementationAddress =  contractConfig.contracts[network].GenericPoolOrderBookFlashBorrowerImplementation.address 
+  const nonce = await provider.getTransactionCount(signer.address)    
+
+  const arbString = getArbRainlangString() ; 
+  const expressionDeployerAddress = contractConfig.contracts[network].RainterpreterExpressionDeployer
+  const parserAddress = contractConfig.contracts[network].RainterpreterParser
+  const orderBookAddress = contractConfig.contracts[network].Orderbook.address 
+  const cloneFactoryAddress = contractConfig.contracts[network].CloneFactory.address
+  const arbImplementationAddress = contractConfig.contracts[network].RouteProcessorOrderBookV3ArbOrderTakerImplementation.address
+  const routeProcessor = contractConfig.contracts[network].routeProcessor3Address.address
 
 
-  const arbExp = path.resolve(
-    __dirname,
-    "../../src/0-arb.rain"
-  );
 
-  const arbString = await fetchFile(arbExp);  
+  const parser = new ethers.Contract(parserAddress.address,Parser.abi,provider) 
 
-  const { sources, constants } = await standardEvaluableConfig(arbString,arb_entrypoints)  
+  let [bytecode,constants] = await parser.parse(
+    ethers.utils.toUtf8Bytes(
+      arbString.trim()
+    )
+  ) 
   
+  const abiEncodedRouter = ethers.utils.defaultAbiCoder.encode(
+    ["address"],
+    [routeProcessor] // Route Processor Address 
+  ) 
+
   const borrowerConfig = {
     orderBook : orderBookAddress,
     evaluableConfig: {
-      deployer: expressionDeployerAddress,
-      sources,
+      deployer: expressionDeployerAddress.address,
+      bytecode,
       constants
     },
-    implementationData : "0x00"
+    implementationData : abiEncodedRouter
   }
   const encodedConfig = ethers.utils.defaultAbiCoder.encode(
     [
-      "tuple(address orderBook,tuple(address deployer,bytes[] sources,uint256[] constants) evaluableConfig, bytes implementationData)",
+      "tuple(address orderBook,tuple(address deployer,bytes bytecode,uint256[] constants) evaluableConfig, bytes implementationData)",
     ],
     [borrowerConfig]
   ); 
-     
-
-    // Create Clone Factory Instance
-    const cloneFactory = new ethers.Contract(cloneFactoryAddress,CloneFactory.abi,signer)  
-
-    const cloneData = await cloneFactory.populateTransaction.clone(arbImplementationAddress,encodedConfig);   
-    
-    // Building Tx
-    const nonce = await provider.getTransactionCount(signer.address)   
-
-    // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
-    // but after being mined affected relevant state.
-    // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
-    const gasLimit = await provider.estimateGas({ 
-      to:cloneData.to ,
-      from:cloneData.from ,
-      data: cloneData.data
-    }) 
-
-    const feeData = await estimateFeeData(provider)  
-
-    // hard conded values to be calculated
-    const txData = {  
-      to: cloneFactoryAddress.toLowerCase() ,
-      from: signer.address, 
-      nonce: ethers.BigNumber.from(nonce).toHexString() ,
-      data : cloneData.data ,
-      gasLimit : gasLimit.toHexString(), 
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
-      maxFeePerGas: feeData.maxFeePerGas.toHexString(),
-      type: '0x02'
-    }   
-        
-    // Generate Transaction 
-    const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
-
-    const privateKey = Buffer.from(
-      priKey,
-      'hex'
-    ) 
-    
-    // Sign Transaction 
-    const signedTx = tx.sign(privateKey)
-
-    // Send the transaction
-    const contractTransaction = await provider.sendTransaction(
-      "0x" + signedTx.serialize().toString("hex")
-    );      
-
-    const cloneEventData = await decodeCloneEvent(contractTransaction,cloneFactory)
-
-    return {cloneEventData,contractTransaction}
   
+  // Create Clone Factory Instance
+  const cloneFactory = new ethers.Contract(cloneFactoryAddress,Cloneable.abi,signer)  
+
+  const cloneData = await cloneFactory.populateTransaction.clone(arbImplementationAddress,encodedConfig);   
+  
+
+  // An estimate may not be accurate since there could be another transaction on the network that was not accounted for,
+  // but after being mined affected relevant state.
+  // https://docs.ethers.org/v5/api/providers/provider/#Provider-estimateGas
+  const gasLimit = await provider.estimateGas({ 
+    to:cloneData.to ,
+    from:cloneData.from ,
+    data: cloneData.data
+  }) 
+
+  const feeData = await estimateFeeData(provider)  
+
+  // hard conded values to be calculated
+  const txData = {  
+    to: cloneFactoryAddress.toLowerCase() ,
+    from: signer.address, 
+    nonce: ethers.BigNumber.from(nonce).toHexString() ,
+    data : cloneData.data ,
+    gasLimit : gasLimit.toHexString(), 
+    maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toHexString(), 
+    maxFeePerGas: feeData.maxFeePerGas.toHexString(),
+    type: '0x02'
+  }   
+      
+  // Generate Transaction 
+  const tx = FeeMarketEIP1559Transaction.fromTxData(txData, { common })   
+
+  const privateKey = Buffer.from(
+    priKey,
+    'hex'
+  ) 
+  
+  // Sign Transaction 
+  const signedTx = tx.sign(privateKey)
+
+  // Send the transaction
+  const contractTransaction = await provider.sendTransaction(
+    "0x" + signedTx.serialize().toString("hex")
+  );      
+
+  const cloneEventData = await decodeCloneEvent(contractTransaction,cloneFactory)
+
+
+  return {cloneEventData,contractTransaction}
+
+
 }  
 
 

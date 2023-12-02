@@ -1,8 +1,8 @@
 import * as dotenv from "dotenv";
-import { supportedContracts, supportedNetworks } from "./utils";
-import { deployRainContract } from "./deployContracts/deployRainContracts";
-import { deployArbInstance } from "./deployContracts/deployArbImplnstance";
-const { Command } = require("commander");
+import {supportedContracts, supportedNetworks } from "./utils";
+import { deployArbInstance} from "./deployContract/deployArbImplnstance";
+import { deployRainContract } from "./deployContract/deployRainContract";
+const { Command } = require("commander"); 
 dotenv.config();
 
 async function main(argv){
@@ -31,11 +31,13 @@ async function main(argv){
 
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.RainterpreterExpressionDeployer)
 
+  await deployRainContract(fromNetwork,toNetwork,supportedContracts.RainterpreterParser)
+
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.Orderbook) 
 
   await deployRainContract(fromNetwork,toNetwork,supportedContracts.CloneFactory)
 
-  await deployRainContract(fromNetwork,toNetwork,supportedContracts.GenericPoolOrderBookFlashBorrowerImplementation) 
+  await deployRainContract(fromNetwork,toNetwork,supportedContracts.RouteProcessorOrderBookV3ArbOrderTakerImplementation) 
 
   await deployArbInstance(toNetwork) 
 
@@ -46,6 +48,7 @@ async function main(argv){
 main(process.argv).catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}); 
+});  
+
 
 
