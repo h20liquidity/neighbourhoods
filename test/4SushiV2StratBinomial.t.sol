@@ -52,7 +52,7 @@ import "test/lib/OrderBookNPE2Real.sol";
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
 string constant FORK_RPC = "https://polygon.llamarpc.com";
-uint256 constant FORK_BLOCK_NUMBER = 50524680;
+uint256 constant FORK_BLOCK_NUMBER = 50654283;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
@@ -149,7 +149,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
 
         for (uint256 i = 0; i < 10; i++) {
             takeOrder(sellOrder, SELL_ROUTE);
-            vm.warp(block.timestamp + 7200);
+            vm.warp(block.timestamp + MAX_COOLDOWN);
         }
     }
 
@@ -165,7 +165,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
 
         for (uint256 i = 0; i < 10; i++) {
             takeOrder(buyOrder, BUY_ROUTE);
-            vm.warp(block.timestamp + 7200);
+            vm.warp(block.timestamp + MAX_COOLDOWN);
         }
     }
 
@@ -379,7 +379,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         uint256[] memory inputs = new uint256[](1);
         inputs[0] = input;
 
-        // Eval RAINSTRING_UD_RATIO expression
+        // Eval RAINSTRING_JITTERY_BINOMIAL expression
         (uint256[] memory stack, uint256[] memory kvs) =
             iEvalExpression(expression, interpreter, store, context, inputs);
         (kvs);
@@ -389,7 +389,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         assertEq(stack[0], expectedJitteryBinomial);
     }
 
-    function decodeBits(uint256 operand, uint256 input) internal returns (uint256 output) {
+    function decodeBits(uint256 operand, uint256 input) internal pure returns (uint256 output) {
         uint256 startBit = operand & 0xFF;
         uint256 length = (operand >> 8) & 0xFF;
 

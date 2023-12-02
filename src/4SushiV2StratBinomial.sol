@@ -57,16 +57,8 @@ IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x535Cc7A243daF34103b8042
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
 
-uint256 constant ORDER_INIT_TIME = 1693216509;
-
-uint256 constant USDT_PER_SECOND = 13889;
-
-uint256 constant MIN_USDT_AMOUNT = 50e6;
-uint256 constant ONE_HOUR = 3600;
-uint256 constant MAX_COOLDOWN = 2 * ONE_HOUR;
-
-uint256 constant SELL_MULTIPLIER = 1e18;
-uint256 constant BUY_MULTIPLIER = 999e15;
+// uint256 constant ONE_HOUR = 3600;
+uint256 constant MAX_COOLDOWN = 1152;
 
 bytes constant RAINSTRING_JITTERY_BINOMIAL =
 // Paramaterise the seed for our randomness (hash).
@@ -111,7 +103,7 @@ bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
 // Sushi needs the usdt amount as 6 decimals (tether's native size).
     "target-usdt-amount: decimal18-scale-n<6 1>(target-usdt-amount18),"
     // Try to average a 1 hour cooldown, so the max is 2 hours.
-    "max-cooldown18: 7200e18,"
+    "max-cooldown18: 1152e18,"
     // Seed the rng with the hash of the last time to make it distinct from the
     // amount random multiplier.
     "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"
