@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
+uint256 constant ORDER_INIT_RATIO = 25e13 ;
+uint256 constant AMOUNT_PER_BATCH = 1000e18 ;
+uint256 constant COOLDOWN = 3600;
+uint256 constant INCR_PER_BATCH = 101e16;
+
+
 bytes constant TRANCHE_STRAT_CALCULATE_IO =
 // Address of the Arb Contract.
     "allowed-counterparty : 0xC8A537a62E9ebD05113937fBEC4AF156272a7aE3,"
@@ -19,7 +25,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO =
     // Current Batch Index and Remaining Amount.
     "batch-index batch-remaining: call<2 2>(0),"
     // Calcuate Ratio from initial ratio and batch index.
-    "io-ratio: decimal18-mul(25e13 int-exp(101e16 batch-index)),"
+    "io-ratio: decimal18-mul(25e13 if(batch-index int-exp(101e16 batch-index) 1e18)),"
     // Calculate Amount from Ratio.
     "amount: decimal18-div(batch-remaining io-ratio),"
     // Order Ratio
@@ -37,7 +43,8 @@ bytes constant TRANCHE_STRAT_HANDLE_IO =
     // New Total Amount Received
     "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0>(in-token-decimals in-token-amount)),"
     // Store Batch Info
-    "batch-start-info: get(batch-start-info-k)," "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
+    "batch-start-info: get(batch-start-info-k),"
+    "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
     // If we are in new Batch, record current time as batch start time.
     "new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),"
