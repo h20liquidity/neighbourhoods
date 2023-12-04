@@ -41,7 +41,7 @@ bytes constant TRANCHE_STRAT_HANDLE_IO =
     // Input Token decimals.
     "in-token-decimals: context<3 1>(),"
     // New Total Amount Received
-    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0>(in-token-decimals in-token-amount)),"
+    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0 1>(in-token-decimals in-token-amount)),"
     // Store Batch Info
     "batch-start-info: get(batch-start-info-k),"
     "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
