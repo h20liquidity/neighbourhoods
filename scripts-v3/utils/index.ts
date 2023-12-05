@@ -290,8 +290,8 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
   const nonce = await provider.getTransactionCount(signer.address)    
 
-  // const arbString = getArbRainlangString();
-  const arbString = getUngatedArbRainlangString();
+  const arbString = getArbRainlangString();
+  // const arbString = getUngatedArbRainlangString();
   const expressionDeployerAddress = contractConfig.contracts[network].RainterpreterExpressionDeployer
   const parserAddress = contractConfig.contracts[network].RainterpreterParser
   const orderBookAddress = contractConfig.contracts[network].Orderbook.address 
