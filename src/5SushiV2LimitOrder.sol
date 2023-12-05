@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
-uint256 constant ORDER_INIT_RATIO = 25e13 ;
-uint256 constant AMOUNT_PER_BATCH = 1000e18 ;
+uint256 constant ORDER_INIT_RATIO = 25e13;
+uint256 constant AMOUNT_PER_BATCH = 1000e18;
 uint256 constant COOLDOWN = 3600;
 uint256 constant INCR_PER_BATCH = 101e16;
-
 
 bytes constant TRANCHE_STRAT_CALCULATE_IO =
 // Address of the Arb Contract.
@@ -43,8 +42,7 @@ bytes constant TRANCHE_STRAT_HANDLE_IO =
     // New Total Amount Received
     "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0 1>(in-token-decimals in-token-amount)),"
     // Store Batch Info
-    "batch-start-info: get(batch-start-info-k),"
-    "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
+    "batch-start-info: get(batch-start-info-k)," "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
     // If we are in new Batch, record current time as batch start time.
     "new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),"

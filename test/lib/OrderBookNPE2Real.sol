@@ -47,5 +47,5 @@ contract OrderBookNPE2Real is OpTest {
             inputs
         );
         return (stack, kvs);
-    } 
+    }
 }
