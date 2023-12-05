@@ -2,35 +2,319 @@
   "abi": [
     {
       "inputs": [],
-      "name": "authoringMetaHash",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "metaHash",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "pure",
-      "type": "function"
+      "name": "DanglingSource",
+      "type": "error"
     },
     {
       "inputs": [
         {
-          "internalType": "bytes",
-          "name": "authoringMeta",
-          "type": "bytes"
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
         }
       ],
-      "name": "buildParseMeta",
-      "outputs": [
+      "name": "DecimalLiteralOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [
         {
-          "internalType": "bytes",
-          "name": "parseMetaBytes",
-          "type": "bytes"
+          "internalType": "uint256",
+          "name": "errorOffset",
+          "type": "uint256"
         }
       ],
-      "stateMutability": "pure",
-      "type": "function"
+      "name": "DuplicateLHSItem",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExcessLHSItems",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExcessRHSItems",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExpectedLeftParen",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExpectedOperand",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "HexLiteralOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "MalformedCommentStart",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "MalformedExponentDigits",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "MalformedHexLiteral",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MaxSources",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "MissingFinalSemi",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "NotAcceptingInputs",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "OddLengthHexLiteral",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "OperandOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ParenOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ParserOutOfBounds",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "StackOverflow",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "StackUnderflow",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnclosedLeftParen",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnclosedOperand",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnexpectedComment",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnexpectedLHSChar",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnexpectedOperand",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnexpectedRHSChar",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnexpectedRightParen",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnknownWord",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "UnsupportedLiteralType",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "word",
+          "type": "string"
+        }
+      ],
+      "name": "WordSize",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "ZeroLengthDecimal",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "ZeroLengthHexLiteral",
+      "type": "error"
     },
     {
       "inputs": [
@@ -44,12 +328,12 @@
       "outputs": [
         {
           "internalType": "bytes",
-          "name": "bytecode",
+          "name": "",
           "type": "bytes"
         },
         {
           "internalType": "uint256[]",
-          "name": "constants",
+          "name": "",
           "type": "uint256[]"
         }
       ],
@@ -57,16 +341,22 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "parseMeta",
-      "outputs": [
+      "inputs": [
         {
-          "internalType": "bytes",
-          "name": "parseMetaBytes",
-          "type": "bytes"
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
         }
       ],
-      "stateMutability": "pure",
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     }
   ],

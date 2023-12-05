@@ -381,7 +381,6 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   return {cloneEventData,contractTransaction}
 
 
-}  
-
+}
 
  
