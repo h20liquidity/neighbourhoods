@@ -9,7 +9,7 @@ uint256 constant INCR_PER_BATCH = 101e16;
 
 bytes constant TRANCHE_STRAT_CALCULATE_IO =
 // Address of the Arb Contract.
-    "allowed-counterparty : 0xC8A537a62E9ebD05113937fBEC4AF156272a7aE3,"
+    "allowed-counterparty : 0xb4ffa641e5dA49F7466142E8418622CB64dBe86B,"
     // Actual counterparty.
     "actual-counterparty : context<1 2>(),"
     // Check counterparty.
@@ -25,7 +25,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO =
     // Current Batch Index and Remaining Amount.
     "batch-index batch-remaining: call<2 2>(0),"
     // Calcuate Ratio from initial ratio and batch index.
-    "io-ratio: decimal18-mul(25e13 if(batch-index int-exp(101e16 batch-index) 1e18)),"
+    "io-ratio: decimal18-mul(25e13 decimal18-power-int(101e16 batch-index)),"
     // Calculate Amount from Ratio.
     "amount: decimal18-div(batch-remaining io-ratio),"
     // Order Ratio

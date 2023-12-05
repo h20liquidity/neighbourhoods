@@ -48,23 +48,4 @@ contract OrderBookNPE2Real is OpTest {
         );
         return (stack, kvs);
     } 
-
-    function iEvalExpressionWithIndex(
-        address expression,
-        uint256 index,
-        address interpreter,
-        address store,
-        uint256[][] memory context,
-        uint256[] memory inputs
-    ) internal view returns (uint256[] memory, uint256[] memory) {
-        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
-        (uint256[] memory stack, uint256[] memory kvs) = IInterpreterV2(interpreter).eval2(
-            IInterpreterStoreV1(address(store)),
-            namespace,
-            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(index), type(uint16).max),
-            context,
-            inputs
-        );
-        return (stack, kvs);
-    }
 }

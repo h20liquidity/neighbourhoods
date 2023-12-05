@@ -19,7 +19,7 @@ import {EvaluableConfigV3} from "rain.interpreter/src/interface/IInterpreterCall
 address constant POLYGON_NHT_HOLDER = 0xe0e0Bb15Ad2dC19e5Eaa133968e498B4D9bF24Da;
 // This could easily break, just happened to be some wallet that held USDT when
 // I was writing this test.
-address constant POLYGON_USDT_HOLDER = 0x72A53cDBBcc1b9efa39c834A540550e23463AAcB;
+address constant POLYGON_USDT_HOLDER = 0xF977814e90dA44bFA03b6295A0616a897441aceC;
 
 /// @dev https://docs.sushi.com/docs/Products/Classic%20AMM/Deployment%20Addresses
 /// @dev https://polygonscan.com/address/0xc35DADB65012eC5796536bD9864eD8773aBc74C4
@@ -43,20 +43,20 @@ address constant POLYGON_PAIR_TOKEN_0 = address(POLYGON_NHT_TOKEN_ADDRESS);
 address constant POLYGON_PAIR_TOKEN_1 = address(POLYGON_USDT_TOKEN_ADDRESS);
 
 IOrderBookV3ArbOrderTaker constant POLYGON_ARB_CONTRACT =
-    IOrderBookV3ArbOrderTaker(0xC8A537a62E9ebD05113937fBEC4AF156272a7aE3);
+    IOrderBookV3ArbOrderTaker(0xb4ffa641e5dA49F7466142E8418622CB64dBe86B);
 
 address constant APPROVED_EOA = 0x669845c29D9B1A64FFF66a55aA13EB4adB889a88;
 address constant APPROVED_COUNTERPARTY = address(POLYGON_ARB_CONTRACT);
 
 RainterpreterExpressionDeployerNPE2 constant POLYGON_DEPLOYER_NPE2 =
-    RainterpreterExpressionDeployerNPE2(0xAc40ae843Fa8A0B10AAA2c6D04451DF206EE7f77);
+    RainterpreterExpressionDeployerNPE2(0xD61d03501E95D4B507566fB42Ca2299595c4B1e6);
 
 RainterpreterParserNPE2 constant POLYGON_PARSER_NPE2 =
-    RainterpreterParserNPE2(0x8418D62C0FB54505F5394d9Ce9fB3eb30DF4a860);
+    RainterpreterParserNPE2(0x63954a113cbDB20A4fD1Ac7DD76c9eDA29727f2D);
 
-address constant POLYGON_INTERPRETER_NPE2 = 0x5474eF512c29d08A146a55b6DaF09633E496e1C8;
-address constant POLYGON_STORE_NPE2 = 0x33E038DDcfe1e0c1f35DeEF672fef7a78c8db986;
-IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0x535Cc7A243daF34103b8042fAd1760aBA2B3c855);
+address constant POLYGON_INTERPRETER_NPE2 = 0xf374faFE473D76bf9518e437B484FbdD5674daFf;
+address constant POLYGON_STORE_NPE2 = 0x5b777FAca336c648262e9c65a3c7A372a08c205b;
+IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0xdcdee0E7a58Bba7e305dB3Abc42F4887CE8EF729);
 
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
@@ -85,7 +85,7 @@ bytes constant RAINSTRING_PRELUDE =
     // USDT token address.
     "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F,"
     // Approved counterparty.
-    "approved-counterparty: 0xC8A537a62E9ebD05113937fBEC4AF156272a7aE3,"
+    "approved-counterparty: 0xb4ffa641e5dA49F7466142E8418622CB64dBe86B,"
     // Actual counterparty.
     "actual-counterparty: context<1 2>(),"
     // Order hash.
@@ -169,7 +169,7 @@ bytes constant SELL_ROUTE =
     // direction 1
     hex"01"
     // to
-    hex"C8A537a62E9ebD05113937fBEC4AF156272a7aE3"
+    hex"b4ffa641e5dA49F7466142E8418622CB64dBe86B"
     // padding
     hex"000000000000000000000000000000000000000000000000000000000000";
 
@@ -180,7 +180,7 @@ bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
 // Sushi needs the usdt amount as 6 decimals (tether's native size).
     "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"
     // Try to average a 1 hour cooldown, so the max is 2 hours.
-    "max-cooldown18: 7200e18,"
+    "max-cooldown18: 1152e18,"
     // Seed the rng with the hash of the last time to make it distinct from the
     // amount random multiplier.
     "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"
@@ -242,7 +242,7 @@ bytes constant BUY_ROUTE =
     // direction 0
     hex"00"
     // to
-    hex"C8A537a62E9ebD05113937fBEC4AF156272a7aE3"
+    hex"b4ffa641e5dA49F7466142E8418622CB64dBe86B"
     // padding
     hex"000000000000000000000000000000000000000000000000000000000000";
 
