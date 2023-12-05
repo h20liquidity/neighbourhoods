@@ -51,8 +51,8 @@ export const RAINSTRING_CALCULATE_ORDER_SELL =
 export const RAINSTRING_CALCULATE_ORDER_BUY =
             // Sushi needs the usdt amount as 6 decimals (tether's native size).
             "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"+
-            // Try to average a 1 hour cooldown, so the max is 2 hours.
-            "max-cooldown18: 7200e18,"+
+            // Try to average a 4.8 mins cooldown, so the max is 9.6 mins.
+            "max-cooldown18: 576e18,"+
             // Seed the rng with the hash of the last time to make it distinct from the
             // amount random multiplier.
             "cooldown-random-multiplier18: call<2 1>(hash(last-time)),"+
