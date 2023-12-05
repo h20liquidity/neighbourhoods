@@ -39,9 +39,6 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
         vaultId: vaultId
       }
     }) 
-  
-  console.log("validOutputs : ",validOutputs)
-
 
   const signer  = new ethers.Wallet(priKey,provider) 
  
@@ -60,11 +57,6 @@ export const deploySushiSellStrategy = async(network:string,priKey: string, comm
       strategyString.trim()
     )
   )  
-
-  console.log("bytecode : ",bytecode)
-  console.log("constants : ",constants)
-
-
   const EvaluableConfig_A = {
     deployer: deployerAddress,
     bytecode: bytecode,
