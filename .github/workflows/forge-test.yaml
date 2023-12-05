@@ -21,22 +21,23 @@ jobs:
         run: forge --version
         id: forge-version
 
-      - name: Forge install shallow
-        run: forge install --shallow
-        id: forge-install-shallow
-
-      - name: git status
-        run: git status
-        id: git-status
+      - name: Forge install
+        run: forge install
+        id: forge-install
 
       - name: Run Forge fmt
         run: forge fmt --check
         id: fmt
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
 
-      - name: Run Forge build
-        run: forge build --sizes
-        id: build
+      - name: Prepare repo
+        run: cd lib/rain.interpreter && nix run
 
       - name: Run Forge tests
         run: forge test -vvv --gas-report
         id: test
+        env:
+          RPC_URL_POLYGON: ${{ secrets. RPC_URL_POLYGON }}

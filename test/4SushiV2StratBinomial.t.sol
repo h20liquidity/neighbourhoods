@@ -34,6 +34,7 @@ import {
     IInterpreterStoreV1,
     IO,
     IERC20,
+    MAX_USDT,
     EvaluableConfigV3,
     OrderConfigV2,
     SourceIndexV2,
@@ -82,13 +83,13 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
 
     function placeBuyOrderFork() internal returns (OrderV2 memory) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringBuy());
-        // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+        assertEq(bytecode, EXPECTED_BUY_BYTECODE);
         return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
     }
 
     function placeSellOrderFork() internal returns (OrderV2 memory order) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSell());
-        // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+        assertEq(bytecode, EXPECTED_SELL_BYTECODE);
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 
@@ -247,7 +248,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringBuy());
-            // assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+            assertEq(bytecode, EXPECTED_BUY_BYTECODE);
             (interpreterDeployer, storeDeployer, expression) = iDeployExpression(bytecode, constants);
         }
 
@@ -338,7 +339,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         address expression;
         {
             (bytes memory bytecode, uint256[] memory constants) = iParser.parse(rainstringSell());
-            // assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+            assertEq(bytecode, EXPECTED_SELL_BYTECODE);
             (interpreterDeployer, storeDeployer, expression) = iDeployExpression(bytecode, constants);
         }
 
@@ -397,7 +398,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         output = (input >> startBit) & mask;
     }
 
-    function jitteryBinomial(uint256 input) internal returns (uint256) {
+    function jitteryBinomial(uint256 input) internal pure returns (uint256) {
         uint256 inputHash = uint256(keccak256(abi.encodePacked(input)));
         uint256 binomial = LibCtPop.ctpop(decodeBits(0x010A00, inputHash)) * 1e18;
         uint256 noise = uint256(keccak256(abi.encodePacked(input, uint256(0)))) % 1e18;
@@ -407,7 +408,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         return jittery.fixedPointDiv(11e18, Math.Rounding.Down);
     }
 
-    function cooldown(uint256 lastTime) internal returns (uint256) {
+    function cooldown(uint256 lastTime) internal pure returns (uint256) {
         uint256 multiplier = jitteryBinomial(uint256(keccak256(abi.encodePacked(lastTime))));
         return MAX_COOLDOWN.scale18(0, 0).fixedPointMul(multiplier, Math.Rounding.Down).scaleN(0, 0);
     }
@@ -442,11 +443,11 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         // last time
         assertEq(stack[12], lastTime);
         // max usdt amount
-        assertEq(stack[11], 100e18);
+        assertEq(stack[11], MAX_USDT);
         // amount random multiplier
         assertEq(stack[10], jitteryBinomial(lastTime));
         // target usdt amount e18
-        assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
+        assertEq(stack[9], MAX_USDT * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
         assertEq(stack[8], stack[9].scaleN(6, 1));
         // max cooldown e18
@@ -497,11 +498,11 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         // last time
         assertEq(stack[12], lastTime);
         // max usdt amount
-        assertEq(stack[11], 100e18);
+        assertEq(stack[11], MAX_USDT);
         // amount random multiplier
         assertEq(stack[10], jitteryBinomial(lastTime));
         // target usdt amount e18
-        assertEq(stack[9], 100e18 * jitteryBinomial(lastTime) / 1e18);
+        assertEq(stack[9], MAX_USDT * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
         assertEq(stack[8], stack[9] / 1e12);
         // max cooldown e18
