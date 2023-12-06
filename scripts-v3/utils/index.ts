@@ -9,7 +9,7 @@ import axios from "axios";
 import { hexlify } from "ethers/lib/utils";
 import Parser from "../abis/IParserV1.json" 
 import Cloneable from "../abis/ICloneableV2.json" 
-import {  getArbRainlangString } from "../deployContract/arb";
+import {  getArbRainlangString, getUngatedArbRainlangString } from "../deployContract/arb";
 
 /**
  * Supported Networks to x-deploy contracts.
@@ -290,7 +290,8 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
 
   const nonce = await provider.getTransactionCount(signer.address)    
 
-  const arbString = getArbRainlangString() ; 
+  const arbString = getArbRainlangString();
+  // const arbString = getUngatedArbRainlangString();
   const expressionDeployerAddress = contractConfig.contracts[network].RainterpreterExpressionDeployer
   const parserAddress = contractConfig.contracts[network].RainterpreterParser
   const orderBookAddress = contractConfig.contracts[network].Orderbook.address 
@@ -380,7 +381,6 @@ export const deployArbContractInstance = async (provider: any, common: Common,  
   return {cloneEventData,contractTransaction}
 
 
-}  
-
+}
 
  

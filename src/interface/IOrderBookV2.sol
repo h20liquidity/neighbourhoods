@@ -1,22 +1,52 @@
 // SPDX-License-Identifier: CAL
 pragma solidity ^0.8.18;
 
-import "./IERC3156FlashLender.sol";
-import {IExpressionDeployerV3, EvaluableV2} from "lib/rain.interpreter/src/lib/caller/LibEvaluable.sol";
-import {
-    EvaluableConfigV3,
-    IInterpreterCallerV2,
-    SignedContextV1
-} from "rain.interpreter/src/interface/IInterpreterCallerV2.sol";
+import {IERC3156FlashLender} from "./IERC3156FlashLender.sol";
+import {EvaluableConfig, Evaluable} from "rain.interpreter/src/interface/deprecated/IInterpreterCallerV1.sol";
+import {SignedContextV1, IInterpreterCallerV2} from "rain.interpreter/src/interface/IInterpreterCallerV2.sol";
+import {IExpressionDeployerV2} from "rain.interpreter/src/interface/deprecated/IExpressionDeployerV2.sol";
 
-/// Import unmodified structures from older versions of `IOrderBook`.
-import {IO, ClearConfig, ClearStateChange} from "./IOrderBookV2.sol";
+/// Configuration for a deposit. All deposits are processed by and for
+/// `msg.sender` so the vaults are unambiguous here.
+/// @param token The token to deposit.
+/// @param vaultId The vault ID for the token to deposit.
+/// @param amount The amount of the token to deposit.
+struct DepositConfig {
+    address token;
+    uint256 vaultId;
+    uint256 amount;
+}
 
-/// Thrown when take orders is called with no orders.
-error NoOrders();
+/// Configuration for a withdrawal. All withdrawals are processed by and for
+/// `msg.sender` so the vaults are unambiguous here.
+/// @param token The token to withdraw.
+/// @param vaultId The vault ID for the token to withdraw.
+/// @param amount The amount of the token to withdraw.
+struct WithdrawConfig {
+    address token;
+    uint256 vaultId;
+    uint256 amount;
+}
 
-/// Thrown when take orders is called with a zero maximum input.
-error ZeroMaximumInput();
+/// Configuration for a single input or output on an `Order`.
+/// @param token The token to either send from the owner as an output or receive
+/// from the counterparty to the owner as an input. The tokens are not moved
+/// during an order, only internal vault balances are updated, until a separate
+/// withdraw step.
+/// @param decimals The decimals to use for internal scaling calculations for
+/// `token`. This is provided directly in IO to save gas on external lookups and
+/// to respect the ERC20 spec that mandates NOT assuming or using the `decimals`
+/// method for onchain calculations. Ostensibly the decimals exists so that all
+/// calculate order entrypoints can treat amounts and ratios as 18 decimal fixed
+/// point values. Order max amounts MUST be rounded down and IO ratios rounded up
+/// to compensate for any loss of precision during decimal rescaling.
+/// @param vaultId The vault ID that tokens will move into if this is an input
+/// or move out from if this is an output.
+struct IO {
+    address token;
+    uint8 decimals;
+    uint256 vaultId;
+}
 
 /// Config the order owner may provide to define their order. The `msg.sender`
 /// that adds an order cannot modify the owner nor bypass the integrity check of
@@ -30,11 +60,54 @@ error ZeroMaximumInput();
 /// @param meta Arbitrary bytes that will NOT be used in the order evaluation
 /// but MUST be emitted as a Rain `MetaV1` when the order is placed so can be
 /// used by offchain processes.
-struct OrderConfigV2 {
+struct OrderConfig {
     IO[] validInputs;
     IO[] validOutputs;
-    EvaluableConfigV3 evaluableConfig;
+    EvaluableConfig evaluableConfig;
     bytes meta;
+}
+
+/// Defines a fully deployed order ready to evaluate by Orderbook.
+/// @param owner The owner of the order is the `msg.sender` that added the order.
+/// @param handleIO true if there is a "handle IO" entrypoint to run. If false
+/// the order book MAY skip calling the interpreter to save gas.
+/// @param evaluable Standard `Evaluable` with entrypoints for both
+/// "calculate order" and "handle IO". The latter MAY be empty bytes, in which
+/// case it will be skipped at runtime to save gas.
+/// @param validInputs A list of input tokens that are economically equivalent
+/// for the purpose of processing this order. Inputs are relative to the order
+/// so these tokens will be sent to the owners vault.
+/// @param validOutputs A list of output tokens that are economically equivalent
+/// for the purpose of processing this order. Outputs are relative to the order
+/// so these tokens will be sent from the owners vault.
+struct Order {
+    address owner;
+    bool handleIO;
+    Evaluable evaluable;
+    IO[] validInputs;
+    IO[] validOutputs;
+}
+
+/// Config for a list of orders to take sequentially as part of a `takeOrders`
+/// call.
+/// @param output Output token from the perspective of the order taker.
+/// @param input Input token from the perspective of the order taker.
+/// @param minimumInput Minimum input from the perspective of the order taker.
+/// @param maximumInput Maximum input from the perspective of the order taker.
+/// @param maximumIORatio Maximum IO ratio as calculated by the order being
+/// taken. The input is from the perspective of the order so higher ratio means
+/// worse deal for the order taker.
+/// @param orders Ordered list of orders that will be taken until the limit is
+/// hit. Takers are expected to prioritise orders that appear to be offering
+/// better deals i.e. lower IO ratios. This prioritisation and sorting MUST
+/// happen offchain, e.g. via. some simulator.
+struct TakeOrdersConfig {
+    address output;
+    address input;
+    uint256 minimumInput;
+    uint256 maximumInput;
+    uint256 maximumIORatio;
+    TakeOrderConfig[] orders;
 }
 
 /// Config for an individual take order from the overall list of orders in a
@@ -46,59 +119,52 @@ struct OrderConfigV2 {
 /// the take order input.
 /// @param signedContext Optional additional signed context relevant to the
 /// taken order.
-struct TakeOrderConfigV2 {
-    OrderV2 order;
+struct TakeOrderConfig {
+    Order order;
     uint256 inputIOIndex;
     uint256 outputIOIndex;
     SignedContextV1[] signedContext;
 }
 
-/// Defines a fully deployed order ready to evaluate by Orderbook. Identical to
-/// `Order` except for the newer `EvaluableV2`.
-/// @param owner The owner of the order is the `msg.sender` that added the order.
-/// @param handleIO true if there is a "handle IO" entrypoint to run. If false
-/// the order book MAY skip calling the interpreter to save gas.
-/// @param evaluable Standard `EvaluableV2` with entrypoints for both
-/// "calculate order" and "handle IO". The latter MAY be empty bytes, in which
-/// case it will be skipped at runtime to save gas.
-/// @param validInputs A list of input tokens that are economically equivalent
-/// for the purpose of processing this order. Inputs are relative to the order
-/// so these tokens will be sent to the owners vault.
-/// @param validOutputs A list of output tokens that are economically equivalent
-/// for the purpose of processing this order. Outputs are relative to the order
-/// so these tokens will be sent from the owners vault.
-struct OrderV2 {
-    address owner;
-    bool handleIO;
-    EvaluableV2 evaluable;
-    IO[] validInputs;
-    IO[] validOutputs;
+/// Additional config to a `clear` that allows two orders to be fully matched to
+/// a specific token moment. Also defines the bounty for the clearer.
+/// @param aliceInputIOIndex The index of the input token in order A.
+/// @param aliceOutputIOIndex The index of the output token in order A.
+/// @param bobInputIOIndex The index of the input token in order B.
+/// @param bobOutputIOIndex The index of the output token in order B.
+/// @param aliceBountyVaultId The vault ID that the bounty from order A should
+/// move to for the clearer.
+/// @param bobBountyVaultId The vault ID that the bounty from order B should move
+/// to for the clearer.
+struct ClearConfig {
+    uint256 aliceInputIOIndex;
+    uint256 aliceOutputIOIndex;
+    uint256 bobInputIOIndex;
+    uint256 bobOutputIOIndex;
+    uint256 aliceBountyVaultId;
+    uint256 bobBountyVaultId;
 }
 
-/// Config for a list of orders to take sequentially as part of a `takeOrders`
-/// call.
-/// @param minimumInput Minimum input from the perspective of the order taker.
-/// @param maximumInput Maximum input from the perspective of the order taker.
-/// @param maximumIORatio Maximum IO ratio as calculated by the order being
-/// taken. The input is from the perspective of the order so higher ratio means
-/// worse deal for the order taker.
-/// @param orders Ordered list of orders that will be taken until the limit is
-/// hit. Takers are expected to prioritise orders that appear to be offering
-/// better deals i.e. lower IO ratios. This prioritisation and sorting MUST
-/// happen offchain, e.g. via. some simulator.
-/// @param data If nonzero length, triggers `onTakeOrders` on the caller of
-/// `takeOrders` with this data. This allows the caller to perform arbitrary
-/// onchain actions between receiving their input tokens, before having to send
-/// their output tokens.
-struct TakeOrdersConfigV2 {
-    uint256 minimumInput;
-    uint256 maximumInput;
-    uint256 maximumIORatio;
-    TakeOrderConfigV2[] orders;
-    bytes data;
+/// Summary of the vault state changes due to clearing an order. NOT the state
+/// changes sent to the interpreter store, these are the LOCAL CHANGES in vault
+/// balances. Note that the difference in inputs/outputs overall between the
+/// counterparties is the bounty paid to the entity that cleared the order.
+/// @param aliceOutput Amount of counterparty A's output token that moved out of
+/// their vault.
+/// @param bobOutput Amount of counterparty B's output token that moved out of
+/// their vault.
+/// @param aliceInput Amount of counterparty A's input token that moved into
+/// their vault.
+/// @param bobInput Amount of counterparty B's input token that moved into their
+/// vault.
+struct ClearStateChange {
+    uint256 aliceOutput;
+    uint256 bobOutput;
+    uint256 aliceInput;
+    uint256 bobInput;
 }
 
-/// @title IOrderBookV3
+/// @title IOrderBookV2
 /// @notice An orderbook that deploys _strategies_ represented as interpreter
 /// expressions rather than individual orders. The order book contract itself
 /// behaves similarly to an `ERC4626` vault but with much more fine grained
@@ -226,64 +292,22 @@ struct TakeOrdersConfigV2 {
 /// As Orderbook supports any expression that can run on any `IInterpreterV1` and
 /// counterparties are available to the order, order strategies are free to
 /// implement KYC/membership, tracking, distributions, stock, buybacks, etc. etc.
-///
-/// Main differences between `IOrderBookV2` and `IOderBookV3`:
-/// - Most structs are now primitives to save gas.
-/// - Order hash is `bytes32`.
-/// - `deposit` and `withdraw` MUST revert if the amount is zero.
-/// - adding an order MUST revert if there is no calculation entrypoint.
-/// - adding an order MUST revert if there is no handle IO entrypoint.
-/// - adding an order MUST revert if there are no inputs.
-/// - adding an order MUST revert if there are no outputs.
-/// - adding and removing orders MUST return a boolean indicating if the state
-/// changed.
-/// - new `orderExists` method.
-interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
-    /// MUST be thrown by `deposit` if the amount is zero.
-    /// @param sender `msg.sender` depositing tokens.
-    /// @param token The token being deposited.
-    /// @param vaultId The vault ID the tokens are being deposited under.
-    error ZeroDepositAmount(address sender, address token, uint256 vaultId);
-
-    /// MUST be thrown by `withdraw` if the amount _requested_ to withdraw is
-    /// zero. The withdrawal MAY still not move any tokens if the vault balance
-    /// is zero, or the withdrawal is used to repay a flash loan.
-    /// @param sender `msg.sender` withdrawing tokens.
-    /// @param token The token being withdrawn.
-    /// @param vaultId The vault ID the tokens are being withdrawn from.
-    error ZeroWithdrawTargetAmount(address sender, address token, uint256 vaultId);
-
-    /// MUST be thrown by `addOrder` if the order has no associated calculation.
-    error OrderNoSources();
-
-    /// MUST be thrown by `addOrder` if the order has no associated handle IO.
-    error OrderNoHandleIO();
-
-    /// MUST be thrown by `addOrder` if the order has no inputs.
-    error OrderNoInputs();
-
-    /// MUST be thrown by `addOrder` if the order has no outputs.
-    error OrderNoOutputs();
-
+interface IOrderBookV2 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// Some tokens have been deposited to a vault.
     /// @param sender `msg.sender` depositing tokens. Delegated deposits are NOT
     /// supported.
-    /// @param token The token being deposited.
-    /// @param vaultId The vault ID the tokens are being deposited under.
-    /// @param amount The amount of tokens deposited.
-    event Deposit(address sender, address token, uint256 vaultId, uint256 amount);
+    /// @param config All config sent to the `deposit` call.
+    event Deposit(address sender, DepositConfig config);
 
     /// Some tokens have been withdrawn from a vault.
     /// @param sender `msg.sender` withdrawing tokens. Delegated withdrawals are
     /// NOT supported.
-    /// @param token The token being withdrawn.
-    /// @param vaultId The vault ID the tokens are being withdrawn from.
-    /// @param targetAmount The amount of tokens requested to withdraw.
+    /// @param config All config sent to the `withdraw` call.
     /// @param amount The amount of tokens withdrawn, can be less than the
-    /// target amount if the vault does not have the funds available to cover
-    /// the target amount. For example an active order might move tokens before
+    /// config amount if the vault does not have the funds available to cover
+    /// the config amount. For example an active order might move tokens before
     /// the withdraw completes.
-    event Withdraw(address sender, address token, uint256 vaultId, uint256 targetAmount, uint256 amount);
+    event Withdraw(address sender, WithdrawConfig config, uint256 amount);
 
     /// An order has been added to the orderbook. The order is permanently and
     /// always active according to its expression until/unless it is removed.
@@ -298,14 +322,14 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param orderHash The hash of the order as it is recorded onchain. Only
     /// the hash is stored in Orderbook storage to avoid paying gas to store the
     /// entire order.
-    event AddOrder(address sender, IExpressionDeployerV3 expressionDeployer, OrderV2 order, bytes32 orderHash);
+    event AddOrder(address sender, IExpressionDeployerV2 expressionDeployer, Order order, uint256 orderHash);
 
     /// An order has been removed from the orderbook. This effectively
     /// deactivates it. Orders can be added again after removal.
     /// @param sender `msg.sender` removing the order and is owner of the order.
     /// @param order The removed order.
     /// @param orderHash The hash of the removed order.
-    event RemoveOrder(address sender, OrderV2 order, bytes32 orderHash);
+    event RemoveOrder(address sender, Order order, uint256 orderHash);
 
     /// Some order has been taken by `msg.sender`. This is the same as them
     /// placing inverse orders then immediately clearing them all, but costs less
@@ -316,7 +340,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param config All config defining the orders to attempt to take.
     /// @param input The input amount from the perspective of sender.
     /// @param output The output amount from the perspective of sender.
-    event TakeOrder(address sender, TakeOrderConfigV2 config, uint256 input, uint256 output);
+    event TakeOrder(address sender, TakeOrderConfig config, uint256 input, uint256 output);
 
     /// Emitted when attempting to match an order that either never existed or
     /// was removed. An event rather than an error so that we allow attempting
@@ -324,7 +348,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param sender `msg.sender` clearing the order that wasn't found.
     /// @param owner Owner of the order that was not found.
     /// @param orderHash Hash of the order that was not found.
-    event OrderNotFound(address sender, address owner, bytes32 orderHash);
+    event OrderNotFound(address sender, address owner, uint256 orderHash);
 
     /// Emitted when an order evaluates to a zero amount. An event rather than an
     /// error so that we allow attempting many orders in a loop and NOT rollback
@@ -332,7 +356,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param sender `msg.sender` clearing the order that had a 0 amount.
     /// @param owner Owner of the order that evaluated to a 0 amount.
     /// @param orderHash Hash of the order that evaluated to a 0 amount.
-    event OrderZeroAmount(address sender, address owner, bytes32 orderHash);
+    event OrderZeroAmount(address sender, address owner, uint256 orderHash);
 
     /// Emitted when an order evaluates to a ratio exceeding the counterparty's
     /// maximum limit. An error rather than an error so that we allow attempting
@@ -340,7 +364,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param sender `msg.sender` clearing the order that had an excess ratio.
     /// @param owner Owner of the order that had an excess ratio.
     /// @param orderHash Hash of the order that had an excess ratio.
-    event OrderExceedsMaxRatio(address sender, address owner, bytes32 orderHash);
+    event OrderExceedsMaxRatio(address sender, address owner, uint256 orderHash);
 
     /// Emitted before two orders clear. Covers both orders and includes all the
     /// state before anything is calculated.
@@ -348,7 +372,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param alice One of the orders.
     /// @param bob The other order.
     /// @param clearConfig Additional config required to process the clearance.
-    event Clear(address sender, OrderV2 alice, OrderV2 bob, ClearConfig clearConfig);
+    event Clear(address sender, Order alice, Order bob, ClearConfig clearConfig);
 
     /// Emitted after two orders clear. Includes all final state changes in the
     /// vault balances, including the clearer's vaults.
@@ -372,74 +396,28 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// possible regulatory issues re: whether a vault share is a security, code
     /// bloat on the vault, complex mint/deposit/withdraw/redeem 4-way logic,
     /// the need for preview functions, etc. etc.
-    ///
     /// At the same time, allowing vault IDs to be specified by the depositor
     /// allows much more granular and direct control over token movements within
     /// Orderbook than either ERC4626 vault shares or mere contract-level ERC20
     /// allowances can facilitate.
-    //
-    /// Vault IDs are namespaced by the token address so there is no risk of
-    /// collision between tokens. For example, vault ID 0 for token A is
-    /// completely different to vault ID 0 for token B.
-    ///
-    /// `0` amount deposits are unsupported as underlying token contracts
-    /// handle `0` value transfers differently and this would be a source of
-    /// confusion. The order book MUST revert with `ZeroDepositAmount` if the
-    /// amount is zero.
-    ///
-    /// @param token The token to deposit.
-    /// @param vaultId The vault ID to deposit under.
-    /// @param amount The amount of tokens to deposit.
-    function deposit(address token, uint256 vaultId, uint256 amount) external;
+    /// @param config All config for the deposit.
+    function deposit(DepositConfig calldata config) external;
 
     /// Allows the sender to withdraw any tokens from their own vaults. If the
     /// withrawer has an active flash loan debt denominated in the same token
     /// being withdrawn then Orderbook will merely reduce the debt and NOT send
     /// the amount of tokens repaid to the flashloan debt.
-    ///
-    /// MUST revert if the amount _requested_ to withdraw is zero. The withdrawal
-    /// MAY still not move any tokens (without revert) if the vault balance is
-    /// zero, or the withdrawal is used to repay a flash loan, or due to any
-    /// other internal accounting.
-    ///
-    /// @param token The token to withdraw.
-    /// @param vaultId The vault ID to withdraw from.
-    /// @param targetAmount The amount of tokens to attempt to withdraw. MAY
-    /// result in fewer tokens withdrawn if the vault balance is lower than the
-    /// target amount. MAY NOT be zero, the order book MUST revert with
-    /// `ZeroWithdrawTargetAmount` if the amount is zero.
-    function withdraw(address token, uint256 vaultId, uint256 targetAmount) external;
+    /// @param config All config required to withdraw. Notably if the amount
+    /// is less than the current vault balance then the vault will be cleared
+    /// to 0 rather than the withdraw transaction reverting.
+    function withdraw(WithdrawConfig calldata config) external;
 
     /// Given an order config, deploys the expression and builds the full `Order`
     /// for the config, then records it as an active order. Delegated adding an
     /// order is NOT supported. The `msg.sender` that adds an order is ALWAYS
     /// the owner and all resulting vault movements are their own.
-    ///
-    /// MUST revert with `OrderNoSources` if the order has no associated
-    /// calculation and `OrderNoHandleIO` if the order has no handle IO
-    /// entrypoint. The calculation MUST return at least two values from
-    /// evaluation, the maximum amount and the IO ratio. The handle IO entrypoint
-    /// SHOULD return zero values from evaluation. Either MAY revert during
-    /// evaluation on the interpreter, which MUST prevent the order from
-    /// clearing.
-    ///
-    /// MUST revert with `OrderNoInputs` if the order has no inputs.
-    /// MUST revert with `OrderNoOutputs` if the order has no outputs.
-    ///
-    /// If the order already exists, the order book MUST NOT change state, which
-    /// includes not emitting an event. Instead it MUST return false. If the
-    /// order book modifies state it MUST emit an `AddOrder` event and return
-    /// true.
-    ///
     /// @param config All config required to build an `Order`.
-    /// @return stateChanged True if the order was added, false if it already
-    /// existed.
-    function addOrder(OrderConfigV2 calldata config) external returns (bool stateChanged);
-
-    /// Returns true if the order exists, false otherwise.
-    /// @param orderHash The hash of the order to check.
-    /// @return exists True if the order exists, false otherwise.
-    function orderExists(bytes32 orderHash) external view returns (bool exists);
+    function addOrder(OrderConfig calldata config) external;
 
     /// Order owner can remove their own orders. Delegated order removal is NOT
     /// supported and will revert. Removing an order multiple times or removing
@@ -447,9 +425,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// transaction will complete with that order hash definitely, redundantly
     /// not live.
     /// @param order The `Order` data exactly as it was added.
-    /// @return stateChanged True if the order was removed, false if it did not
-    /// exist.
-    function removeOrder(OrderV2 calldata order) external returns (bool stateChanged);
+    function removeOrder(Order calldata order) external;
 
     /// Allows `msg.sender` to attempt to fill a list of orders in sequence
     /// without needing to place their own order and clear them. This works like
@@ -489,9 +465,7 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// vaults processed.
     /// @return totalOutput Total tokens taken from `msg.sender` and distributed
     /// between vaults.
-    function takeOrders(TakeOrdersConfigV2 calldata config)
-        external
-        returns (uint256 totalInput, uint256 totalOutput);
+    function takeOrders(TakeOrdersConfig calldata config) external returns (uint256 totalInput, uint256 totalOutput);
 
     /// Allows `msg.sender` to match two live orders placed earlier by
     /// non-interactive parties and claim a bounty in the process. The clearer is
@@ -541,8 +515,8 @@ interface IOrderBookV3 is IERC3156FlashLender, IInterpreterCallerV2 {
     /// @param aliceSignedContext Optional signed context that is relevant to A.
     /// @param bobSignedContext Optional signed context that is relevant to B.
     function clear(
-        OrderV2 memory alice,
-        OrderV2 memory bob,
+        Order memory alice,
+        Order memory bob,
         ClearConfig calldata clearConfig,
         SignedContextV1[] memory aliceSignedContext,
         SignedContextV1[] memory bobSignedContext
