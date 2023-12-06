@@ -3,7 +3,7 @@ pragma solidity =0.8.19;
 
 import "test/util/Test5SushiV2LimitOrderUtil.sol";
 import {console2} from "forge-std/console2.sol";
-import {rainstringSellLimitOrder,rainstringBuyLimitOrder, ORDER_INIT_RATIO, AMOUNT_PER_BATCH, INCR_PER_BATCH} from "src/5SushiV2LimitOrder.sol";
+import {rainstringSellLimitOrder,rainstringBuyLimitOrder, ORDER_INIT_RATIO_SELL, AMOUNT_PER_BATCH, INCR_PER_BATCH} from "src/5SushiV2LimitOrder.sol";
 import {
     POLYGON_PARSER_NPE2,
     POLYGON_NHT_TOKEN_ADDRESS,
@@ -50,6 +50,48 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         uint256 mask = (2 ** length) - 1;
         return (target >> startBit) & mask;
     } 
+
+    function testUni() public {
+
+        selectPolygonFork() ; 
+
+        // bytes memory exp = 
+        // "polygon-sushi-v2-factory: 0xc35DADB65012eC5796536bD9864eD8773aBc74C4 ,"
+        // "nht-token-address: 0x84342e932797FC62814189f01F0Fb05F52519708 ,"
+        // "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F ,"
+        // "target-nht-amount: 10000e18 ,"
+        // "last-price-timestamp usdt-amount6: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-nht-amount nht-token-address usdt-token-address) ;";
+
+        {(bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSellLimitOrder());}
+        {(bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringBuyLimitOrder());}
+
+
+        // IInterpreterV2 interpreter;
+        // IInterpreterStoreV1 store;
+        // address expression;
+        // {
+        //     (interpreter, store, expression,) = POLYGON_DEPLOYER_NPE2.deployExpression2(bytecode, constants);
+        // }
+
+        // uint256[][] memory context = new uint256[][](0);
+        // uint256[] memory inputs = new uint256[](0);
+
+        // FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+
+        // (uint256[] memory stack, uint256[] memory kvs) = interpreter.eval2(
+        //     store,
+        //     namespace,
+        //     LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+        //     context,
+        //     inputs
+        // ); 
+
+        // for(uint256 i = 0 ; i < stack.length ; i++){
+        //     console2.log("stack : ",stack[i]); //4.497002
+        // }
+
+
+    }
 
     // function testLimitSellOrderReal(uint256 orderHash, uint256 vaultId, uint256 balanceDiff) public {
     //     vm.assume(balanceDiff > 1 && balanceDiff <= 1000e6);

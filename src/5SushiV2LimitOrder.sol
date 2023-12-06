@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
-uint256 constant ORDER_INIT_RATIO = 25e13;
+uint256 constant ORDER_INIT_RATIO_SELL = 25e13;
+uint256 constant ORDER_INIT_RATIO_BUY = 2222e18 + 222222222222222222; // ( 1/ORDER_INIT_RATIO_SELL)
+
 uint256 constant AMOUNT_PER_BATCH = 1000e18;
 uint256 constant COOLDOWN = 3600;
-uint256 constant INCR_PER_BATCH = 101e16;
+uint256 constant INCR_PER_BATCH = 101e16; 
 
-bytes constant TRANCHE_STRAT_CALCULATE_IO =
+bytes constant PRELUDE = 
 // Address of the Arb Contract.
     "allowed-counterparty : 0xb4ffa641e5dA49F7466142E8418622CB64dBe86B,"
     // Actual counterparty.
@@ -22,9 +24,11 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO =
     // Ensure 1 hr Cooldown between Batches.
     ":ensure<1>(greater-than(block-timestamp() int-add(batch-start-time 3600))),"
     // Current Batch Index and Remaining Amount.
-    "batch-index batch-remaining: call<2 2>(0),"
-    // Calcuate Ratio from initial ratio and batch index.
-    "io-ratio: decimal18-mul(25e13 decimal18-power-int(101e16 batch-index)),"
+    "batch-index batch-remaining: call<2 2>(0)," ;
+
+bytes constant TRANCHE_STRAT_CALCULATE_IO_SELL =
+// Calcuate Ratio from initial ratio and batch index.
+    "io-ratio: decimal18-mul(45e13 decimal18-power-int(101e16 batch-index)),"
     // Calculate Amount from Ratio.
     "amount: decimal18-div(batch-remaining io-ratio),"
     // Order Ratio
@@ -36,11 +40,9 @@ bytes constant TRANCHE_STRAT_HANDLE_IO_SELL =
     // Total Amount Received Key
     "total-received-k : hash(batch-start-info-k),"
     // Input Amount received.
-    "in-token-amount : context<3 4>(),"
-    // Input Token decimals.
-    "in-token-decimals: context<3 1>(),"
+    "usdt-in-amount : context<3 4>(),"
     // New Total Amount Received
-    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0 1>(in-token-decimals in-token-amount)),"
+    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18<6>(usdt-in-amount)),"
     // Store Batch Info
     "batch-start-info: get(batch-start-info-k)," "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
@@ -51,19 +53,29 @@ bytes constant TRANCHE_STRAT_HANDLE_IO_SELL =
     // Set Total Amount received.
     ":set(total-received-k new-total-received);";
 
+bytes constant TRANCHE_STRAT_CALCULATE_IO_BUY =
+// Calcuate Ratio from initial ratio and batch index.
+    "io-ratio: decimal18-mul(2222222222222222222222 decimal18-power-int(101e16 batch-index)),"
+    // Calculate Amount from Ratio.
+    "amount: decimal18-div(batch-remaining io-ratio),"
+    // Order Ratio
+    "ratio: io-ratio;";
+
+
+
 bytes constant TRANCHE_STRAT_HANDLE_IO_BUY =
     // Batch Info Key.
     "batch-start-info-k : context<1 0>(),"
     // Total Amount Received Key
     "total-received-k : hash(batch-start-info-k),"
     // NHT Amount received from trade.
-    "nht-in-token-amount18 : context<3 4>(),"
-    // USDT Token decimals.
-    "usdt-token-decimals: context<4 1>(),"
+    "nht-in-amount : context<3 4>(),"
+    // Get current ratio from context
+    "io-ratio: context<2 1>(),"
     //usdt equivalent of nht-in-token-amount18.
-    "_ usdt-amount6: uniswap-v2-amount-out<1>(0xc35DADB65012eC5796536bD9864eD8773aBc74C4 nht-in-token-amount18 0x84342e932797FC62814189f01F0Fb05F52519708 0xc2132D05D31c914a87C6611C10748AEb04B58e8F),"
+    "usdt-out-amount18: decimal18-div(nht-in-amount io-ratio),"
     // New Total Amount Received
-    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0 1>(usdt-token-decimals usdt-amount6)),"
+    "new-total-received new-batch-index _: call<2 3>(usdt-out-amount18),"
     // Store Batch Info
     "batch-start-info: get(batch-start-info-k)," "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
@@ -89,9 +101,9 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
     "new-batch-remaining: int-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
 
 function rainstringSellLimitOrder() pure returns (bytes memory) {
-    return bytes.concat(TRANCHE_STRAT_CALCULATE_IO, TRANCHE_STRAT_HANDLE_IO_SELL, TRANCHE_STRAT_CALCULATE_BATCH);
+    return bytes.concat(PRELUDE,TRANCHE_STRAT_CALCULATE_IO_SELL, TRANCHE_STRAT_HANDLE_IO_SELL, TRANCHE_STRAT_CALCULATE_BATCH);
 }
 
 function rainstringBuyLimitOrder() pure returns (bytes memory) {
-    return bytes.concat(TRANCHE_STRAT_CALCULATE_IO, TRANCHE_STRAT_HANDLE_IO_BUY, TRANCHE_STRAT_CALCULATE_BATCH);
+    return bytes.concat(PRELUDE,TRANCHE_STRAT_CALCULATE_IO_BUY, TRANCHE_STRAT_HANDLE_IO_BUY, TRANCHE_STRAT_CALCULATE_BATCH);
 }
