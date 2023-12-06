@@ -3,7 +3,14 @@ pragma solidity =0.8.19;
 
 import "test/util/Test5SushiV2LimitOrderUtil.sol";
 import {console2} from "forge-std/console2.sol";
-import {rainstringSellLimitOrder,rainstringBuyLimitOrder, ORDER_INIT_RATIO_SELL,ORDER_INIT_RATIO_BUY, AMOUNT_PER_BATCH, INCR_PER_BATCH} from "src/5SushiV2LimitOrder.sol";
+import {
+    rainstringSellLimitOrder,
+    rainstringBuyLimitOrder,
+    ORDER_INIT_RATIO_SELL,
+    ORDER_INIT_RATIO_BUY,
+    AMOUNT_PER_BATCH,
+    INCR_PER_BATCH
+} from "src/5SushiV2LimitOrder.sol";
 import {
     POLYGON_PARSER_NPE2,
     POLYGON_NHT_TOKEN_ADDRESS,
@@ -49,7 +56,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     function decode(uint256 startBit, uint256 length, uint256 target) internal pure returns (uint256) {
         uint256 mask = (2 ** length) - 1;
         return (target >> startBit) & mask;
-    } 
+    }
 
     function testLimitSellOrderReal(uint256 orderHash, uint256 vaultId, uint256 balanceDiff) public {
         vm.assume(balanceDiff > 1 && balanceDiff <= 2000e6);
@@ -184,8 +191,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
 
         LimitOrder memory limitOrder;
 
-        for (uint256 i = 0; i < 10; i++) { 
-            
+        for (uint256 i = 0; i < 10; i++) {
             {
                 limitOrder = LimitOrder(orderHash, 0, expression, context, new uint256[](0), new uint256[](0), 0);
                 // Eval Calculate_Io Source
@@ -197,20 +203,18 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
                 IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
                 context = limitOrder.context;
             }
-            {   
+            {
                 limitOrder = LimitOrder(orderHash, 1, expression, context, new uint256[](0), new uint256[](0), 0);
                 // Eval Handle_Io source
                 limitOrder = evalLimitOrder(limitOrder);
 
-
                 // set kvs[1]
-                IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs); 
+                IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
 
                 if ((limitOrder.stack[6] / AMOUNT_PER_BATCH) > 0) {
                     // Increment Batch Index
                     vm.warp(block.timestamp + 3600 + 1);
                 }
-
             }
         }
     }
@@ -254,14 +258,14 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         assertEq(stack[2], ioRatio, "stack 2");
         assertEq(stack[1], amount, "stack 1");
         assertEq(stack[0], ioRatio, "stack 0");
-    } 
+    }
 
     function checkCalculateBuyStack(LimitOrder memory limitOrder) internal {
         uint256[] memory stack = limitOrder.stack;
         uint256 orderHash = limitOrder.context[1][0];
         uint256 balanceDiff = 0;
         (, uint256 batchIndex, uint256 batchRemaining) =
-            calculateBatch(orderHash, balanceDiff.scale18(limitOrder.context[3][1], 0)) ;
+            calculateBatch(orderHash, balanceDiff.scale18(limitOrder.context[3][1], 0));
         FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
         uint256 batchStartInfo = IInterpreterStoreV1(address(iStore)).get(namespace, orderHash);
         uint256 batchStartTime = decode(32, 32, batchStartInfo);
@@ -282,6 +286,5 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         assertEq(stack[0], ioRatio, "stack 0");
 
         console2.log("here1");
-
     }
 }

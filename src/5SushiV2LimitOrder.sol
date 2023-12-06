@@ -6,9 +6,9 @@ uint256 constant ORDER_INIT_RATIO_BUY = 2222e18 + 222222222222222222; // ( 1/ORD
 
 uint256 constant AMOUNT_PER_BATCH = 1000e18;
 uint256 constant COOLDOWN = 3600;
-uint256 constant INCR_PER_BATCH = 101e16; 
+uint256 constant INCR_PER_BATCH = 101e16;
 
-bytes constant PRELUDE = 
+bytes constant PRELUDE =
 // Address of the Arb Contract.
     "allowed-counterparty : 0xb4ffa641e5dA49F7466142E8418622CB64dBe86B,"
     // Actual counterparty.
@@ -24,7 +24,7 @@ bytes constant PRELUDE =
     // Ensure 1 hr Cooldown between Batches.
     ":ensure<1>(greater-than(block-timestamp() int-add(batch-start-time 3600))),"
     // Current Batch Index and Remaining Amount.
-    "batch-index batch-remaining: call<2 2>(0)," ;
+    "batch-index batch-remaining: call<2 2>(0),";
 
 bytes constant TRANCHE_STRAT_CALCULATE_IO_SELL =
 // Calcuate Ratio from initial ratio and batch index.
@@ -35,7 +35,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO_SELL =
     "ratio: io-ratio;";
 
 bytes constant TRANCHE_STRAT_HANDLE_IO_SELL =
-    // Batch Info Key.
+// Batch Info Key.
     "batch-start-info-k : context<1 0>(),"
     // Total Amount Received Key
     "total-received-k : hash(batch-start-info-k),"
@@ -61,10 +61,8 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO_BUY =
     // Order Ratio
     "ratio: io-ratio;";
 
-
-
 bytes constant TRANCHE_STRAT_HANDLE_IO_BUY =
-    // Batch Info Key.
+// Batch Info Key.
     "batch-start-info-k : context<1 0>(),"
     // Total Amount Received Key
     "total-received-k : hash(batch-start-info-k),"
@@ -101,9 +99,13 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
     "new-batch-remaining: int-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
 
 function rainstringSellLimitOrder() pure returns (bytes memory) {
-    return bytes.concat(PRELUDE,TRANCHE_STRAT_CALCULATE_IO_SELL, TRANCHE_STRAT_HANDLE_IO_SELL, TRANCHE_STRAT_CALCULATE_BATCH);
+    return bytes.concat(
+        PRELUDE, TRANCHE_STRAT_CALCULATE_IO_SELL, TRANCHE_STRAT_HANDLE_IO_SELL, TRANCHE_STRAT_CALCULATE_BATCH
+    );
 }
 
 function rainstringBuyLimitOrder() pure returns (bytes memory) {
-    return bytes.concat(PRELUDE,TRANCHE_STRAT_CALCULATE_IO_BUY, TRANCHE_STRAT_HANDLE_IO_BUY, TRANCHE_STRAT_CALCULATE_BATCH);
+    return bytes.concat(
+        PRELUDE, TRANCHE_STRAT_CALCULATE_IO_BUY, TRANCHE_STRAT_HANDLE_IO_BUY, TRANCHE_STRAT_CALCULATE_BATCH
+    );
 }
