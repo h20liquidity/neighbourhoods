@@ -30,8 +30,8 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO =
     // Order Ratio
     "ratio: io-ratio;";
 
-bytes constant TRANCHE_STRAT_HANDLE_IO =
-// Batch Info Key.
+bytes constant TRANCHE_STRAT_HANDLE_IO_SELL =
+    // Batch Info Key.
     "batch-start-info-k : context<1 0>(),"
     // Total Amount Received Key
     "total-received-k : hash(batch-start-info-k),"
@@ -41,6 +41,29 @@ bytes constant TRANCHE_STRAT_HANDLE_IO =
     "in-token-decimals: context<3 1>(),"
     // New Total Amount Received
     "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0 1>(in-token-decimals in-token-amount)),"
+    // Store Batch Info
+    "batch-start-info: get(batch-start-info-k)," "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
+    "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
+    // If we are in new Batch, record current time as batch start time.
+    "new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),"
+    // Set Batch Info.
+    ":set(batch-start-info-k new-batch-info),"
+    // Set Total Amount received.
+    ":set(total-received-k new-total-received);";
+
+bytes constant TRANCHE_STRAT_HANDLE_IO_BUY =
+    // Batch Info Key.
+    "batch-start-info-k : context<1 0>(),"
+    // Total Amount Received Key
+    "total-received-k : hash(batch-start-info-k),"
+    // NHT Amount received from trade.
+    "nht-in-token-amount18 : context<3 4>(),"
+    // USDT Token decimals.
+    "usdt-token-decimals: context<4 1>(),"
+    //usdt equivalent of nht-in-token-amount18.
+    "_ usdt-amount6: uniswap-v2-amount-out<1>(0xc35DADB65012eC5796536bD9864eD8773aBc74C4 nht-in-token-amount18 0x84342e932797FC62814189f01F0Fb05F52519708 0xc2132D05D31c914a87C6611C10748AEb04B58e8F),"
+    // New Total Amount Received
+    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18-dynamic<0 1>(usdt-token-decimals usdt-amount6)),"
     // Store Batch Info
     "batch-start-info: get(batch-start-info-k)," "batch-start-index: bitwise-decode<0 32>(batch-start-info),"
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
@@ -65,6 +88,10 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
     // Remaining batch amount
     "new-batch-remaining: int-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
 
-function rainstringLimitOrder() pure returns (bytes memory) {
-    return bytes.concat(TRANCHE_STRAT_CALCULATE_IO, TRANCHE_STRAT_HANDLE_IO, TRANCHE_STRAT_CALCULATE_BATCH);
+function rainstringSellLimitOrder() pure returns (bytes memory) {
+    return bytes.concat(TRANCHE_STRAT_CALCULATE_IO, TRANCHE_STRAT_HANDLE_IO_SELL, TRANCHE_STRAT_CALCULATE_BATCH);
+}
+
+function rainstringBuyLimitOrder() pure returns (bytes memory) {
+    return bytes.concat(TRANCHE_STRAT_CALCULATE_IO, TRANCHE_STRAT_HANDLE_IO_BUY, TRANCHE_STRAT_CALCULATE_BATCH);
 }
