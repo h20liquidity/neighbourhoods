@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
-uint256 constant ORDER_INIT_RATIO_SELL = 25e13;
+uint256 constant ORDER_INIT_RATIO_SELL = 45e13;
 uint256 constant ORDER_INIT_RATIO_BUY = 2222e18 + 222222222222222222; // ( 1/ORDER_INIT_RATIO_SELL)
 
 uint256 constant AMOUNT_PER_BATCH = 1000e18;
@@ -57,7 +57,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO_BUY =
 // Calcuate Ratio from initial ratio and batch index.
     "io-ratio: decimal18-mul(2222222222222222222222 decimal18-power-int(101e16 batch-index)),"
     // Calculate Amount from Ratio.
-    "amount: decimal18-div(batch-remaining io-ratio),"
+    "amount: batch-remaining,"
     // Order Ratio
     "ratio: io-ratio;";
 

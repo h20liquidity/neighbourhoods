@@ -3,7 +3,7 @@ pragma solidity =0.8.19;
 
 import "test/util/Test5SushiV2LimitOrderUtil.sol";
 import {console2} from "forge-std/console2.sol";
-import {rainstringSellLimitOrder,rainstringBuyLimitOrder, ORDER_INIT_RATIO_SELL, AMOUNT_PER_BATCH, INCR_PER_BATCH} from "src/5SushiV2LimitOrder.sol";
+import {rainstringSellLimitOrder,rainstringBuyLimitOrder, ORDER_INIT_RATIO_SELL,ORDER_INIT_RATIO_BUY, AMOUNT_PER_BATCH, INCR_PER_BATCH} from "src/5SushiV2LimitOrder.sol";
 import {
     POLYGON_PARSER_NPE2,
     POLYGON_NHT_TOKEN_ADDRESS,
@@ -51,250 +51,237 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         return (target >> startBit) & mask;
     } 
 
-    function testUni() public {
+    function testLimitSellOrderReal(uint256 orderHash, uint256 vaultId, uint256 balanceDiff) public {
+        vm.assume(balanceDiff > 1 && balanceDiff <= 2000e6);
+        vm.warp(RESERVE_TIMESTAMP);
 
-        selectPolygonFork() ; 
+        uint256[][] memory context = new uint256[][](5);
+        {
+            {
+                uint256[] memory baseContext = new uint256[](2);
+                context[0] = baseContext;
+            }
+            {
+                uint256[] memory callingContext = new uint256[](3);
+                // order hash
+                callingContext[0] = orderHash;
+                // owner
+                callingContext[1] = uint256(uint160(address(this)));
+                // counterparty
+                callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+                context[1] = callingContext;
+            }
+            {
+                uint256[] memory calculationsContext = new uint256[](0);
+                context[2] = calculationsContext;
+            }
+            {
+                uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                inputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
+                inputsContext[1] = POLYGON_USDT_TOKEN_DECIMALS;
+                inputsContext[2] = vaultId;
+                inputsContext[3] = balanceDiff;
+                inputsContext[4] = balanceDiff;
 
-        // bytes memory exp = 
-        // "polygon-sushi-v2-factory: 0xc35DADB65012eC5796536bD9864eD8773aBc74C4 ,"
-        // "nht-token-address: 0x84342e932797FC62814189f01F0Fb05F52519708 ,"
-        // "usdt-token-address: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F ,"
-        // "target-nht-amount: 10000e18 ,"
-        // "last-price-timestamp usdt-amount6: uniswap-v2-amount-out<1>(polygon-sushi-v2-factory target-nht-amount nht-token-address usdt-token-address) ;";
+                context[3] = inputsContext;
+            }
+            {
+                uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                outputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
+                context[4] = outputsContext;
+            }
+        }
 
-        {(bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSellLimitOrder());}
-        {(bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringBuyLimitOrder());}
+        (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringSellLimitOrder());
 
+        address interpreter;
+        address store;
+        address expression;
+        {
+            (interpreter, store, expression) = iDeployExpression(bytecode, constants);
+        }
 
-        // IInterpreterV2 interpreter;
-        // IInterpreterStoreV1 store;
-        // address expression;
-        // {
-        //     (interpreter, store, expression,) = POLYGON_DEPLOYER_NPE2.deployExpression2(bytecode, constants);
-        // }
+        LimitOrder memory limitOrder;
+        for (uint256 i = 0; i < 10; i++) {
+            {
+                limitOrder = LimitOrder(orderHash, 0, expression, context, new uint256[](0), new uint256[](0), 0);
+                // Eval Calculate_Io Source
+                limitOrder = evalLimitOrder(limitOrder);
+                // Assert stack[0]
+                checkCalculateSellStack(limitOrder);
+                // Set kvs[0]
+                IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
+                context = limitOrder.context;
+            }
 
-        // uint256[][] memory context = new uint256[][](0);
-        // uint256[] memory inputs = new uint256[](0);
+            {
+                limitOrder = LimitOrder(orderHash, 1, expression, context, new uint256[](0), new uint256[](0), 0);
+                // Eval Handle_Io source
+                limitOrder = evalLimitOrder(limitOrder);
+                // set kvs[1]
+                IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
 
-        // FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
-
-        // (uint256[] memory stack, uint256[] memory kvs) = interpreter.eval2(
-        //     store,
-        //     namespace,
-        //     LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
-        //     context,
-        //     inputs
-        // ); 
-
-        // for(uint256 i = 0 ; i < stack.length ; i++){
-        //     console2.log("stack : ",stack[i]); //4.497002
-        // }
-
-
+                // Check if floor of div is greater than 0
+                if (((limitOrder.stack[6].scale18(POLYGON_USDT_TOKEN_DECIMALS, 1)) / AMOUNT_PER_BATCH) > 0) {
+                    // Increment Batch Index
+                    vm.warp(block.timestamp + 3600 + 1);
+                }
+            }
+        }
     }
 
-    // function testLimitSellOrderReal(uint256 orderHash, uint256 vaultId, uint256 balanceDiff) public {
-    //     vm.assume(balanceDiff > 1 && balanceDiff <= 1000e6);
-    //     vm.warp(RESERVE_TIMESTAMP);
+    function testLimitBuyOrderReal(uint256 orderHash, uint256 vaultId, uint256 balanceDiff) public {
+        vm.assume(balanceDiff > 1 && balanceDiff <= 3000e18);
+        vm.warp(RESERVE_TIMESTAMP);
 
-    //     uint256[][] memory context = new uint256[][](5);
-    //     {
-    //         {
-    //             uint256[] memory baseContext = new uint256[](2);
-    //             context[0] = baseContext;
-    //         }
-    //         {
-    //             uint256[] memory callingContext = new uint256[](3);
-    //             // order hash
-    //             callingContext[0] = orderHash;
-    //             // owner
-    //             callingContext[1] = uint256(uint160(address(this)));
-    //             // counterparty
-    //             callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
-    //             context[1] = callingContext;
-    //         }
-    //         {
-    //             uint256[] memory calculationsContext = new uint256[](0);
-    //             context[2] = calculationsContext;
-    //         }
-    //         {
-    //             uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-    //             inputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
-    //             inputsContext[1] = POLYGON_USDT_TOKEN_DECIMALS;
-    //             inputsContext[2] = vaultId;
-    //             inputsContext[3] = balanceDiff;
-    //             inputsContext[4] = balanceDiff;
+        uint256[][] memory context = new uint256[][](5);
+        {
+            {
+                uint256[] memory baseContext = new uint256[](2);
+                context[0] = baseContext;
+            }
+            {
+                uint256[] memory callingContext = new uint256[](3);
+                // order hash
+                callingContext[0] = orderHash;
+                // owner
+                callingContext[1] = uint256(uint160(address(this)));
+                // counterparty
+                callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+                context[1] = callingContext;
+            }
+            {
+                uint256[] memory calculationsContext = new uint256[](2);
+                calculationsContext[1] = ORDER_INIT_RATIO_BUY;
 
-    //             context[3] = inputsContext;
-    //         }
-    //         {
-    //             uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-    //             outputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
-    //             context[4] = outputsContext;
-    //         }
-    //     }
+                context[2] = calculationsContext;
+            }
+            {
+                uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                inputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
+                inputsContext[1] = POLYGON_NHT_TOKEN_DECIMALS;
+                inputsContext[2] = vaultId;
+                inputsContext[3] = balanceDiff;
+                inputsContext[4] = balanceDiff;
 
-    //     (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringLimitOrder());
+                context[3] = inputsContext;
+            }
+            {
+                uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                outputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
+                context[4] = outputsContext;
+            }
+        }
 
-    //     address interpreter;
-    //     address store;
-    //     address expression;
-    //     {
-    //         (interpreter, store, expression) = iDeployExpression(bytecode, constants);
-    //     }
+        (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringBuyLimitOrder());
 
-    //     LimitOrder memory limitOrder;
+        address interpreter;
+        address store;
+        address expression;
+        {
+            (interpreter, store, expression) = iDeployExpression(bytecode, constants);
+        }
 
-    //     uint256 totalReceivedAmount = 0;
-    //     for (uint256 i = 0; i < 10; i++) {
-    //         {
-    //             limitOrder = LimitOrder(orderHash, 0, expression, context, new uint256[](0), new uint256[](0), 0);
-    //             // Eval Calculate_Io Source
-    //             limitOrder = evalLimitOrder(limitOrder);
-    //             // Assert stack[0]
-    //             checkCalculateStack(limitOrder);
-    //             // Set kvs[0]
-    //             IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
-    //         }
+        LimitOrder memory limitOrder;
 
-    //         {
-    //             limitOrder = LimitOrder(orderHash, 1, expression, context, new uint256[](0), new uint256[](0), 0);
-    //             // Eval Handle_Io source
-    //             limitOrder = evalLimitOrder(limitOrder);
-    //             // set kvs[1]
-    //             IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
+        for (uint256 i = 0; i < 10; i++) { 
+            
+            {
+                limitOrder = LimitOrder(orderHash, 0, expression, context, new uint256[](0), new uint256[](0), 0);
+                // Eval Calculate_Io Source
+                limitOrder = evalLimitOrder(limitOrder);
 
-    //             // Increment total received amount and warp if new batch is strating.
-    //             totalReceivedAmount += balanceDiff;
-    //             // Check if floor of div is greater than 0
-    //             if (((totalReceivedAmount.scale18(POLYGON_USDT_TOKEN_DECIMALS, 1)) / AMOUNT_PER_BATCH) > 0) {
-    //                 // Increment Batch Index
-    //                 vm.warp(block.timestamp + 3600 + 1);
-    //             }
-    //         }
-    //     }
-    // }
+                // Assert stack[0]
+                checkCalculateBuyStack(limitOrder);
+                // Set kvs[0]
+                IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
+                context = limitOrder.context;
+            }
+            {   
+                limitOrder = LimitOrder(orderHash, 1, expression, context, new uint256[](0), new uint256[](0), 0);
+                // Eval Handle_Io source
+                limitOrder = evalLimitOrder(limitOrder);
 
-    // function testLimitBuyOrderReal(uint256 orderHash, uint256 vaultId, uint256 balanceDiff) public {
-    //     vm.assume(balanceDiff > 1 && balanceDiff <= 1000e18);
-    //     vm.warp(RESERVE_TIMESTAMP);
 
-    //     uint256[][] memory context = new uint256[][](5);
-    //     {
-    //         {
-    //             uint256[] memory baseContext = new uint256[](2);
-    //             context[0] = baseContext;
-    //         }
-    //         {
-    //             uint256[] memory callingContext = new uint256[](3);
-    //             // order hash
-    //             callingContext[0] = orderHash;
-    //             // owner
-    //             callingContext[1] = uint256(uint160(address(this)));
-    //             // counterparty
-    //             callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
-    //             context[1] = callingContext;
-    //         }
-    //         {
-    //             uint256[] memory calculationsContext = new uint256[](0);
-    //             context[2] = calculationsContext;
-    //         }
-    //         {
-    //             uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-    //             inputsContext[0] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
-    //             inputsContext[1] = POLYGON_NHT_TOKEN_DECIMALS;
-    //             inputsContext[2] = vaultId;
-    //             inputsContext[3] = balanceDiff;
-    //             inputsContext[4] = balanceDiff;
+                // set kvs[1]
+                IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs); 
 
-    //             context[3] = inputsContext;
-    //         }
-    //         {
-    //             uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-    //             outputsContext[0] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
-    //             context[4] = outputsContext;
-    //         }
-    //     }
+                if ((limitOrder.stack[6] / AMOUNT_PER_BATCH) > 0) {
+                    // Increment Batch Index
+                    vm.warp(block.timestamp + 3600 + 1);
+                }
 
-    //     (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringLimitOrder());
+            }
+        }
+    }
 
-    //     address interpreter;
-    //     address store;
-    //     address expression;
-    //     {
-    //         (interpreter, store, expression) = iDeployExpression(bytecode, constants);
-    //     }
+    function calculateBatch(uint256 orderHash, uint256 newReceived18)
+        internal
+        view
+        returns (uint256, uint256, uint256)
+    {
+        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+        uint256 totalReceivedKey = uint256(keccak256(abi.encodePacked(orderHash)));
+        uint256 totalReceived = IInterpreterStoreV1(address(iStore)).get(namespace, totalReceivedKey);
+        uint256 newTotalReceived = totalReceived + newReceived18;
+        uint256 newBatchIndex = newTotalReceived / AMOUNT_PER_BATCH;
+        uint256 newBatchRemaining = ((newBatchIndex + 1) * AMOUNT_PER_BATCH) - newTotalReceived;
+        return (newTotalReceived, newBatchIndex, newBatchRemaining);
+    }
 
-    //     LimitOrder memory limitOrder;
+    function checkCalculateSellStack(LimitOrder memory limitOrder) internal {
+        uint256[] memory stack = limitOrder.stack;
+        uint256 orderHash = limitOrder.context[1][0];
+        uint256 balanceDiff = 0;
+        (, uint256 batchIndex, uint256 batchRemaining) =
+            calculateBatch(orderHash, balanceDiff.scale18(limitOrder.context[3][1], 0));
 
-    //     uint256 totalReceivedAmount = 0;
-    //     for (uint256 i = 0; i < 10; i++) {
-    //         {
-    //             limitOrder = LimitOrder(orderHash, 0, expression, context, new uint256[](0), new uint256[](0), 0);
-    //             // Eval Calculate_Io Source
-    //             limitOrder = evalLimitOrder(limitOrder);
-    //             // Assert stack[0]
-    //             checkCalculateStack(limitOrder);
-    //             // Set kvs[0]
-    //             IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
-    //         }
+        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+        uint256 batchStartInfo = IInterpreterStoreV1(address(iStore)).get(namespace, orderHash);
+        uint256 batchStartTime = decode(32, 32, batchStartInfo);
+        uint256 ratioIncrement = UD60x18.unwrap(powu(UD60x18.wrap(INCR_PER_BATCH), batchIndex));
+        uint256 ioRatio = ORDER_INIT_RATIO_SELL.fixedPointMul(ratioIncrement, Math.Rounding.Down);
 
-    //         {
-    //             limitOrder = LimitOrder(orderHash, 1, expression, context, new uint256[](0), new uint256[](0), 0);
-    //             // Eval Handle_Io source
-    //             limitOrder = evalLimitOrder(limitOrder);
-    //             // set kvs[1]
-    //             IInterpreterStoreV1(store).set(StateNamespace.wrap(0), limitOrder.kvs);
+        uint256 amount = batchRemaining.fixedPointDiv(ioRatio, Math.Rounding.Down);
 
-    //             // Increment total received amount and warp if new batch is strating.
-    //             totalReceivedAmount += balanceDiff;
-    //             // Check if floor of div is greater than 0
-    //             if (((totalReceivedAmount.scale18(POLYGON_USDT_TOKEN_DECIMALS, 1)) / AMOUNT_PER_BATCH) > 0) {
-    //                 // Increment Batch Index
-    //                 vm.warp(block.timestamp + 3600 + 1);
-    //             }
-    //         }
-    //     }
-    // }
+        assertEq(stack[9], uint256(uint160(address(APPROVED_COUNTERPARTY))), "stack 9");
+        assertEq(stack[8], uint256(uint160(address(APPROVED_COUNTERPARTY))), "stack 8");
+        assertEq(stack[7], orderHash, "stack 7");
+        assertEq(stack[6], batchStartInfo, "stack 6");
+        assertEq(stack[5], batchStartTime, "stack 5");
+        assertEq(stack[4], batchIndex, "stack 4");
+        assertEq(stack[3], batchRemaining, "stack 3");
+        assertEq(stack[2], ioRatio, "stack 2");
+        assertEq(stack[1], amount, "stack 1");
+        assertEq(stack[0], ioRatio, "stack 0");
+    } 
 
-    // function calculateBatch(uint256 orderHash, uint256 newReceived18)
-    //     internal
-    //     view
-    //     returns (uint256, uint256, uint256)
-    // {
-    //     FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
-    //     uint256 totalReceivedKey = uint256(keccak256(abi.encodePacked(orderHash)));
-    //     uint256 totalReceived = IInterpreterStoreV1(address(iStore)).get(namespace, totalReceivedKey);
-    //     uint256 newTotalReceived = totalReceived + newReceived18;
-    //     uint256 newBatchIndex = newTotalReceived / AMOUNT_PER_BATCH;
-    //     uint256 newBatchRemaining = ((newBatchIndex + 1) * AMOUNT_PER_BATCH) - newTotalReceived;
-    //     return (newTotalReceived, newBatchIndex, newBatchRemaining);
-    // }
+    function checkCalculateBuyStack(LimitOrder memory limitOrder) internal {
+        uint256[] memory stack = limitOrder.stack;
+        uint256 orderHash = limitOrder.context[1][0];
+        uint256 balanceDiff = 0;
+        (, uint256 batchIndex, uint256 batchRemaining) =
+            calculateBatch(orderHash, balanceDiff.scale18(limitOrder.context[3][1], 0)) ;
+        FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+        uint256 batchStartInfo = IInterpreterStoreV1(address(iStore)).get(namespace, orderHash);
+        uint256 batchStartTime = decode(32, 32, batchStartInfo);
+        uint256 ratioIncrement = UD60x18.unwrap(powu(UD60x18.wrap(INCR_PER_BATCH), batchIndex));
+        uint256 ioRatio = ORDER_INIT_RATIO_BUY.fixedPointMul(ratioIncrement, Math.Rounding.Down);
 
-    // function checkCalculateStack(LimitOrder memory limitOrder) internal {
-    //     uint256[] memory stack = limitOrder.stack;
-    //     uint256 orderHash = limitOrder.context[1][0];
-    //     uint256 balanceDiff = 0;
-    //     (, uint256 batchIndex, uint256 batchRemaining) =
-    //         calculateBatch(orderHash, balanceDiff.scale18(limitOrder.context[3][1], 1));
+        uint256 amount = batchRemaining;
 
-    //     FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
-    //     uint256 batchStartInfo = IInterpreterStoreV1(address(iStore)).get(namespace, orderHash);
-    //     uint256 batchStartTime = decode(32, 32, batchStartInfo);
-    //     uint256 ratioIncrement = UD60x18.unwrap(powu(UD60x18.wrap(INCR_PER_BATCH), batchIndex));
-    //     uint256 ioRatio = ORDER_INIT_RATIO.fixedPointMul(ratioIncrement, Math.Rounding.Down);
+        assertEq(stack[9], uint256(uint160(address(APPROVED_COUNTERPARTY))), "stack 9");
+        assertEq(stack[8], uint256(uint160(address(APPROVED_COUNTERPARTY))), "stack 8");
+        assertEq(stack[7], orderHash, "stack 7");
+        assertEq(stack[6], batchStartInfo, "stack 6");
+        assertEq(stack[5], batchStartTime, "stack 5");
+        assertEq(stack[4], batchIndex, "stack 4");
+        assertEq(stack[3], batchRemaining, "stack 3");
+        assertEq(stack[2], ioRatio, "stack 2");
+        assertEq(stack[1], amount, "stack 1");
+        assertEq(stack[0], ioRatio, "stack 0");
 
-    //     uint256 amount = batchRemaining.fixedPointDiv(ioRatio, Math.Rounding.Down);
+        console2.log("here1");
 
-    //     assertEq(stack[9], uint256(uint160(address(APPROVED_COUNTERPARTY))), "stack 9");
-    //     assertEq(stack[8], uint256(uint160(address(APPROVED_COUNTERPARTY))), "stack 8");
-    //     assertEq(stack[7], orderHash, "stack 7");
-    //     assertEq(stack[6], batchStartInfo, "stack 6");
-    //     assertEq(stack[5], batchStartTime, "stack 5");
-    //     assertEq(stack[4], batchIndex, "stack 4");
-    //     assertEq(stack[3], batchRemaining, "stack 3");
-    //     assertEq(stack[2], ioRatio, "stack 2");
-    //     assertEq(stack[1], amount, "stack 1");
-    //     assertEq(stack[0], ioRatio, "stack 0");
-    // }
+    }
 }
