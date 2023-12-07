@@ -1,12 +1,25 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
-uint256 constant ORDER_INIT_RATIO_SELL = 45e13;
-uint256 constant ORDER_INIT_RATIO_BUY = 2222e18 + 222222222222222222; // ( 1/ORDER_INIT_RATIO_SELL)
+import {IRouteProcessor} from "src/interface/IRouteProcessor.sol";
 
-uint256 constant AMOUNT_PER_BATCH = 1000e18;
-uint256 constant COOLDOWN = 3600;
-uint256 constant INCR_PER_BATCH = 101e16;
+/// @dev https://polygonscan.com/address/0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6
+IRouteProcessor constant ROUTE_PROCESSOR = IRouteProcessor(address(0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6));  
+
+/// @dev Initial Sell Limit.
+uint256 constant ORDER_INIT_RATIO_SELL = 50e13;
+
+/// @dev Initial Buy Limit = 1 / ORDER_INIT_RATIO_SELL
+uint256 constant ORDER_INIT_RATIO_BUY = 2000e18 ; 
+
+/// @dev Amount per tranche 100 USDT FP denomiated. 
+uint256 constant AMOUNT_PER_BATCH = 100e18; 
+
+/// @dev Cooldown 5 minutes.
+uint256 constant COOLDOWN = 300 ;
+
+/// @dev Increment of 1% per tranche
+uint256 constant INCR_PER_BATCH = 101e16; // 1.01 % increase in price
 
 bytes constant PRELUDE =
 // Address of the Arb Contract.
@@ -22,13 +35,13 @@ bytes constant PRELUDE =
     // Batch Start Time.
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
     // Ensure 1 hr Cooldown between Batches.
-    ":ensure<1>(greater-than(block-timestamp() int-add(batch-start-time 3600))),"
+    ":ensure<1>(greater-than(block-timestamp() int-add(batch-start-time 300))),"
     // Current Batch Index and Remaining Amount.
     "batch-index batch-remaining: call<2 2>(0),";
 
 bytes constant TRANCHE_STRAT_CALCULATE_IO_SELL =
 // Calcuate Ratio from initial ratio and batch index.
-    "io-ratio: decimal18-mul(45e13 decimal18-power-int(101e16 batch-index)),"
+    "io-ratio: decimal18-mul(50e13 decimal18-power-int(101e16 batch-index)),"
     // Calculate Amount from Ratio.
     "amount: decimal18-div(batch-remaining io-ratio),"
     // Order Ratio
@@ -55,7 +68,7 @@ bytes constant TRANCHE_STRAT_HANDLE_IO_SELL =
 
 bytes constant TRANCHE_STRAT_CALCULATE_IO_BUY =
 // Calcuate Ratio from initial ratio and batch index.
-    "io-ratio: decimal18-mul(2222222222222222222222 decimal18-power-int(101e16 batch-index)),"
+    "io-ratio: decimal18-mul(2000e18 decimal18-power-int(101e16 batch-index)),"
     // Calculate Amount from Ratio.
     "amount: batch-remaining,"
     // Order Ratio
@@ -90,7 +103,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
     // Total amount received key
     "total-received-k: hash(context<1 0>()),"
     // Amount Per Batch
-    "amount-per-batch: 1000e18,"
+    "amount-per-batch: 100e18,"
     // New total amount
     "new-total-amount-received: int-add(get(total-received-k) new-received),"
     // Batch Index is the floor of the div
@@ -104,8 +117,36 @@ function rainstringSellLimitOrder() pure returns (bytes memory) {
     );
 }
 
+bytes constant EXPECTED_SELL_LIMIT_BYTECODE = hex"030000007400ec1c0a000a010000000a00020100000001000000001a020000190100000a00000100000002340100000000000305012020010000010000000428020000160000001c0200001901000101000002090102020000000501000004240200000100000323020000000000070000000622020000000000071d0d000a0a000001000000000b0100000a00040300000002260100060901030200000000340100000000000605012000000000060501202000000006010000020000000406022000160000000602202000000007000000041c0200001e030000000000090000000035020000000000030000000135020000110901060a0000010b010000010000050000000000000001340100002802000000000002000000032a02000000000003000000020100000600000004280200003102000032020000"; 
+
+function expectedSellConstants() pure returns (uint256[] memory constants) {
+    constants = new uint256[](7);
+    constants[0] = 1033319511837261577281946038215603300479310489707;
+    constants[1] = COOLDOWN;
+    constants[2] = 0;
+    constants[3] = ORDER_INIT_RATIO_SELL;
+    constants[4] = INCR_PER_BATCH;
+    constants[5] = AMOUNT_PER_BATCH;
+    constants[6] = 1;
+
+}
+
 function rainstringBuyLimitOrder() pure returns (bytes memory) {
     return bytes.concat(
         PRELUDE, TRANCHE_STRAT_CALCULATE_IO_BUY, TRANCHE_STRAT_HANDLE_IO_BUY, TRANCHE_STRAT_CALCULATE_BATCH
     );
+}
+
+bytes constant EXPECTED_BUY_LIMIT_BYTECODE = hex"030000006c00f01a0a000a010000000a00020100000001000000001a020000190100000a00000100000002340100000000000305012020010000010000000428020000160000001c02000019010001010000020901020200000005010000042402000001000003230200000000000600000007200f000c0a000001000000000b0100000a0004030a000102000000030000000222020000000000040901030200000000340100000000000805012000000000080501202000000008010000020000000606022000160000000602202000000009000000061c0200001e0300000000000b0000000035020000000000050000000135020000110901060a0000010b010000010000050000000000000001340100002802000000000002000000032a02000000000003000000020100000600000004280200003102000032020000"; 
+
+function expectedBuyConstants() pure returns (uint256[] memory constants) {
+    constants = new uint256[](7);
+    constants[0] = 1033319511837261577281946038215603300479310489707;
+    constants[1] = COOLDOWN;
+    constants[2] = 0;
+    constants[3] = ORDER_INIT_RATIO_BUY;
+    constants[4] = INCR_PER_BATCH;
+    constants[5] = AMOUNT_PER_BATCH;
+    constants[6] = 1;
+
 }
