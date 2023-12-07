@@ -16,8 +16,8 @@ import {
     ROUTE_PROCESSOR,
     EXPECTED_SELL_LIMIT_BYTECODE,
     EXPECTED_BUY_LIMIT_BYTECODE,
-    expectedSellConstants,
-    expectedBuyConstants
+    expectedLimitOrderSellConstants,
+    expectedLimitOrderBuyConstants
 } from "src/5SushiV2LimitOrder.sol";
 import {
     POLYGON_PARSER_NPE2,
@@ -85,7 +85,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     function placeBuyLimitOrderFork() internal returns (OrderV2 memory) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringBuyLimitOrder());
         assertEq(bytecode, EXPECTED_BUY_LIMIT_BYTECODE);
-        uint256[] memory expectedConstants = expectedBuyConstants();
+        uint256[] memory expectedConstants = expectedLimitOrderBuyConstants();
         assertEq(expectedConstants.length, constants.length);
         for (uint256 i = 0; i < constants.length; i++) {
             assertEq(constants[i], expectedConstants[i]);
@@ -96,7 +96,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     function placeSellLimitOrderFork() internal returns (OrderV2 memory order) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSellLimitOrder());
         assertEq(bytecode, EXPECTED_SELL_LIMIT_BYTECODE);
-        uint256[] memory expectedConstants = expectedSellConstants();
+        uint256[] memory expectedConstants = expectedLimitOrderSellConstants();
         assertEq(expectedConstants.length, constants.length);
         for (uint256 i = 0; i < constants.length; i++) {
             assertEq(constants[i], expectedConstants[i]);
@@ -106,6 +106,10 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
 
     function getInputVaultBalance(OrderV2 memory order) internal view returns (uint256) {
         return POLYGON_ORDERBOOK.vaultBalance(order.owner, order.validInputs[0].token, order.validInputs[0].vaultId);
+    }
+
+    function getOutputVaultBalance(OrderV2 memory order) internal view returns (uint256) {
+        return POLYGON_ORDERBOOK.vaultBalance(order.owner, order.validOutputs[0].token, order.validOutputs[0].vaultId);
     }
 
     function placeOrder(bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output)
@@ -204,7 +208,23 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         OrderV2 memory sellOrder = placeSellLimitOrderFork();
 
         for (uint256 i = 0; i < 5; i++) {
-            takeOrder(sellOrder, SELL_ROUTE);
+            vm.recordLogs();
+            takeOrder(sellOrder, SELL_ROUTE); 
+
+            Vm.Log[] memory entries = vm.getRecordedLogs(); 
+            uint256 ratio;
+            uint256 output; 
+            uint256 input; 
+            for(uint256 j = 0; j < entries.length; j++){
+                if(entries[j].topics[0] == keccak256("Context(address,uint256[][])")){
+                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address,uint256[][]));
+                    ratio = context[2][1] ;
+                    input = context[3][4] ;
+                    output = context[4][4] ;
+                }
+            }
+            console2.log("RATIO [%s] : [%s NHT sold, %s USDT bought.]",ratio,output,input); 
+
             vm.warp(block.timestamp + COOLDOWN + 1);
         }
     }
@@ -227,8 +247,25 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         );
         OrderV2 memory buyOrder = placeBuyLimitOrderFork();
 
+
         for (uint256 i = 0; i < 5; i++) {
+            vm.recordLogs();
             takeOrder(buyOrder, BUY_ROUTE);
+
+            Vm.Log[] memory entries = vm.getRecordedLogs(); 
+            uint256 ratio;
+            uint256 output; 
+            uint256 input; 
+            for(uint256 j = 0; j < entries.length; j++){
+                if(entries[j].topics[0] == keccak256("Context(address,uint256[][])")){
+                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address,uint256[][]));
+                    ratio = context[2][1] ;
+                    input = context[3][4] ;
+                    output = context[4][4] ;
+                }
+            }
+            console2.log("RATIO [%s] : [%s USDT sold, %s NHT bought.]",ratio,output,input); 
+
             vm.warp(block.timestamp + COOLDOWN + 1);
         }
     }
@@ -291,6 +328,8 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         }
 
         (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringSellLimitOrder());
+        assertEq(bytecode, EXPECTED_SELL_LIMIT_BYTECODE);
+
 
         address interpreter;
         address store;
@@ -351,7 +390,6 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
             {
                 uint256[] memory calculationsContext = new uint256[](2);
                 calculationsContext[1] = ORDER_INIT_RATIO_BUY;
-
                 context[2] = calculationsContext;
             }
             {
@@ -372,6 +410,8 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         }
 
         (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringBuyLimitOrder());
+        assertEq(bytecode, EXPECTED_BUY_LIMIT_BYTECODE);
+
 
         address interpreter;
         address store;

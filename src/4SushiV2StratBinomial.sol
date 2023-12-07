@@ -61,6 +61,7 @@ address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
 
 // uint256 constant ONE_HOUR = 3600;
 uint256 constant MAX_COOLDOWN = 576;
+uint256 constant MAX_COOLDOWN_18 = 576e18;
 uint256 constant MAX_USDT = 50e18;
 
 bytes constant RAINSTRING_JITTERY_BINOMIAL =
@@ -148,6 +149,20 @@ function rainstringSell() pure returns (bytes memory) {
     );
 }
 
+function expectedBinomialSellConstants() pure returns (uint256[] memory constants) {
+    constants = new uint256[](9);
+    constants[0] = uint256(uint160(POLYGON_SUSHI_V2_FACTORY));
+    constants[1] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
+    constants[2] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
+    constants[3] = uint256(uint160(APPROVED_COUNTERPARTY));
+    constants[4] = MAX_USDT;
+    constants[5] = MAX_COOLDOWN_18;
+    constants[6] = 0;
+    constants[7] = 1e18;
+    constants[8] = 11e18;
+
+}
+
 bytes constant SELL_ROUTE =
 //offset
     hex"0000000000000000000000000000000000000000000000000000000000000020"
@@ -219,6 +234,19 @@ function rainstringBuy() pure returns (bytes memory) {
     return bytes.concat(
         RAINSTRING_PRELUDE, RAINSTRING_CALCULATE_ORDER_BUY, RAINSTRING_HANDLE_IO_BUY, RAINSTRING_JITTERY_BINOMIAL
     );
+}
+
+function expectedBinomialBuyConstants() pure returns (uint256[] memory constants) {
+    constants = new uint256[](9);
+    constants[0] = uint256(uint160(POLYGON_SUSHI_V2_FACTORY));
+    constants[1] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
+    constants[2] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
+    constants[3] = uint256(uint160(APPROVED_COUNTERPARTY));
+    constants[4] = MAX_USDT;
+    constants[5] = MAX_COOLDOWN_18;
+    constants[6] = 0;
+    constants[7] = 1e18;
+    constants[8] = 11e18;
 }
 
 bytes constant BUY_ROUTE =
