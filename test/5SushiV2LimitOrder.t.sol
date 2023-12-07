@@ -209,21 +209,21 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
 
         for (uint256 i = 0; i < 5; i++) {
             vm.recordLogs();
-            takeOrder(sellOrder, SELL_ROUTE); 
+            takeOrder(sellOrder, SELL_ROUTE);
 
-            Vm.Log[] memory entries = vm.getRecordedLogs(); 
+            Vm.Log[] memory entries = vm.getRecordedLogs();
             uint256 ratio;
-            uint256 output; 
-            uint256 input; 
-            for(uint256 j = 0; j < entries.length; j++){
-                if(entries[j].topics[0] == keccak256("Context(address,uint256[][])")){
-                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address,uint256[][]));
-                    ratio = context[2][1] ;
-                    input = context[3][4] ;
-                    output = context[4][4] ;
+            uint256 output;
+            uint256 input;
+            for (uint256 j = 0; j < entries.length; j++) {
+                if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
+                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
+                    ratio = context[2][1];
+                    input = context[3][4];
+                    output = context[4][4];
                 }
             }
-            console2.log("RATIO [%s] : [%s NHT sold, %s USDT bought.]",ratio,output,input); 
+            console2.log("RATIO [%s] : [%s NHT sold, %s USDT bought.]", ratio, output, input);
 
             vm.warp(block.timestamp + COOLDOWN + 1);
         }
@@ -247,24 +247,23 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         );
         OrderV2 memory buyOrder = placeBuyLimitOrderFork();
 
-
         for (uint256 i = 0; i < 5; i++) {
             vm.recordLogs();
             takeOrder(buyOrder, BUY_ROUTE);
 
-            Vm.Log[] memory entries = vm.getRecordedLogs(); 
+            Vm.Log[] memory entries = vm.getRecordedLogs();
             uint256 ratio;
-            uint256 output; 
-            uint256 input; 
-            for(uint256 j = 0; j < entries.length; j++){
-                if(entries[j].topics[0] == keccak256("Context(address,uint256[][])")){
-                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address,uint256[][]));
-                    ratio = context[2][1] ;
-                    input = context[3][4] ;
-                    output = context[4][4] ;
+            uint256 output;
+            uint256 input;
+            for (uint256 j = 0; j < entries.length; j++) {
+                if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
+                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
+                    ratio = context[2][1];
+                    input = context[3][4];
+                    output = context[4][4];
                 }
             }
-            console2.log("RATIO [%s] : [%s USDT sold, %s NHT bought.]",ratio,output,input); 
+            console2.log("RATIO [%s] : [%s USDT sold, %s NHT bought.]", ratio, output, input);
 
             vm.warp(block.timestamp + COOLDOWN + 1);
         }
@@ -329,7 +328,6 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
 
         (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringSellLimitOrder());
         assertEq(bytecode, EXPECTED_SELL_LIMIT_BYTECODE);
-
 
         address interpreter;
         address store;
@@ -411,7 +409,6 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
 
         (bytes memory bytecode, uint256[] memory constants) = iParseExpression(rainstringBuyLimitOrder());
         assertEq(bytecode, EXPECTED_BUY_LIMIT_BYTECODE);
-
 
         address interpreter;
         address store;

@@ -160,7 +160,6 @@ function expectedBinomialSellConstants() pure returns (uint256[] memory constant
     constants[6] = 0;
     constants[7] = 1e18;
     constants[8] = 11e18;
-
 }
 
 bytes constant SELL_ROUTE =
