@@ -3,7 +3,6 @@
 pragma solidity >=0.8.10;
 
 interface IRouteProcessor {
-    
     struct RouteProcessorData {
         address tokenIn;
         uint256 amountIn;
@@ -12,7 +11,7 @@ interface IRouteProcessor {
         address to;
         bytes route;
     }
-    
+
     /// @notice Process a swap with passed route on RouteProcessor
     /// @param tokenIn The address of the token to swap from
     /// @param amountIn The amount of token to swap from

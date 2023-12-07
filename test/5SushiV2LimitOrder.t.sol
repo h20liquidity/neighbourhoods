@@ -87,19 +87,19 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         assertEq(bytecode, EXPECTED_BUY_LIMIT_BYTECODE);
         uint256[] memory expectedConstants = expectedBuyConstants();
         assertEq(expectedConstants.length, constants.length);
-        for(uint256 i = 0 ; i < constants.length ; i++){
-            assertEq(constants[i],expectedConstants[i]);
+        for (uint256 i = 0; i < constants.length; i++) {
+            assertEq(constants[i], expectedConstants[i]);
         }
         return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
     }
 
     function placeSellLimitOrderFork() internal returns (OrderV2 memory order) {
-        (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSellLimitOrder()); 
+        (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSellLimitOrder());
         assertEq(bytecode, EXPECTED_SELL_LIMIT_BYTECODE);
         uint256[] memory expectedConstants = expectedSellConstants();
         assertEq(expectedConstants.length, constants.length);
-        for(uint256 i = 0 ; i < constants.length ; i++){
-            assertEq(constants[i],expectedConstants[i]);
+        for (uint256 i = 0; i < constants.length; i++) {
+            assertEq(constants[i], expectedConstants[i]);
         }
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
@@ -161,31 +161,29 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     function decode(uint256 startBit, uint256 length, uint256 target) internal pure returns (uint256) {
         uint256 mask = (2 ** length) - 1;
         return (target >> startBit) & mask;
-    } 
+    }
 
-    function moveSushiV2Price(address inputToken, address outputToken, address tokenHolder, uint256 amountIn, bytes memory encodedRoute) public { 
-
+    function moveSushiV2Price(
+        address inputToken,
+        address outputToken,
+        address tokenHolder,
+        uint256 amountIn,
+        bytes memory encodedRoute
+    ) public {
         // An External Account
         address EXTERNAL_EOA = address(0x654FEf5Fb8A1C91ad47Ba192F7AA81dd3C821427);
         {
-            giveTestAccountsTokens(IERC20(inputToken), tokenHolder, EXTERNAL_EOA, amountIn);   
+            giveTestAccountsTokens(IERC20(inputToken), tokenHolder, EXTERNAL_EOA, amountIn);
         }
-        vm.startPrank(EXTERNAL_EOA); 
+        vm.startPrank(EXTERNAL_EOA);
 
-        IERC20(inputToken).approve(address(ROUTE_PROCESSOR),amountIn); 
-        
-        bytes memory decodedRoute = abi.decode(encodedRoute,(bytes));  
+        IERC20(inputToken).approve(address(ROUTE_PROCESSOR), amountIn);
 
-        ROUTE_PROCESSOR.processRoute(
-            inputToken,
-            amountIn,
-            outputToken,
-            0,
-            EXTERNAL_EOA,   
-            decodedRoute
-        );  
+        bytes memory decodedRoute = abi.decode(encodedRoute, (bytes));
+
+        ROUTE_PROCESSOR.processRoute(inputToken, amountIn, outputToken, 0, EXTERNAL_EOA, decodedRoute);
         vm.stopPrank();
-    } 
+    }
 
     function testSellLimitOrderHappyFork() public {
         selectPolygonFork();
@@ -209,13 +207,13 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
             takeOrder(sellOrder, SELL_ROUTE);
             vm.warp(block.timestamp + COOLDOWN + 1);
         }
-    }  
+    }
 
     function testBuyLimitOrderHappyFork() public {
         selectPolygonFork();
         {
             // Deposit USDT.
-            uint256 depositAmount = 1000e6; 
+            uint256 depositAmount = 1000e6;
             giveTestAccountsTokens(POLYGON_USDT_TOKEN_ADDRESS, POLYGON_USDT_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, depositAmount);
         }
@@ -227,13 +225,13 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
             2000000e18,
             SELL_ROUTE
         );
-        OrderV2 memory buyOrder = placeBuyLimitOrderFork(); 
+        OrderV2 memory buyOrder = placeBuyLimitOrderFork();
 
         for (uint256 i = 0; i < 5; i++) {
             takeOrder(buyOrder, BUY_ROUTE);
             vm.warp(block.timestamp + COOLDOWN + 1);
         }
-    } 
+    }
 
     function takeOrder(OrderV2 memory order, bytes memory route) internal {
         assertTrue(POLYGON_ORDERBOOK.orderExists(keccak256(abi.encode(order))), "order exists");
@@ -429,9 +427,8 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     function checkCalculateSellStack(LimitOrder memory limitOrder) internal {
         uint256[] memory stack = limitOrder.stack;
         uint256 orderHash = limitOrder.context[1][0];
-    
-        (, uint256 batchIndex, uint256 batchRemaining) =
-            calculateBatch(orderHash, 0);
+
+        (, uint256 batchIndex, uint256 batchRemaining) = calculateBatch(orderHash, 0);
 
         FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
         uint256 batchStartInfo = IInterpreterStoreV1(address(iStore)).get(namespace, orderHash);
@@ -457,8 +454,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         uint256[] memory stack = limitOrder.stack;
         uint256 orderHash = limitOrder.context[1][0];
 
-        (, uint256 batchIndex, uint256 batchRemaining) =
-            calculateBatch(orderHash, 0);
+        (, uint256 batchIndex, uint256 batchRemaining) = calculateBatch(orderHash, 0);
         FullyQualifiedNamespace namespace = LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
         uint256 batchStartInfo = IInterpreterStoreV1(address(iStore)).get(namespace, orderHash);
         uint256 batchStartTime = decode(32, 32, batchStartInfo);
