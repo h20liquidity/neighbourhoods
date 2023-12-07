@@ -19,7 +19,7 @@ uint256 constant AMOUNT_PER_BATCH = 100e18;
 uint256 constant COOLDOWN = 300;
 
 /// @dev Increment of 1% per tranche
-uint256 constant INCR_PER_BATCH = 101e16; // 1.01 % increase in price
+uint256 constant INCR_PER_BATCH = 101e16;
 
 bytes constant PRELUDE =
 // Address of the Arb Contract.
