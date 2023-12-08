@@ -43,7 +43,9 @@ import {
     POLYGON_PARSER_NPE2,
     POLYGON_USDT_HOLDER,
     POLYGON_NHT_HOLDER,
-    RAINSTRING_JITTERY_BINOMIAL
+    RAINSTRING_JITTERY_BINOMIAL,
+    expectedBinomialBuyConstants,
+    expectedBinomialSellConstants
 } from "src/4SushiV2StratBinomial.sol";
 import "lib/rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 import "rain.interpreter/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
@@ -84,12 +86,22 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
     function placeBuyOrderFork() internal returns (OrderV2 memory) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringBuy());
         assertEq(bytecode, EXPECTED_BUY_BYTECODE);
+        uint256[] memory expectedConstants = expectedBinomialBuyConstants();
+        assertEq(expectedConstants.length, constants.length);
+        for (uint256 i = 0; i < constants.length; i++) {
+            assertEq(constants[i], expectedConstants[i]);
+        }
         return placeOrder(bytecode, constants, polygonNhtIo(), polygonUsdtIo());
     }
 
     function placeSellOrderFork() internal returns (OrderV2 memory order) {
         (bytes memory bytecode, uint256[] memory constants) = POLYGON_PARSER_NPE2.parse(rainstringSell());
         assertEq(bytecode, EXPECTED_SELL_BYTECODE);
+        uint256[] memory expectedConstants = expectedBinomialSellConstants();
+        assertEq(expectedConstants.length, constants.length);
+        for (uint256 i = 0; i < constants.length; i++) {
+            assertEq(constants[i], expectedConstants[i]);
+        }
         return placeOrder(bytecode, constants, polygonUsdtIo(), polygonNhtIo());
     }
 

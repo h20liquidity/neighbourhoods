@@ -11,7 +11,6 @@ contract Test5SushiV2LimitOrderUtil is OrderBookNPE2Real {
         uint256[][] context;
         uint256[] stack;
         uint256[] kvs;
-        uint256 balanceDiff;
     }
 
     function evalLimitOrder(LimitOrder memory limitOrder) internal view returns (LimitOrder memory) {
