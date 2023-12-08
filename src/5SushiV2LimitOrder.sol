@@ -35,7 +35,7 @@ bytes constant PRELUDE =
     "batch-start-info: get(batch-start-info-k),"
     // Batch Start Time.
     "batch-start-time: bitwise-decode<32 32>(batch-start-info),"
-    // Ensure 1 hr Cooldown between Batches.
+    // Ensure 5 mins Cooldown between Batches.
     ":ensure<1>(greater-than(block-timestamp() int-add(batch-start-time 300))),"
     // Current Batch Index and Remaining Amount.
     "batch-index batch-remaining: call<2 2>(0),";
@@ -106,11 +106,11 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
     // Amount Per Batch
     "amount-per-batch: 100e18,"
     // New total amount
-    "new-total-amount-received: int-add(get(total-received-k) new-received),"
+    "new-total-amount-received: decimal18-add(get(total-received-k) new-received),"
     // Batch Index is the floor of the div
     "new-batch-index: int-div(new-total-amount-received amount-per-batch),"
     // Remaining batch amount
-    "new-batch-remaining: int-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
+    "new-batch-remaining: decimal18-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
 
 function rainstringSellLimitOrder() pure returns (bytes memory) {
     return bytes.concat(
