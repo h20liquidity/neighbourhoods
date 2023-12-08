@@ -9,11 +9,31 @@ const TRANCHE_STRAT_CALCULATE_BATCH =
     // Amount Per Batch
     "amount-per-batch: 100e18,"+
     // New total amount
-    "new-total-amount-received: int-add(get(total-received-k) new-received),"+
+    "new-total-amount-received: decimal18-add(get(total-received-k) new-received),"+
     // Batch Index is the floor of the div
     "new-batch-index: int-div(new-total-amount-received amount-per-batch),"+
     // Remaining batch amount
-    "new-batch-remaining: int-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
+    "new-batch-remaining: decimal18-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-amount-received);";
+
+const TRANCHE_STRAT_HANDLE_IO =
+    // Batch Info Key.
+        "batch-start-info-k : context<1 0>(),"+
+        // Total Amount Received Key
+        "total-received-k : hash(batch-start-info-k),"+
+        // New Total Amount Received
+        "new-total-received new-batch-index _: call<2 3>(decimal18-scale18<6>(usdt-amount-diff)),"+
+        // Get Batch Info
+        "batch-start-info: get(batch-start-info-k),"+
+        // Get Batch Start Index from Batch Info.
+        "batch-start-index: bitwise-decode<0 32>(batch-start-info),"+
+        // Get Batch Start Time from Batch Info.
+        "batch-start-time: bitwise-decode<32 32>(batch-start-info),"+
+        // If we are in new Batch, record current time as batch start time.
+        "new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),"+
+        // Set Batch Info.
+        ":set(batch-start-info-k new-batch-info),"+
+        // Set Total Amount received.
+        ":set(total-received-k new-total-received);";
 
 export const getLimitOrderPrelude = (network) => {
 
@@ -51,26 +71,10 @@ export const getSellLimitOrder = (network,sellRatio) => {
     // Order Ratio
     "ratio: io-ratio;"; 
 
-    const TRANCHE_STRAT_HANDLE_IO_SELL =
-    // Batch Info Key.
-    "batch-start-info-k : context<1 0>(),"+
-    // Total Amount Received Key
-    "total-received-k : hash(batch-start-info-k),"+
+    const TRANCHE_STRAT_HANDLE_IO_SELL_USDT_IN =
     // Input Amount received.
-    "usdt-in-amount : context<3 4>(),"+
-    // New Total Amount Received
-    "new-total-received new-batch-index _: call<2 3>(decimal18-scale18<6>(usdt-in-amount)),"+
-    // Store Batch Info
-    "batch-start-info: get(batch-start-info-k)," + "batch-start-index: bitwise-decode<0 32>(batch-start-info),"+
-    "batch-start-time: bitwise-decode<32 32>(batch-start-info),"+
-    // If we are in new Batch, record current time as batch start time.
-    "new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),"+
-    // Set Batch Info.
-    ":set(batch-start-info-k new-batch-info),"+
-    // Set Total Amount received.
-    ":set(total-received-k new-total-received);"; 
-
-    return getLimitOrderPrelude(network) + TRANCHE_STRAT_CALCULATE_IO_SELL + TRANCHE_STRAT_HANDLE_IO_SELL + TRANCHE_STRAT_CALCULATE_BATCH
+    "usdt-amount-diff : context<3 4>(),";
+    return getLimitOrderPrelude(network) + TRANCHE_STRAT_CALCULATE_IO_SELL + TRANCHE_STRAT_HANDLE_IO_SELL_USDT_IN + TRANCHE_STRAT_HANDLE_IO + TRANCHE_STRAT_CALCULATE_BATCH
 
 
 }
@@ -85,31 +89,12 @@ export const getBuyLimitOrder = (network,buyRatio) => {
     // Order Ratio
     "ratio: io-ratio;";
 
-    const TRANCHE_STRAT_HANDLE_IO_BUY =
-    // Batch Info Key.
-    "batch-start-info-k : context<1 0>(),"+
-    // Total Amount Received Key
-    "total-received-k : hash(batch-start-info-k),"+
-    // NHT Amount received from trade.
-    "nht-in-amount : context<3 4>(),"+
-    // Get current ratio from context
-    "io-ratio: context<2 1>(),"+
-    //usdt equivalent of nht-in-token-amount18.
-    "usdt-out-amount18: decimal18-div(nht-in-amount io-ratio),"+
-    // New Total Amount Received
-    "new-total-received new-batch-index _: call<2 3>(usdt-out-amount18),"+
-    // Store Batch Info
-    "batch-start-info: get(batch-start-info-k),"+ "batch-start-index: bitwise-decode<0 32>(batch-start-info),"+
-    "batch-start-time: bitwise-decode<32 32>(batch-start-info),"+
-    // If we are in new Batch, record current time as batch start time.
-    "new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),"+
-    // Set Batch Info.
-    ":set(batch-start-info-k new-batch-info),"+
-    // Set Total Amount received.
-    ":set(total-received-k new-total-received);";
+    const TRANCHE_STRAT_HANDLE_IO_BUY_USDT_OUT =
+    // USDT Amount Sent.
+    "usdt-amount-diff : context<4 4>(),";
 
     
-    return getLimitOrderPrelude(network) + TRANCHE_STRAT_CALCULATE_IO_BUY + TRANCHE_STRAT_HANDLE_IO_BUY + TRANCHE_STRAT_CALCULATE_BATCH
+    return getLimitOrderPrelude(network) + TRANCHE_STRAT_CALCULATE_IO_BUY + TRANCHE_STRAT_HANDLE_IO_BUY_USDT_OUT + TRANCHE_STRAT_HANDLE_IO + TRANCHE_STRAT_CALCULATE_BATCH
 
 
 }
