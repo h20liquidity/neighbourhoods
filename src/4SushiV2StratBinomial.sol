@@ -59,10 +59,9 @@ IOrderBookV3 constant POLYGON_ORDERBOOK = IOrderBookV3(0xdcdee0E7a58Bba7e305dB3A
 address constant CLEARER = 0xf098172786a87FA7426eA811Ff25D31D599f766D;
 address constant OB_FLASH_BORROWER = 0x409717e08DcA5fE40efdB05318FBF0E65762814D;
 
-// uint256 constant ONE_HOUR = 3600;
 uint256 constant MAX_COOLDOWN = 576;
 uint256 constant MAX_COOLDOWN_18 = 576e18;
-uint256 constant MAX_USDT = 50e18;
+uint256 constant MAX_USDT_18 = 50e18;
 
 bytes constant RAINSTRING_JITTERY_BINOMIAL =
 // Paramaterise the seed for our randomness (hash).
@@ -95,7 +94,7 @@ bytes constant RAINSTRING_PRELUDE =
     "last-time: get(order-hash),"
     // Set the last time to this block.
     ":set(order-hash block-timestamp()),"
-    // Try to sell $50 worth of nht.
+    // Try to sell $25 worth of nht.
     // Set the max at $50 so that the binomial peak sits at $25.
     "max-usdt-amount18: 50e18,"
     // We can just seed the rng with last time.
@@ -155,7 +154,7 @@ function expectedBinomialSellConstants() pure returns (uint256[] memory constant
     constants[1] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
     constants[2] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
     constants[3] = uint256(uint160(APPROVED_COUNTERPARTY));
-    constants[4] = MAX_USDT;
+    constants[4] = MAX_USDT_18;
     constants[5] = MAX_COOLDOWN_18;
     constants[6] = 0;
     constants[7] = 1e18;
@@ -241,7 +240,7 @@ function expectedBinomialBuyConstants() pure returns (uint256[] memory constants
     constants[1] = uint256(uint160(address(POLYGON_NHT_TOKEN_ADDRESS)));
     constants[2] = uint256(uint160(address(POLYGON_USDT_TOKEN_ADDRESS)));
     constants[3] = uint256(uint160(APPROVED_COUNTERPARTY));
-    constants[4] = MAX_USDT;
+    constants[4] = MAX_USDT_18;
     constants[5] = MAX_COOLDOWN_18;
     constants[6] = 0;
     constants[7] = 1e18;

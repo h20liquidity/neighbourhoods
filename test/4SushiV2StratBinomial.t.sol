@@ -34,7 +34,7 @@ import {
     IInterpreterStoreV1,
     IO,
     IERC20,
-    MAX_USDT,
+    MAX_USDT_18,
     EvaluableConfigV3,
     OrderConfigV2,
     SourceIndexV2,
@@ -455,11 +455,11 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         // last time
         assertEq(stack[12], lastTime);
         // max usdt amount
-        assertEq(stack[11], MAX_USDT);
+        assertEq(stack[11], MAX_USDT_18);
         // amount random multiplier
         assertEq(stack[10], jitteryBinomial(lastTime));
         // target usdt amount e18
-        assertEq(stack[9], MAX_USDT * jitteryBinomial(lastTime) / 1e18);
+        assertEq(stack[9], MAX_USDT_18 * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
         assertEq(stack[8], stack[9].scaleN(6, 1));
         // max cooldown e18
@@ -510,11 +510,11 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
         // last time
         assertEq(stack[12], lastTime);
         // max usdt amount
-        assertEq(stack[11], MAX_USDT);
+        assertEq(stack[11], MAX_USDT_18);
         // amount random multiplier
         assertEq(stack[10], jitteryBinomial(lastTime));
         // target usdt amount e18
-        assertEq(stack[9], MAX_USDT * jitteryBinomial(lastTime) / 1e18);
+        assertEq(stack[9], MAX_USDT_18 * jitteryBinomial(lastTime) / 1e18);
         // target usdt amount e6
         assertEq(stack[8], stack[9] / 1e12);
         // max cooldown e18
