@@ -40,7 +40,7 @@ bytes constant PRELUDE =
     // Current Batch Index and Remaining Amount.
     "batch-index batch-remaining: call<2 2>(0),";
 
-bytes constant TRANCHE_STRAT_HANDLE_IO = 
+bytes constant TRANCHE_STRAT_HANDLE_IO =
 // Batch Info Key.
     "batch-start-info-k : context<1 0>(),"
     // Total Amount Received Key
@@ -70,7 +70,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO_SELL =
 
 bytes constant TRANCHE_STRAT_HANDLE_IO_SELL_USDT_IN =
 // Input Amount received.
-    "usdt-amount-diff : context<3 4>(),";
+ "usdt-amount-diff : context<3 4>(),";
 
 bytes constant TRANCHE_STRAT_CALCULATE_IO_BUY =
 // Calcuate Ratio from initial ratio and batch index.
@@ -82,7 +82,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_IO_BUY =
 
 bytes constant TRANCHE_STRAT_HANDLE_IO_BUY_USDT_OUT =
 // USDT Amount Sent.
-    "usdt-amount-diff : context<4 4>(),";
+ "usdt-amount-diff : context<4 4>(),";
 
 bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
 // Amount received
@@ -100,7 +100,11 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
 
 function rainstringSellLimitOrder() pure returns (bytes memory) {
     return bytes.concat(
-        PRELUDE, TRANCHE_STRAT_CALCULATE_IO_SELL, TRANCHE_STRAT_HANDLE_IO_SELL_USDT_IN, TRANCHE_STRAT_HANDLE_IO, TRANCHE_STRAT_CALCULATE_BATCH
+        PRELUDE,
+        TRANCHE_STRAT_CALCULATE_IO_SELL,
+        TRANCHE_STRAT_HANDLE_IO_SELL_USDT_IN,
+        TRANCHE_STRAT_HANDLE_IO,
+        TRANCHE_STRAT_CALCULATE_BATCH
     );
 }
 
@@ -120,7 +124,11 @@ function expectedLimitOrderSellConstants() pure returns (uint256[] memory consta
 
 function rainstringBuyLimitOrder() pure returns (bytes memory) {
     return bytes.concat(
-        PRELUDE, TRANCHE_STRAT_CALCULATE_IO_BUY, TRANCHE_STRAT_HANDLE_IO_BUY_USDT_OUT, TRANCHE_STRAT_HANDLE_IO, TRANCHE_STRAT_CALCULATE_BATCH
+        PRELUDE,
+        TRANCHE_STRAT_CALCULATE_IO_BUY,
+        TRANCHE_STRAT_HANDLE_IO_BUY_USDT_OUT,
+        TRANCHE_STRAT_HANDLE_IO,
+        TRANCHE_STRAT_CALCULATE_BATCH
     );
 }
 
