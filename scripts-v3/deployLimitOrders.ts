@@ -29,7 +29,9 @@ async function main(argv){
   
   console.log(`\n>>>> Deploying limit orders to ${toNetwork.toUpperCase()}...`) 
  
-  const vaultId = randomUint256().toString()
+  // const vaultId = randomUint256().toString()
+  const vaultId = "82212972147442832250651702525296904327619221408273464764340702831835315043991"
+
 
   await deployLimitStrategy(toNetwork,vaultId,sellRatio,buyRatio)
 

@@ -39,36 +39,36 @@
     },
     "polygon": {
       "Rainterpreter": {
-        "address": "0xf374fafe473d76bf9518e437b484fbdd5674daff",
-        "transaction": "0x52abde36afcbd0d6a273b3de18737245097bbcf0e8bc521ef8e0cd706150b81c"
+        "address": "0x5b84e7ca07b6c7d68e472d0ba9db93a783a7504a",
+        "transaction": "0xacc84a7503cd51499370cfbbe487b25b9b4ee4c5fa5b85d2e319177f5b000122"
       },
       "RainterpreterStore": {
-        "address": "0x5b777faca336c648262e9c65a3c7a372a08c205b",
-        "transaction": "0xd7ff9ab75d0b9fd0f50fd7e175567d27fe3cff161108357e47333d1cd7ab4ad9"
+        "address": "0x8bb704a1c16e47305170c553a332b0ade22c222f",
+        "transaction": "0xf03345ff345c97164622ce4a6bc289c57c647deec575c0fecd15487ab28ee6f8"
       },
       "RainterpreterParser": {
-        "address": "0x63954a113cbdb20a4fd1ac7dd76c9eda29727f2d",
-        "transaction": "0x1c06b7d8f79b346a4f96a6b06d476f1cca7301cf23e48c7e932d293b9b4e182d"
+        "address": "0x53ce2bb747b035857626a5f4ddb9bd1e115248e8",
+        "transaction": "0xaa1d5eef0abc63426c68fc053de178b06244bb3f571b8a473466130247c546d6"
       },
       "RainterpreterExpressionDeployer": {
-        "address": "0xd61d03501e95d4b507566fb42ca2299595c4b1e6",
-        "transaction": "0x595178354b211bbaa65b4a38cbae73e93c1ddd54fa1e10ed920113f299f17a0e"
+        "address": "0x475c3cda27b6dd89148220915b4e4f57b56a0be1",
+        "transaction": "0xa330e0044c0f69573f19dfe68db32115f466f3799b13f1673c7050c717c985f2"
       },
       "Orderbook": {
-        "address": "0xdcdee0e7a58bba7e305db3abc42f4887ce8ef729",
-        "transaction": "0xcedac59588c23a049cd2b924b234e19ff7c79ff81e7f809a8a02a0d4108fcaa8"
+        "address": "0x16d518706d666c549da7bd31110623b09ef23abb",
+        "transaction": "0xc08492661c9987477c5279640c2b600ef3d2556b22f031cee580a6cc6fbd4743"
       },
       "RouteProcessorOrderBookV3ArbOrderTakerImplementation": {
-        "address": "0xb63a632c36f010d2a7598da83bbd65b132ad80ee",
-        "transaction": "0x0d7dddf8e8c2eb3206bbe250e1414dba4c813f7e439081893832f36ecd669db6"
+        "address": "0xc9db5c413f8125237b8d2c176e674dda5cc96935",
+        "transaction": "0x14475a97143007ecdb1251481c774b76d35c7614df8ac09c9d13a7acfa050b50"
       },
       "CloneFactory": {
-        "address": "0x6d0c39093c21da1230acdd911420bbfa353a3fba",
-        "transaction": "0x1bd6f23a7055172b0a6cd577723f44283222361def52206f3ca91bf097c86112"
+        "address": "0x9d46d8726488217177fc822dce981c77ccdeebee",
+        "transaction": "0x2a152e52dc17f74e27ec8c8f3996ecae736207320434c34be2724ce6b3bcf98a"
       },
       "RouteProcessorOrderBookV3ArbOrderTakerInstance": {
-        "address": "0xb4ffa641e5da49f7466142e8418622cb64dbe86b",
-        "transaction": "0x4167dd11b8e2af89018547e6c2e56b2e6f40a2dc4c97336b6bf45050e7b1fad7"
+        "address": "0xD4A7e432b5E56535F0a671144551ef833dc2c569",
+        "transaction": "0x0b366a09390eb5668a899a2705fa05ff81962bb2c3b69556ad861201a43e7a2e"
       },
       "routeProcessor3Address": {
         "address": "0x0a6e511Fe663827b9cA7e2D2542b20B37fC217A6"
