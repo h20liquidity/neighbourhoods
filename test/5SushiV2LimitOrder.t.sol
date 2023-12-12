@@ -58,7 +58,6 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
     using LibFixedPointDecimalScale for uint256;
 
-    string constant FORK_RPC = "https://polygon.llamarpc.com";
     uint256 constant FORK_BLOCK_NUMBER = 51049758;
 
     uint32 constant RESERVE_TIMESTAMP = 1701608565;
@@ -69,7 +68,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
     function selectPolygonFork() internal {
-        uint256 fork = vm.createFork(FORK_RPC);
+        uint256 fork = vm.createFork(vm.envString("RPC_URL_POLYGON"));
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
     }
