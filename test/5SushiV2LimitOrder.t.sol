@@ -59,7 +59,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
     using LibFixedPointDecimalScale for uint256;
 
     string constant FORK_RPC = "https://polygon.llamarpc.com";
-    uint256 constant FORK_BLOCK_NUMBER = 50848263;
+    uint256 constant FORK_BLOCK_NUMBER = 51049758;
 
     uint32 constant RESERVE_TIMESTAMP = 1701608565;
     uint256 constant VAULT_ID = uint256(keccak256("vault"));
@@ -193,7 +193,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         selectPolygonFork();
         {
             // Deposit NHT.
-            uint256 depositAmount = 2000000e18;
+            uint256 depositAmount = 100000000e18;
             giveTestAccountsTokens(POLYGON_NHT_TOKEN_ADDRESS, POLYGON_NHT_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(POLYGON_NHT_TOKEN_ADDRESS, VAULT_ID, depositAmount);
         }
@@ -202,7 +202,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
             address(POLYGON_USDT_TOKEN_ADDRESS),
             address(POLYGON_NHT_TOKEN_ADDRESS),
             POLYGON_USDT_HOLDER,
-            1000e6,
+            10000e6,
             BUY_ROUTE
         );
         OrderV2 memory sellOrder = placeSellLimitOrderFork();
@@ -233,7 +233,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
         selectPolygonFork();
         {
             // Deposit USDT.
-            uint256 depositAmount = 1000e6;
+            uint256 depositAmount = 10000e6;
             giveTestAccountsTokens(POLYGON_USDT_TOKEN_ADDRESS, POLYGON_USDT_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(POLYGON_USDT_TOKEN_ADDRESS, VAULT_ID, depositAmount);
         }
@@ -242,7 +242,7 @@ contract Test4SushiV2LimitOrder is Test5SushiV2LimitOrderUtil {
             address(POLYGON_NHT_TOKEN_ADDRESS),
             address(POLYGON_USDT_TOKEN_ADDRESS),
             POLYGON_NHT_HOLDER,
-            2000000e18,
+            100000000e18,
             SELL_ROUTE
         );
         OrderV2 memory buyOrder = placeBuyLimitOrderFork();

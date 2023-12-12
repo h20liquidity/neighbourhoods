@@ -14,7 +14,7 @@ uint256 constant ORDER_INIT_RATIO_SELL = 50e13;
 uint256 constant ORDER_INIT_RATIO_BUY = 2000e18;
 
 /// @dev Amount per tranche 100 USDT FP denomiated.
-uint256 constant AMOUNT_PER_BATCH = 100e18;
+uint256 constant AMOUNT_PER_BATCH = 1000e18;
 
 /// @dev Cooldown 5 minutes.
 uint256 constant COOLDOWN = 300;
@@ -90,7 +90,7 @@ bytes constant TRANCHE_STRAT_CALCULATE_BATCH =
     // Total Usdt18 Key
     "total-usdt18-k: hash(context<1 0>()),"
     // Amount Per Batch
-    "amount-per-batch: 100e18,"
+    "amount-per-batch: 1000e18,"
     // New total amount
     "new-total-usdt18-amount: decimal18-add(get(total-usdt18-k) usdt18-amount),"
     // Batch Index is the floor of the div

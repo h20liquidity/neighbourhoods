@@ -7,7 +7,7 @@ const TRANCHE_STRAT_CALCULATE_BATCH =
     // Total Usdt18 Key
     "total-usdt18-k: hash(context<1 0>()),"+
     // Amount Per Batch
-    "amount-per-batch: 100e18,"+
+    "amount-per-batch: 1000e18,"+
     // New total amount
     "new-total-usdt18-amount: decimal18-add(get(total-usdt18-k) usdt18-amount),"+
     // Batch Index is the floor of the div
