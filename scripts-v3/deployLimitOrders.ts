@@ -16,6 +16,7 @@ async function main(argv){
     .requiredOption("-t --to <network-name>",`Target network to deploy order to. Any of [${supportedNetworks}]`)
     .requiredOption("-s --sell-ratio <Sell Ratio>",`Limit Sell Order Ratio`)
     .requiredOption("-b --buy-ratio <Buy Ratio>",`Limit Buy Order Ratio`)
+    .requiredOption("-v --vault <vault>",`Hexadecimal string representing the vault id.`)
     .description([
       "Deploy Limit Orders"
     ].join("\n"))
@@ -24,15 +25,13 @@ async function main(argv){
 
   const toNetwork = cmdOptions.to
   const sellRatio = cmdOptions.sellRatio 
-  const buyRatio = cmdOptions.buyRatio 
+  const buyRatio = cmdOptions.buyRatio
+  const vaultId = cmdOptions.vault 
+
 
   
   console.log(`\n>>>> Deploying limit orders to ${toNetwork.toUpperCase()}...`) 
  
-  // const vaultId = randomUint256().toString()
-  const vaultId = "82212972147442832250651702525296904327619221408273464764340702831835315043991"
-
-
   await deployLimitStrategy(toNetwork,vaultId,sellRatio,buyRatio)
 
   
