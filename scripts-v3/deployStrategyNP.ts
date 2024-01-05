@@ -14,17 +14,17 @@ async function main(argv){
 
   const cmdOptions = new Command()
     .requiredOption("-t --to <network-name>",`Target network to deploy order to. Any of [${supportedNetworks}]`)
+    .requiredOption("-v --vault <vault>",`Hexadecimal string representing the vault id.`)
     .description([
       "Deploy Strategy to target network"
     ].join("\n"))
     .parse(argv) 
     .opts();   
 
-  const toNetwork = cmdOptions.to 
+  const toNetwork = cmdOptions.to
+  const vaultId = cmdOptions.vault 
   
   console.log(`\n>>>> Deploying strategy to ${toNetwork.toUpperCase()}...`) 
- 
-  const vaultId = randomUint256().toString()
 
   await deployPilotBinomialStrategy(toNetwork,vaultId)
 
