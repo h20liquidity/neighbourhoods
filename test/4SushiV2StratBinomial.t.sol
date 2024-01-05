@@ -54,7 +54,6 @@ import "test/lib/OrderBookNPE2Real.sol";
 
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
-string constant FORK_RPC = "https://polygon.llamarpc.com";
 uint256 constant FORK_BLOCK_NUMBER = 50715909;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
@@ -70,7 +69,7 @@ contract Test4SushiV2StratBinomial is OrderBookNPE2Real {
     using LibFixedPointDecimalScale for uint256;
 
     function selectPolygonFork() internal {
-        uint256 fork = vm.createFork(FORK_RPC);
+        uint256 fork = vm.createFork(vm.envString("RPC_URL_POLYGON"));
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
     }
