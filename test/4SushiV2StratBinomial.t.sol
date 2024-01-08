@@ -54,7 +54,7 @@ import "test/lib/OrderBookNPE2Real.sol";
 
 uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
-uint256 constant FORK_BLOCK_NUMBER = 50715909;
+uint256 constant FORK_BLOCK_NUMBER = 52085449;
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
 
 address constant TEST_ORDER_OWNER = address(0x84723849238);
