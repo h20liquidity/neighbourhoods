@@ -105,7 +105,7 @@ bytes constant RAINSTRING_PRELUDE =
 bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
 // Sushi needs the usdt amount as 6 decimals (tether's native size).
     "target-usdt-amount: decimal18-scale-n<6 1>(target-usdt-amount18),"
-    // Try to average a 12 mins cooldown, so the max is 24 mins.
+    // Try to average an 18 mins cooldown, so the max is 36 mins.
     "max-cooldown18: 2160e18,"
     // Seed the rng with the hash of the last time to make it distinct from the
     // amount random multiplier.
@@ -191,7 +191,7 @@ bytes constant EXPECTED_SELL_BYTECODE =
 bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
 // Sushi needs the usdt amount as 6 decimals (tether's native size).
     "target-usdt-amount: decimal18-scale-n<6>(target-usdt-amount18),"
-    // Try to average a 12 mins cooldown, so the max is 24 mins.
+    // Try to average an 18 mins cooldown, so the max is 36 mins.
     "max-cooldown18: 2160e18,"
     // Seed the rng with the hash of the last time to make it distinct from the
     // amount random multiplier.
